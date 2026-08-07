@@ -1,0 +1,68 @@
+[
+ {
+  "item": 8,
+  "codigo": "18605136",
+  "campo": "f_c7",
+  "valor_original": "0.06527777777955635"
+ },
+ {
+  "item": 11,
+  "codigo": "18628602",
+  "campo": "f_c7",
+  "valor_original": "2.0118055555576575"
+ },
+ {
+  "item": 20,
+  "codigo": "18661798",
+  "campo": "f_c7",
+  "valor_original": "0.09861111110512866"
+ },
+ {
+  "item": 26,
+  "codigo": "18637108",
+  "campo": "f_oc",
+  "valor_original": "En proceso"
+ },
+ {
+  "item": 27,
+  "codigo": "18632338",
+  "campo": "f_c7",
+  "valor_original": "0.07708333332993789"
+ },
+ {
+  "item": 29,
+  "codigo": "18691083",
+  "campo": "f_c7",
+  "valor_original": "0.9715277777722804"
+ },
+ {
+  "item": 57,
+  "codigo": "18636975",
+  "campo": "f_c7",
+  "valor_original": "0.8145833333328483"
+ },
+ {
+  "item": 67,
+  "codigo": "18508502",
+  "campo": "f_c7",
+  "valor_original": "0.08333333333575865"
+ },
+ {
+  "item": 137,
+  "codigo": "18846524",
+  "campo": "f_trabajos",
+  "valor_original": "Consultar"
+ },
+ {
+  "item": 668,
+  "codigo": "19353788",
+  "campo": "f_trabajos",
+  "valor_original": "Pendiente"
+ },
+ {
+  "item": 689,
+  "codigo": "19374214",
+  "campo": "f_trabajos",
+  "valor_original": "Pendiente"
+ }
+]
