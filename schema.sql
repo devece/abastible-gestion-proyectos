@@ -124,6 +124,55 @@ create policy "anon_select_certificadores" on public.certificadores_por_region f
 -- alter table public.proyectos drop constraint proyectos_codigo_key;
 -- alter table public.proyectos add constraint proyectos_item_key unique (item);
 
+-- ── Stage: Planilla de Datos (planilla-datos.html) — campos por tipo de cliente ──
+-- Comunes (reutiliza nombre_proyecto, direccion, region, comuna, obs que ya existen)
+alter table public.proyectos add column if not exists pd_fecha date;
+alter table public.proyectos add column if not exists pd_tipo_instalacion text; -- 'habitacional' | 'constructora' | 'comercial'
+alter table public.proyectos add column if not exists pd_firma_nombre text;
+
+-- Habitacional
+alter table public.proyectos add column if not exists hab_nombre_cliente text;
+alter table public.proyectos add column if not exists hab_rut text;
+alter table public.proyectos add column if not exists hab_correo text;
+alter table public.proyectos add column if not exists hab_telefono text;
+alter table public.proyectos add column if not exists hab_contacto_obra_nombre text;
+alter table public.proyectos add column if not exists hab_contacto_obra_telefono text;
+
+-- Constructora Inmobiliaria
+alter table public.proyectos add column if not exists const_razon_social text;
+alter table public.proyectos add column if not exists const_rut_empresa text;
+alter table public.proyectos add column if not exists const_rep_legal_nombre text;
+alter table public.proyectos add column if not exists const_rep_legal_rut text;
+alter table public.proyectos add column if not exists const_rep_legal_telefono text;
+alter table public.proyectos add column if not exists const_rep_legal_correo text;
+alter table public.proyectos add column if not exists const_contacto_obra_nombre text;
+alter table public.proyectos add column if not exists const_contacto_obra_telefono text;
+alter table public.proyectos add column if not exists const_contacto_obra_correo text;
+alter table public.proyectos add column if not exists const_correo_facturacion text;
+alter table public.proyectos add column if not exists const_cant_edificios int;
+alter table public.proyectos add column if not exists const_cant_pisos int;
+alter table public.proyectos add column if not exists const_cant_instalaciones int;
+alter table public.proyectos add column if not exists const_anio_construccion int;
+alter table public.proyectos add column if not exists const_vivienda_social text;
+alter table public.proyectos add column if not exists const_conductos_colectivos text;
+alter table public.proyectos add column if not exists const_cant_conductos_individuales int;
+alter table public.proyectos add column if not exists const_cant_calderas int;
+
+-- Comercial / Industrial
+alter table public.proyectos add column if not exists com_razon_social text;
+alter table public.proyectos add column if not exists com_rut_empresa text;
+alter table public.proyectos add column if not exists com_rubro_sii text;
+alter table public.proyectos add column if not exists com_rep_legal_nombre text;
+alter table public.proyectos add column if not exists com_rep_legal_rut text;
+alter table public.proyectos add column if not exists com_rep_legal_correo text;
+alter table public.proyectos add column if not exists com_correo_facturacion text;
+alter table public.proyectos add column if not exists com_fecha_fundacion date;
+alter table public.proyectos add column if not exists com_tamano_empresa text;
+alter table public.proyectos add column if not exists com_estacionalidad text;
+alter table public.proyectos add column if not exists com_contacto_nombre text;
+alter table public.proyectos add column if not exists com_contacto_telefono text;
+alter table public.proyectos add column if not exists com_contacto_correo text;
+
 -- ── Stage: campos para prellenar Welcome Pack / End Pack (correr esto en la tabla ya existente) ──
 alter table public.proyectos add column if not exists nombre_proyecto text;
 alter table public.proyectos add column if not exists direccion text;

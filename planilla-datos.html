@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Formulario Datos Instalación GLP - Versión 7.0</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Ubuntu+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+<style>
+:root{--accent:#FF6600;--card:#fff;--muted:#777}
+*{box-sizing:border-box}
+body{font-family:"Ubuntu Sans",Tahoma,Verdana,sans-serif;background:#f4f7f8;padding:20px;color:#222;margin:0}
+
+.wrapper{max-width:950px;margin:auto;background:var(--card);padding:22px 28px;border-radius:10px;box-shadow:0 8px 28px rgba(27,31,35,.06)}
+
+.header{border-bottom:3px solid var(--accent);margin-bottom:14px;padding-bottom:12px}
+.header h1{margin:0;font-size:2rem;font-weight:500}
+.header .sub{color:var(--muted)}
+
+.section{margin-bottom:18px;padding:14px;background:#fbfbfb;border:1px solid #e6e6e6;border-radius:8px}
+.section h3{color:var(--accent)}
+
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.col{min-width:220px}
+
+label{font-weight:500;margin-bottom:6px;display:block}
+input,select,textarea{width:100%;padding:10px;border-radius:6px;border:1.5px solid #ccc;font-size:.95rem}
+textarea{min-height:90px}
+
+.collapsible{display:none}
+.collapsible.open{display:block}
+
+/* firma */
+.firma-section{margin-top:20px;border-top:1px solid #ccc;padding-top:16px;display:flex;gap:14px;flex-wrap:wrap}
+.firma-col{flex:1 1 320px}
+.firma-box{position:relative;height:120px;border:2px solid #999;border-radius:6px;overflow:hidden}
+.firma-box span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.8rem;color:#aaa}
+.firma-box img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:none;background:#fff}
+
+.buttons{display:flex;justify-content:flex-end;gap:12px;margin-top:10px}
+.btn-main{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:10px 14px}
+.btn-sec{background:none;border:1px solid var(--accent);color:var(--accent);border-radius:8px;padding:9px 12px}
+.btn-main:disabled{opacity:.5;cursor:not-allowed}
+
+.banner{display:none;padding:11px 16px;border-radius:8px;font-size:.85rem;font-weight:600;margin-bottom:14px}
+.banner.show{display:block}
+.banner.ok{background:#e6f6ec;color:#166534;border:1px solid #a7dfba}
+.banner.err{background:#fdeaea;color:#8a1f1f;border:1px solid #f3b7b7}
+
+@media print {
+
+ body{
+  margin:0;
+  padding:0;
+ }
+
+ .wrapper{
+  margin:0 !important;
+  padding:10px !important;
+  box-shadow:none;
+  max-width:100%;
+ }
+
+ .section{
+  page-break-inside: avoid;
+ }
+
+ .row{
+  page-break-inside: avoid;
+ }
+}
+</style>
+</head>
+
+<body>
+
+<form class="wrapper" id="mainForm">
+
+<div class="header">
+<h1>Informe de Datos Instalación GLP</h1>
+<div class="sub">Versión 7.0 · Abastible</div>
+</div>
+
+<div id="banner" class="banner"></div>
+
+<!-- 1 -->
+<div class="section">
+<h3>1. Datos Generales</h3>
+
+<div class="row">
+<div class="col"><label>Código / N° Renova *</label><input id="codigo" placeholder="Ej: 18700000"></div>
+<div class="col"><label>Nombre Proyecto</label><input id="nombreProyecto"></div>
+<div class="col"><label>Fecha</label><input type="date" id="fecha"></div>
+</div>
+
+<div class="row">
+<div class="col"><label>Dirección del Proyecto</label><input id="direccion"></div>
+</div>
+
+<div class="row">
+<div class="col">
+<label>Región</label>
+<select id="region"><option value="">Seleccione región</option></select>
+</div>
+
+<div class="col">
+<label>Comuna</label>
+<select id="comuna"><option value="">Seleccione comuna</option></select>
+</div>
+</div>
+
+<div class="row">
+<div class="col">
+<label>Tipo de Instalación</label>
+<select id="tipoInstalacion">
+<option value="">Seleccione</option>
+<option value="habitacional">Habitacional</option>
+<option value="constructora">Constructora Inmobiliaria</option>
+<option value="comercial">Comercial / Industrial</option>
+</select>
+</div>
+</div>
+</div>
+
+
+<!-- HABITACIONAL -->
+<div id="habitacionalSection" class="section collapsible">
+<h3>2. Información Cliente Habitacional</h3>
+
+<div class="row">
+<div class="col"><label>Nombre Cliente</label><input id="hab_nombre"></div>
+<div class="col"><label>RUT</label><input class="rut" id="hab_rut"></div>
+<div class="col"><label>Correo</label><input type="email" id="hab_correo"></div>
+</div>
+
+<div class="row">
+<div class="col"><label>Teléfono</label><input class="telefono" id="hab_telefono" placeholder="+56 9 1234 5678" value="+56 "></div>
+<div class="col"><label>Nombre Contacto en Obra</label><input id="hab_contacto_nombre"></div>
+<div class="col"><label>Teléfono Contacto</label><input class="telefono" id="hab_contacto_telefono" placeholder="+56 9 1234 5678" value="+56 "></div>
+</div>
+
+</div>
+
+<!-- CONSTRUCTORA -->
+<div id="constructoraSection" class="section collapsible">
+<h3>2. Información Constructora Inmobiliaria</h3>
+
+<div class="row">
+<div class="col"><label>Razón Social</label><input id="const_razon_social"></div>
+<div class="col"><label>RUT Empresa</label><input class="rut" id="const_rut_empresa"></div>
+</div>
+
+<div class="row">
+<div class="col"><label>Nombre Representante Legal</label><input id="const_rep_nombre"></div>
+<div class="col"><label>RUT Representante Legal</label><input class="rut" id="const_rep_rut"></div>
+<div class="col"><label>Teléfono Representante</label><input class="telefono" id="const_rep_telefono" placeholder="+56 9 1234 5678" value="+56 "></div>
+<div class="col"><label>Correo Representante</label><input type="email" id="const_rep_correo"></div>
+</div>
+
+<div class="row">
+<div class="col"><label>Nombre Contacto en Obra</label><input id="const_contacto_nombre"></div>
+<div class="col"><label>Teléfono Contacto</label><input class="telefono" id="const_contacto_telefono" placeholder="+56 9 1234 5678"></div>
+<div class="col"><label>Correo Contacto</label><input type="email" id="const_contacto_correo"></div>
+</div>
+
+<div class="row">
+<div class="col"><label>Correo Facturación</label><input type="email" id="const_correo_facturacion"></div>
+<div class="col"><label>Cantidad Edificios</label><input type="number" id="const_cant_edificios"></div>
+<div class="col"><label>Cantidad Pisos</label><input type="number" id="const_cant_pisos"></div>
+<div class="col"><label>Cantidad Instalaciones</label><input type="number" id="const_cant_instalaciones"></div>
+<div class="col"><label>Año Construcción</label><input type="number" id="const_anio_construccion"></div>
+</div>
+
+<div class="row">
+<div class="col">
+<label>¿Vivienda Social?</label>
+<select id="const_vivienda_social"><option></option><option>SI</option><option>NO</option></select>
+</div>
+
+<div class="col">
+<label>¿Conductos Colectivos?</label>
+<select id="const_conductos_colectivos"><option></option><option>SI</option><option>NO</option></select>
+</div>
+
+<div class="col"><label>Cantidad Conductos Individuales</label><input type="number" id="const_cant_conductos"></div>
+<div class="col"><label>Cantidad Calderas</label><input type="number" id="const_cant_calderas"></div>
+</div>
+
+</div>
+
+<!-- COMERCIAL -->
+<div id="comercialSection" class="section collapsible">
+<h3>2. Información Comercial / Industrial</h3>
+
+<div class="row">
+<div class="col"><label>Razón Social / Empresa</label><input id="com_razon_social"></div>
+<div class="col"><label>RUT Empresa</label><input class="rut" id="com_rut_empresa"></div>
+<div class="col"><label>N° Rubro SII</label><input id="com_rubro_sii"></div>
+</div>
+
+<div class="row">
+<div class="col"><label>Nombre Representante Legal</label><input id="com_rep_nombre"></div>
+<div class="col"><label>RUT Representante</label><input class="rut" id="com_rep_rut"></div>
+<div class="col"><label>Correo Representante</label><input type="email" id="com_rep_correo"></div>
+</div>
+
+<div class="row">
+<div class="col"><label>Correo Facturación</label><input type="email" id="com_correo_facturacion"></div>
+<div class="col"><label>Fecha Fundación</label><input type="date" id="com_fecha_fundacion"></div>
+</div>
+
+<div class="row">
+<div class="col">
+<label>Tamaño Empresa</label>
+<select id="com_tamano_empresa">
+<option></option>
+<option>MICRO</option>
+<option>PEQUEÑA</option>
+<option>MEDIANA</option>
+<option>GRANDE</option>
+</select>
+</div>
+
+<div class="col">
+<label>Estacionalidad</label>
+<select id="com_estacionalidad">
+<option></option>
+<option>Sin estacionalidad</option>
+<option>Verano</option>
+<option>Invierno</option>
+<option>Festividades</option>
+</select>
+</div>
+</div>
+
+<div class="row">
+<div class="col"><label>Nombre Contacto</label><input id="com_contacto_nombre"></div>
+<div class="col"><label>Teléfono Contacto</label><input class="telefono" id="com_contacto_telefono" placeholder="+56 9 1234 5678" value="+56 "></div>
+<div class="col"><label>Correo Contacto</label><input type="email" id="com_contacto_correo"></div>
+</div>
+
+</div>
+
+<!-- OBS -->
+<div class="section">
+<h3>3. Observaciones</h3>
+<textarea id="observaciones"></textarea>
+</div>
+<!-- FIRMA -->
+<div class="firma-section">
+<div class="firma-col">
+<label>NOMBRE CLIENTE</label>
+<input type="text" id="firmaNombre">
+</div>
+
+<div class="firma-col">
+<label>FIRMA CLIENTE</label>
+<input type="file" id="firmaCliente" accept="image/*">
+<div class="firma-box">
+<span id="firmaHint">Cargar firma</span>
+<img id="previewFirma">
+</div>
+</div>
+</div>
+<div class="buttons">
+<button type="button" class="btn-sec" onclick="generarPDF()">Descargar PDF</button>
+<button type="button" class="btn-main" id="btnGuardar" onclick="guardarYGenerarPDF()">Guardar en Planilla Maestra + PDF</button>
+</div>
+
+</form>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<script>
+
+const SUPABASE_URL='https://aocbetucqvgxxjopjbjm.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvY2JldHVjcXZneHhqb3BqYmptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxMzI1ODEsImV4cCI6MjEwMTcwODU4MX0.QfsInd_7iyeUHInGEMMSzLUh_FILaG4QPVn9pC8RByI';
+const sb=supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* REGIONES COMPLETAS */
+const regiones = {
+"Arica y Parinacota":["Arica","Camarones","Putre","General Lagos"],
+"Tarapacá":["Iquique","Alto Hospicio","Pozo Almonte","Camiña","Colchane","Huara","Pica"],
+"Antofagasta":["Antofagasta","Mejillones","Sierra Gorda","Taltal","Calama","Ollagüe","San Pedro de Atacama","Tocopilla","María Elena"],
+"Atacama":["Copiapó","Caldera","Tierra Amarilla","Chañaral","Diego de Almagro","Vallenar","Alto del Carmen","Freirina","Huasco"],
+"Coquimbo":["La Serena","Coquimbo","Andacollo","La Higuera","Paihuano","Vicuña","Ovalle","Combarbalá","Monte Patria","Punitaqui","Río Hurtado","Illapel","Canela","Los Vilos","Salamanca"],
+"Valparaíso":["Valparaíso","Casablanca","Concón","Juan Fernández","Puchuncaví","Quintero","Viña del Mar","Isla de Pascua","Los Andes","Calle Larga","Rinconada","San Esteban","La Ligua","Cabildo","Petorca","Zapallar","Papudo","Quillota","La Calera","Hijuelas","La Cruz","Nogales","San Antonio","Algarrobo","Cartagena","El Quisco","El Tabo","Santo Domingo","San Felipe","Catemu","Llaillay","Panquehue","Putaendo","Santa María","Limache","Olmué","Quilpué","Villa Alemana"],
+"Metropolitana de Santiago":["Alhué","Buin","Calera de Tango","Cerrillos","Cerro Navia","Colina","Conchalí","Curacaví","El Bosque","El Monte","Estación Central","Huechuraba","Independencia","Isla de Maipo","La Cisterna","La Florida","La Granja","La Pintana","La Reina","Las Condes","Lo Barnechea","Lo Espejo","Lo Prado","Macul","Maipú","María Pinto","Melipilla","Ñuñoa","Padre Hurtado","Paine","Pedro Aguirre Cerda","Peñaflor","Peñalolén","Pirque","Providencia","Pudahuel","Puente Alto","Quilicura","Quinta Normal","Recoleta","Renca","San Bernardo","San Joaquín","San José de Maipo","San Miguel","San Pedro","San Ramón","Santiago","Talagante","Tiltil","Vitacura","Lampa"],
+"O'Higgins":["Rancagua","Codegua","Coinco","Coltauco","Doñihue","Graneros","Las Cabras","Machalí","Malloa","Mostazal","Olivar","Peumo","Pichidegua","Quinta de Tilcoco","Rengo","Requínoa","San Vicente","San Fernando","Chépica","Nancagua","Placilla","Pumanque","Santa Cruz","Palmilla","Peralillo","Marchigüe","La Estrella","Litueche","Navidad","Paredones","Pichilemu"],
+"Maule":["Talca","Constitución","Curepto","Empedrado","Maule","Pelarco","Pencahue","Río Claro","San Clemente","San Rafael","Curicó","Hualañé","Licantén","Molina","Rauco","Romeral","Sagrada Familia","Teno","Vichuquén","Linares","Colbún","Longaví","Parral","Retiro","San Javier","Villa Alegre","Yerbas Buenas","Cauquenes","Chanco","Pelluhue"],
+"Ñuble":["Chillán","Chillán Viejo","Bulnes","Cobquecura","Coelemu","Coihueco","El Carmen","Ninhue","Pemuco","Pinto","Quillón","Ránquil","San Carlos","San Fabián","San Ignacio","San Nicolás","Treguaco","Yungay"],
+"Biobío":["Concepción","Coronel","Chiguayante","Florida","Hualpén","Hualqui","Lota","Penco","San Pedro de la Paz","Santa Juana","Talcahuano","Tomé","Antuco","Cabrero","Laja","Los Ángeles","Mulchén","Nacimiento","Negrete","Quilaco","Quilleco","San Rosendo","Santa Bárbara","Tucapel","Yumbel","Alto Biobío","Lebu","Arauco","Cañete","Contulmo","Curanilahue","Los Álamos","Tirúa"],
+"La Araucanía":["Temuco","Carahue","Cunco","Curarrehue","Freire","Galvarino","Gorbea","Lautaro","Loncoche","Melipeuco","Nueva Imperial","Padre Las Casas","Perquenco","Pitrufquén","Pucón","Saavedra","Teodoro Schmidt","Toltén","Vilcún","Villarrica","Cholchol","Angol","Collipulli","Curacautín","Ercilla","Lonquimay","Los Sauces","Lumaco","Purén","Renaico","Traiguén","Victoria"],
+"Los Ríos":["Valdivia","Corral","Lanco","Los Lagos","Máfil","Mariquina","Paillaco","Panguipulli","Futrono","La Unión","Río Bueno","Lago Ranco"],
+"Los Lagos":["Puerto Montt","Calbuco","Cochamó","Fresia","Frutillar","Futaleufú","Hualaihué","Llanquihue","Los Muermos","Maullín","Puerto Varas","Ancud","Castro","Chonchi","Curaco de Vélez","Dalcahue","Puqueldón","Queilén","Quellón","Quemchi","Quinchao","Osorno","Purranque","Puyehue","Río Negro","San Juan de la Costa","San Pablo","Chaitén","Palena"],
+"Aysén":["Coyhaique","Lago Verde","Aysén","Cisnes","Guaitecas","Chile Chico","Río Ibáñez","Cochrane","O'Higgins","Tortel"],
+"Magallanes y Antártica Chilena":["Punta Arenas","Laguna Blanca","Río Verde","San Gregorio","Natales","Torres del Paine","Porvenir","Primavera","Timaukel","Cabo de Hornos","Antártica"]
+};
+
+/* Mapeo a los códigos de región que ya usa la Planilla Maestra (solo las 10 regiones donde operan) */
+const REGION_A_V8 = {
+  "Coquimbo":"IV Coquimbo",
+  "Valparaíso":"V Valparaíso",
+  "Metropolitana de Santiago":"RM Metropolitana",
+  "O'Higgins":"VI Ohiggins",
+  "Maule":"VII Maule",
+  "Ñuble":"XVI Ñuble",
+  "Biobío":"VIII Biobío",
+  "La Araucanía":"IX Araucanía",
+  "Los Ríos":"XIV Los Ríos",
+  "Los Lagos":"X Los Lagos"
+};
+
+const region=document.getElementById("region");
+const comuna=document.getElementById("comuna");
+
+Object.keys(regiones).forEach(r=>{
+ let o=document.createElement("option");
+ o.value=r;
+ o.textContent=r;
+ region.appendChild(o);
+});
+
+region.addEventListener("change",()=>{
+ comuna.innerHTML='<option value="">Seleccione comuna</option>';
+ (regiones[region.value]||[]).forEach(c=>{
+  let o=document.createElement("option");
+  o.textContent=c;
+  comuna.appendChild(o);
+ });
+});
+
+/* SECCION 2 */
+const tipo=document.getElementById("tipoInstalacion");
+const hab=document.getElementById("habitacionalSection");
+const cons=document.getElementById("constructoraSection");
+const com=document.getElementById("comercialSection");
+
+tipo.addEventListener("change",function(){
+ hab.classList.remove("open");
+ cons.classList.remove("open");
+ com.classList.remove("open");
+
+ if(this.value==="habitacional") hab.classList.add("open");
+ if(this.value==="constructora") cons.classList.add("open");
+ if(this.value==="comercial") com.classList.add("open");
+});
+
+/* FIRMA */
+const inputFirma = document.getElementById("firmaCliente");
+const imgFirma = document.getElementById("previewFirma");
+const hint = document.getElementById("firmaHint");
+
+inputFirma.addEventListener("change", function(){
+
+ const file = this.files[0];
+ if(!file) return;
+
+ const reader = new FileReader();
+
+ reader.onload = function(e){
+  imgFirma.src = e.target.result;
+  imgFirma.style.display = "block";
+  hint.style.display = "none";
+ };
+
+ reader.readAsDataURL(file);
+
+});
+
+/* PDF */
+function generarPDF(){
+
+ const element = document.getElementById("mainForm");
+
+ const nombreCliente = document.getElementById("firmaNombre").value || "Cliente";
+
+ const opt = {
+  margin: [0,0,0,0],
+  filename: `Planilla Datos ${nombreCliente}.pdf`,
+  image: { type: 'jpeg', quality: 1 },
+  html2canvas: {
+    scale: 2,
+    scrollY: 0,
+    windowWidth: document.body.scrollWidth
+  },
+  jsPDF: {
+    unit: 'mm',
+    format: 'letter',
+    orientation: 'portrait'
+  },
+  pagebreak: {
+    mode: ['css', 'legacy'],
+    avoid: ['.row', '.section', '.firma-section']
+  }
+ };
+
+ html2pdf().set(opt).from(element).save();
+}
+/* ================= FORMATO RUT ================= */
+
+function formatearRUT(rut) {
+
+  rut = rut.replace(/[^0-9kK]/g, '').toUpperCase();
+
+  if (rut.length < 2) return rut;
+
+  let cuerpo = rut.slice(0, -1);
+  let dv = rut.slice(-1);
+
+  cuerpo = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
+  return cuerpo + "-" + dv;
+}
+
+document.querySelectorAll(".rut").forEach(input => {
+
+  input.addEventListener("input", function () {
+    this.value = formatearRUT(this.value);
+  });
+
+});
+/* ================= FORMATO TELÉFONO CHILE ================= */
+
+function formatearTelefono(valor){
+
+  let numeros = valor.replace(/\D/g, '');
+
+  // quitar 56 si lo repiten
+  if(numeros.startsWith("56")) numeros = numeros.slice(2);
+
+  // máximo 9 dígitos nacionales
+  numeros = numeros.slice(0,9);
+
+  let resultado = "+56 ";
+
+  if(numeros.length > 0){
+    resultado += numeros[0] + " ";
+  }
+
+  if(numeros.length > 1){
+    resultado += numeros.slice(1,5);
+  }
+
+  if(numeros.length > 5){
+    resultado += " " + numeros.slice(5,9);
+  }
+
+  return resultado.trim();
+}
+
+document.querySelectorAll(".telefono").forEach(input => {
+
+  input.addEventListener("input", function(){
+    this.value = formatearTelefono(this.value);
+  });
+
+});
+
+/* ================= GUARDAR EN LA PLANILLA MAESTRA ================= */
+
+function v(id){ var e=document.getElementById(id); return e?(e.value||null):null; }
+
+function mostrarBanner(msg, tipo){
+  var b=document.getElementById('banner');
+  b.textContent=msg;
+  b.className='banner show '+tipo;
+}
+
+async function guardarYGenerarPDF(){
+  var codigo=(v('codigo')||'').trim();
+  var reg=v('region');
+  var tipoInst=v('tipoInstalacion');
+
+  if(!codigo){ mostrarBanner('⚠️ Ingresa el Código / N° Renova antes de guardar.','err'); document.getElementById('codigo').focus(); return; }
+  if(!reg){ mostrarBanner('⚠️ Selecciona la Región.','err'); return; }
+
+  var payload={
+    codigo:codigo,
+    nombre_proyecto:v('nombreProyecto'),
+    direccion:v('direccion'),
+    region:REGION_A_V8[reg]||reg,
+    comuna:v('comuna'),
+    pd_fecha:v('fecha'),
+    pd_tipo_instalacion:tipoInst,
+    pd_firma_nombre:v('firmaNombre'),
+    obs:v('observaciones'),
+
+    hab_nombre_cliente:v('hab_nombre'), hab_rut:v('hab_rut'), hab_correo:v('hab_correo'),
+    hab_telefono:v('hab_telefono'), hab_contacto_obra_nombre:v('hab_contacto_nombre'), hab_contacto_obra_telefono:v('hab_contacto_telefono'),
+
+    const_razon_social:v('const_razon_social'), const_rut_empresa:v('const_rut_empresa'),
+    const_rep_legal_nombre:v('const_rep_nombre'), const_rep_legal_rut:v('const_rep_rut'),
+    const_rep_legal_telefono:v('const_rep_telefono'), const_rep_legal_correo:v('const_rep_correo'),
+    const_contacto_obra_nombre:v('const_contacto_nombre'), const_contacto_obra_telefono:v('const_contacto_telefono'),
+    const_contacto_obra_correo:v('const_contacto_correo'), const_correo_facturacion:v('const_correo_facturacion'),
+    const_cant_edificios:v('const_cant_edificios'), const_cant_pisos:v('const_cant_pisos'),
+    const_cant_instalaciones:v('const_cant_instalaciones'), const_anio_construccion:v('const_anio_construccion'),
+    const_vivienda_social:v('const_vivienda_social'), const_conductos_colectivos:v('const_conductos_colectivos'),
+    const_cant_conductos_individuales:v('const_cant_conductos'), const_cant_calderas:v('const_cant_calderas'),
+
+    com_razon_social:v('com_razon_social'), com_rut_empresa:v('com_rut_empresa'), com_rubro_sii:v('com_rubro_sii'),
+    com_rep_legal_nombre:v('com_rep_nombre'), com_rep_legal_rut:v('com_rep_rut'), com_rep_legal_correo:v('com_rep_correo'),
+    com_correo_facturacion:v('com_correo_facturacion'), com_fecha_fundacion:v('com_fecha_fundacion'),
+    com_tamano_empresa:v('com_tamano_empresa'), com_estacionalidad:v('com_estacionalidad'),
+    com_contacto_nombre:v('com_contacto_nombre'), com_contacto_telefono:v('com_contacto_telefono'), com_contacto_correo:v('com_contacto_correo')
+  };
+
+  var btn=document.getElementById('btnGuardar');
+  btn.disabled=true; btn.textContent='Guardando...';
+
+  try{
+    var existente=await sb.from('proyectos').select('id,item').eq('codigo',codigo).limit(1);
+    if(existente.error) throw existente.error;
+
+    if(existente.data && existente.data.length){
+      var upd=await sb.from('proyectos').update(payload).eq('id',existente.data[0].id);
+      if(upd.error) throw upd.error;
+      mostrarBanner('✅ Proyecto '+codigo+' actualizado en la Planilla Maestra (ya existía).','ok');
+    } else {
+      var maxRes=await sb.from('proyectos').select('item').order('item',{ascending:false}).limit(1);
+      if(maxRes.error) throw maxRes.error;
+      var nextItem=(maxRes.data&&maxRes.data.length?maxRes.data[0].item:0)+1;
+      var cliente=payload.hab_nombre_cliente||payload.const_razon_social||payload.com_razon_social||'';
+      var nuevo=Object.assign({},payload,{
+        item:nextItem, cliente:cliente, tipo:'00 Sin Tipo de proyecto asignado',
+        status:'2. Entregado a coordinador', etapa:'Validación',
+        f_v_coord:new Date().toISOString()
+      });
+      var ins=await sb.from('proyectos').insert(nuevo);
+      if(ins.error) throw ins.error;
+      mostrarBanner('✅ Proyecto '+codigo+' creado en la Planilla Maestra.','ok');
+    }
+    generarPDF();
+  }catch(e){
+    console.error('Error guardando en Supabase', e);
+    mostrarBanner('⚠️ No se pudo guardar en la Planilla Maestra: '+(e.message||e),'err');
+  }finally{
+    btn.disabled=false; btn.textContent='Guardar en Planilla Maestra + PDF';
+  }
+}
+</script></body>
+</html>
