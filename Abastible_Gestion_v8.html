@@ -284,7 +284,7 @@ tbody td:first-child{padding-left:20px}
 
 <div class="page on" id="p-gestion">
   <div class="filtros">
-    <input class="fi" type="text" id="fi-q" placeholder="Buscar cliente, código, región, contratista, ITO..." oninput="filtrar()">
+    <input class="fi" type="text" id="fi-q" placeholder="Buscar cliente, código, región, contratista, ITO, jefe de instalaciones..." oninput="filtrar()">
     <select class="fi" id="fi-st" onchange="filtrar()">
       <option value="">Estado — todos</option>
       <option>1. Evaluación Previa</option>
@@ -549,10 +549,12 @@ var SUPABASE_URL='https://aocbetucqvgxxjopjbjm.supabase.co';
 var SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvY2JldHVjcXZneHhqb3BqYmptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxMzI1ODEsImV4cCI6MjEwMTcwODU4MX0.QfsInd_7iyeUHInGEMMSzLUh_FILaG4QPVn9pC8RByI';
 var sb=supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 var BD=[], FLT=[], PAG=1, PPP=50, SC='item', SA=true, CFI=null;
+var CERT_POR_REGION={}, certManual=false;
 
 // ─── ARRANQUE ─────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async function() {
   await cargarDesdeSupabase();
+  await cargarCertificadores();
 
   filtrar();
   renderDash();
@@ -561,6 +563,9 @@ document.addEventListener('DOMContentLoaded', async function() {
 
   document.getElementById('btn-crear').addEventListener('click', crearProyecto);
   document.getElementById('btn-cf').addEventListener('click', okForzado);
+  document.getElementById('nr').addEventListener('change', sugerirCertificador);
+  document.getElementById('nct').addEventListener('input', sugerirCertificador);
+  document.getElementById('nce').addEventListener('input', function(){certManual=true;});
   document.querySelectorAll('.ov').forEach(function(el){
     el.addEventListener('click', function(e){if(e.target===el)el.classList.remove('open');});
   });
@@ -577,6 +582,26 @@ async function cargarDesdeSupabase(){
     toast('⚠️ No se pudo conectar a la base de datos','err');
     BD=[];
   }
+}
+
+async function cargarCertificadores(){
+  try{
+    var res=await sb.from('certificadores_por_region').select('*');
+    if(res.error) throw res.error;
+    CERT_POR_REGION={};
+    res.data.forEach(function(r){CERT_POR_REGION[r.region]=r;});
+  }catch(e){
+    console.error('Error cargando certificadores_por_region', e);
+  }
+}
+
+function sugerirCertificador(){
+  if(certManual)return;
+  var reg=document.getElementById('nr').value;
+  var info=CERT_POR_REGION[reg];
+  if(!info)return;
+  var val=(info.modo==='contratista')?(document.getElementById('nct').value||''):info.certificador;
+  document.getElementById('nce').value=val;
 }
 
 async function guardar(idx){
@@ -632,6 +657,11 @@ function diasDesde(s){
   return Math.floor((Date.now()-d.getTime())/86400000);
 }
 function diasProy(p){return diasDesde(p.f_v_coord||p.f_liberado)||0;}
+function diasEntreFechas(a,b){
+  var da=new Date(String(a).replace(' ','T')), db=new Date(String(b).replace(' ','T'));
+  if(isNaN(da.getTime())||isNaN(db.getTime()))return null;
+  return Math.floor((db.getTime()-da.getTime())/86400000);
+}
 function vencido(p){
   var s=p.status||'';
   if(s==='7. Cierre Proyecto'||s==='8. Cierre Forzado')return false;
@@ -664,7 +694,7 @@ function filtrar(){
   var sup=document.getElementById('fi-sup').value||'';
   var tip=document.getElementById('fi-tip').value||'';
   FLT=BD.filter(function(p){
-    if(q){var t=[p.codigo,p.cliente,p.region,p.contratista,p.ito,p.supervisor,p.vendedor,p.comuna,p.tipo,String(p.item)].join(' ').toLowerCase();if(t.indexOf(q)<0)return false;}
+    if(q){var t=[p.codigo,p.cliente,p.region,p.contratista,p.ito,p.supervisor,p.vendedor,p.comuna,p.tipo,p.jefe,String(p.item)].join(' ').toLowerCase();if(t.indexOf(q)<0)return false;}
     if(st&&p.status!==st)return false;
     if(reg&&p.region!==reg)return false;
     if(sup&&p.supervisor!==sup)return false;
@@ -731,11 +761,13 @@ function abrirDet(id){
   document.getElementById('m-titulo').textContent='Proyecto '+esc(p.codigo||'—');
   document.getElementById('m-sub').textContent=(p.cliente||'—')+'  ·  '+(p.region||'')+'  ·  '+(p.tipo||'');
   var dias=diasProy(p), dg=p.f_gestor?diasDesde(p.f_gestor):null;
+  var diasLib=(p.f_v_coord&&p.f_liberado)?diasEntreFechas(p.f_v_coord,p.f_liberado):null;
   var cer=p.status==='7. Cierre Proyecto'||p.status==='8. Cierre Forzado';
   var h='';
 
   // Timer
   h+='<div class="timer"><div><div class="tlbl">Tiempo total del proyecto</div><div class="tnum">'+(dias||'—')+'</div><div class="tunit">días corridos desde inicio</div></div>';
+  h+='<div><div class="tlbl">Días en liberación</div><div class="tnum" style="font-size:26px">'+(diasLib!==null?diasLib:'—')+'</div><div class="tunit">coordinador → liberado</div></div>';
   h+='<div style="text-align:right"><div class="tlbl">Estado actual</div><div style="margin-top:8px">'+mkBadge(p.status)+'</div><div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:3px">'+esc(p.etapa||'')+'</div></div></div>';
 
   // Alertas
@@ -768,7 +800,8 @@ function abrirDet(id){
   h+=hF(idx,'f_oc','Envío O.C. a Contratistas y Proveedores',p,'📄','Welcome Pack pendiente hasta confirmar inicio',cer);
   h+=hF(idx,'f_trabajos','Inicio de Trabajos',p,'🔨','',cer);
   h+=hF(idx,'f_tc8','Envío TC8',p,'📑','Indica retiro de tanque desde bodega',cer);
-  h+=hF(idx,'f_montaje','Montaje Tanque + Ampliación Cliente',p,'🛢','',cer);
+  h+=hF(idx,'f_montaje','Montaje de Tanque',p,'🛢','',cer);
+  h+=hF(idx,'f_ampliacion','Ampliación de Cliente',p,'🔧','',cer);
   h+='</div>';
 
   // Cargas
@@ -792,13 +825,15 @@ function abrirDet(id){
   h+=hOK(idx,'tc7','TC7',p,'📝',cer);
   h+='</div>';
 
+  var PK=['pago1','pago2','pago3','pago4'];
+  var pagosOk=PK.filter(function(k){return p[k]==='OK';}).length;
   h+='<div class="etapa e5"><div class="ehdr">💰 Etapa 5 &nbsp;·&nbsp; Estados de Pago al Contratista</div><div class="pgrid">';
-  ['pago1','pago2','pago3','pago4'].forEach(function(k,i){
+  PK.forEach(function(k,i){
     var ok=p[k]==='OK';
     h+='<div class="pcard'+(ok?' pok':'')+'"'+((!ok&&!cer)?' onclick="mkPago('+idx+',\''+k+'\',event)"':'')+' title="'+(ok?'Pago registrado':'Clic para registrar')+'">';
     h+='<span class="pico">'+(ok?'✅':'○')+'</span><span class="plbl">Pago '+(i+1)+'</span></div>';
   });
-  h+='</div></div>';
+  h+='</div><div style="padding:0 16px 12px;font-size:12.5px;color:var(--muted)"><strong style="color:var(--navy)">'+pagosOk+' de '+PK.length+'</strong> estados de pago registrados</div></div>';
 
   h+='<div class="etapa e6"><div class="ehdr">🏁 Etapa 6 &nbsp;·&nbsp; Cierre del Proyecto</div>';
   h+=hF(idx,'f_gestor','Enviado a Gestor Documental',p,'📁','Días en gestor se calculan automáticamente',cer);
@@ -886,7 +921,7 @@ function okForzado(){
 }
 
 // ─── NUEVO PROYECTO ───────────────────────────────────────────────────────
-function abrirNuevo(){document.getElementById('ov-new').classList.add('open');}
+function abrirNuevo(){certManual=false;document.getElementById('ov-new').classList.add('open');}
 async function crearProyecto(){
   var cod=(document.getElementById('nc').value||'').trim();
   var cli=(document.getElementById('ncl').value||'').trim();
