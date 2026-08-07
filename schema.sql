@@ -58,6 +58,17 @@ create table public.proyectos (
   medidores_cant int,
   toneladas_estimadas numeric,
 
+  -- para prellenar Welcome Pack / End Pack (panel-wp-ep.html)
+  nombre_proyecto text,
+  direccion text,
+  rut_cliente text,
+  correo_cliente text,
+  correo_ito text,
+  telefono_ito text,
+  trabajos text,
+  plazo_dias int,
+  apoyo_cliente text,
+
   obs text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -112,3 +123,14 @@ create policy "anon_select_certificadores" on public.certificadores_por_region f
 -- ── Corrección aplicada tras el CREATE TABLE inicial (constraint estaba mal puesta en "codigo") ──
 -- alter table public.proyectos drop constraint proyectos_codigo_key;
 -- alter table public.proyectos add constraint proyectos_item_key unique (item);
+
+-- ── Stage: campos para prellenar Welcome Pack / End Pack (correr esto en la tabla ya existente) ──
+alter table public.proyectos add column if not exists nombre_proyecto text;
+alter table public.proyectos add column if not exists direccion text;
+alter table public.proyectos add column if not exists rut_cliente text;
+alter table public.proyectos add column if not exists correo_cliente text;
+alter table public.proyectos add column if not exists correo_ito text;
+alter table public.proyectos add column if not exists telefono_ito text;
+alter table public.proyectos add column if not exists trabajos text;
+alter table public.proyectos add column if not exists plazo_dias int;
+alter table public.proyectos add column if not exists apoyo_cliente text;

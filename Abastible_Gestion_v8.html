@@ -493,6 +493,16 @@ tbody td:first-child{padding-left:20px}
         <div class="fg"><label>Tanque</label><input id="nta" placeholder="Ej: TQ1000S"></div>
         <div class="fg"><label>Cant. Tanques</label><input id="nca" type="number" placeholder="1" min="1"></div>
         <div class="fg"><label>Costo Inversión ($)</label><input id="ncs" type="number" placeholder="5000000"></div>
+        <div class="fg full" style="margin:6px 0 -4px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--brand)">Datos para Welcome Pack / End Pack</div>
+        <div class="fg"><label>Nombre Proyecto</label><input id="nnp" placeholder="Ej: StarTrek"></div>
+        <div class="fg"><label>Dirección Proyecto</label><input id="ndir" placeholder="Calle, número, módulo"></div>
+        <div class="fg"><label>RUT Cliente</label><input id="nrut" placeholder="14.567.890-k"></div>
+        <div class="fg"><label>Correo Cliente</label><input id="ncoc" type="email" placeholder="cliente@correo.com"></div>
+        <div class="fg"><label>Correo ITO</label><input id="ncoi" type="email" placeholder="ito@abastible.cl"></div>
+        <div class="fg"><label>Teléfono ITO</label><input id="ntei" placeholder="+56 9 xxxx xxxx"></div>
+        <div class="fg"><label>Plazo (días)</label><input id="npla" type="number" placeholder="35"></div>
+        <div class="fg full"><label>Trabajos a Desarrollar</label><textarea id="ntra" placeholder="Excavaciones, bases, redes..."></textarea></div>
+        <div class="fg full"><label>Apoyo requerido del Cliente</label><textarea id="napo" placeholder="Celosías, suministro artefactos..."></textarea></div>
         <div class="fg full"><label>Observaciones</label><textarea id="no" placeholder="Notas, contexto, condiciones especiales..."></textarea></div>
       </div>
     </div>
@@ -662,6 +672,36 @@ function diasEntreFechas(a,b){
   if(isNaN(da.getTime())||isNaN(db.getTime()))return null;
   return Math.floor((db.getTime()-da.getTime())/86400000);
 }
+var MESES_ES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+function fechaLarga(s){
+  if(!s||s==='null')return '';
+  var d=new Date(String(s).replace(' ','T')); if(isNaN(d.getTime()))return '';
+  return d.getDate()+' de '+MESES_ES[d.getMonth()]+' de '+d.getFullYear();
+}
+
+// ─── WELCOME PACK / END PACK ──────────────────────────────────────────────
+function abrirWPEP(idx,tipo){
+  var p=BD[idx];
+  var qs=new URLSearchParams({
+    tipo:tipo,
+    numeroProyecto:p.codigo||'',
+    nombreProyecto:p.nombre_proyecto||p.cliente||'',
+    direccionProyecto:p.direccion||'',
+    ciudad:p.comuna||'',
+    nombreCliente:p.cliente||'',
+    rut:p.rut_cliente||'',
+    correoCliente:p.correo_cliente||'',
+    nombreITO:p.ito||'',
+    correoITO:p.correo_ito||'',
+    telefonoITO:p.telefono_ito||'',
+    socioInstalador:p.contratista||'',
+    trabajos:p.trabajos||'',
+    fechaInicio:fechaLarga(p.f_trabajos||p.f_liberado),
+    plazo:p.plazo_dias||'',
+    apoyoCliente:p.apoyo_cliente||''
+  });
+  window.open('panel-wp-ep.html?'+qs.toString(),'_blank');
+}
 function vencido(p){
   var s=p.status||'';
   if(s==='7. Cierre Proyecto'||s==='8. Cierre Forzado')return false;
@@ -784,6 +824,13 @@ function abrirDet(id){
   h+=inf('Potencia',p.potencia?p.potencia+' Mcal/h':null);
   h+=inf('Tanque',p.tanque?(p.tanque+(p.cant_tanque?' × '+p.cant_tanque:'')):null);
   h+=inf('Costo',p.costo?'$ '+Number(p.costo).toLocaleString('es-CL'):null);
+  h+=inf('Dirección',p.direccion)+inf('RUT Cliente',p.rut_cliente)+inf('Correo Cliente',p.correo_cliente);
+  h+=inf('Correo ITO',p.correo_ito)+inf('Teléfono ITO',p.telefono_ito)+inf('Plazo',p.plazo_dias?p.plazo_dias+' días':null);
+  h+='</div>';
+
+  h+='<div class="pie" style="margin-top:0;padding-top:0;border-top:none;margin-bottom:18px">';
+  h+='<button class="btn btn-outline" onclick="abrirWPEP('+idx+',\'WP\')">📧 Generar Welcome Pack</button>';
+  h+='<button class="btn btn-outline" onclick="abrirWPEP('+idx+',\'EP\')">🏁 Generar End Pack</button>';
   h+='</div>';
 
   // Etapas
@@ -937,13 +984,18 @@ async function crearProyecto(){
     cert:document.getElementById('nce').value,potencia:document.getElementById('np').value||null,
     tanque:document.getElementById('nta').value,cant_tanque:document.getElementById('nca').value||null,
     costo:document.getElementById('ncs').value||null,obs:document.getElementById('no').value,
+    nombre_proyecto:document.getElementById('nnp').value,direccion:document.getElementById('ndir').value,
+    rut_cliente:document.getElementById('nrut').value,correo_cliente:document.getElementById('ncoc').value,
+    correo_ito:document.getElementById('ncoi').value,telefono_ito:document.getElementById('ntei').value,
+    plazo_dias:document.getElementById('npla').value||null,trabajos:document.getElementById('ntra').value,
+    apoyo_cliente:document.getElementById('napo').value,
     status:'2. Entregado a coordinador',etapa:'Validación',f_v_coord:ts.replace(' ','T')};
   try{
     var res=await sb.from('proyectos').insert(nuevo).select().single();
     if(res.error) throw res.error;
     var creado=res.data; creado._id=String(creado.id);
     BD.push(creado);
-    ['nc','ncl','nco','ni','nct','nj','nv','nce','np','nta','nca','ncs','no'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
+    ['nc','ncl','nco','ni','nct','nj','nv','nce','np','nta','nca','ncs','no','nnp','ndir','nrut','ncoc','ncoi','ntei','npla','ntra','napo'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
     document.getElementById('nr').value='';
     closeOv('ov-new'); filtrar();
     toast('✅ Proyecto '+cod+' creado · '+ts,'ok');
