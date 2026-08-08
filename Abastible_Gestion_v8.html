@@ -803,6 +803,7 @@ function abrirWPEP(idx,tipo){
     socioInstalador:p.contratista||'',
     trabajos:p.trabajos||'',
     fechaInicio:fechaLarga(p.f_trabajos||p.f_liberado),
+    fechaFin:fechaLarga(p.f_termino_ejecucion),
     plazo:p.plazo_dias||'',
     apoyoCliente:p.apoyo_cliente||''
   });
@@ -946,11 +947,6 @@ function abrirDet(id){
   h+='</div>';
   if(!p.pd_tipo_instalacion)h+='<div class="alerta al-b" style="margin-top:-6px;margin-bottom:16px">💡 &nbsp;Todavía no se ha cargado la <strong>Planilla de Datos</strong> de este proyecto (dirección, RUT, correo del cliente).</div>';
 
-  h+='<div class="pie" style="margin-top:0;padding-top:0;border-top:none;margin-bottom:18px">';
-  h+='<button class="btn btn-outline" onclick="abrirWPEP('+idx+',\'WP\')">📧 Generar Welcome Pack</button>';
-  h+='<button class="btn btn-outline" onclick="abrirWPEP('+idx+',\'EP\')">🏁 Generar End Pack</button>';
-  h+='</div>';
-
   // Etapas
   h+='<div class="etapas">';
   h+='<div class="etapa e1"><div class="ehdr">📋 Etapa 1 &nbsp;·&nbsp; Validación de Proyectos</div>';
@@ -965,6 +961,7 @@ function abrirDet(id){
   h+=hF(idx,'f_liberado','Proyecto Liberado',p,'🔓','Jefe de Proyectos Masivos',cer);
   h+=hF(idx,'f_oc','Envío O.C. a Contratistas y Proveedores',p,'📄','Welcome Pack pendiente hasta confirmar inicio',cer);
   h+=hF(idx,'f_trabajos','Inicio de Trabajos',p,'🔨','',cer);
+  if(!cer)h+=hBotonAccion('📧','Enviar Welcome Pack al cliente','','<button class="hbtn hb-reg" onclick="abrirWPEP('+idx+',\'WP\')">📧 Generar Welcome Pack</button>');
   h+=hF(idx,'f_tc8','Envío TC8',p,'📑','Indica retiro de tanque desde bodega',cer);
   h+=hF(idx,'f_montaje','Montaje de Tanque',p,'🛢','',cer);
   h+=hF(idx,'f_ampliacion','Ampliación de Cliente',p,'🔧','',cer);
@@ -1002,6 +999,8 @@ function abrirDet(id){
   h+='</div><div style="padding:0 16px 12px;font-size:12.5px;color:var(--muted)"><strong style="color:var(--navy)">'+pagosOk+' de '+PK.length+'</strong> estados de pago registrados</div></div>';
 
   h+='<div class="etapa e6"><div class="ehdr">🏁 Etapa 6 &nbsp;·&nbsp; Cierre del Proyecto</div>';
+  h+=hF(idx,'f_termino_ejecucion','Término de Ejecución',p,'🏗','',cer);
+  if(!cer)h+=hBotonAccion('🏁','Enviar End Pack al cliente','','<button class="hbtn hb-reg" onclick="abrirWPEP('+idx+',\'EP\')">🏁 Generar End Pack</button>');
   h+=hF(idx,'f_gestor','Enviado a Gestor Documental',p,'📁','Días en gestor se calculan automáticamente',cer);
   if(p.f_forzado)h+='<div class="hito"><div class="hico">⛔</div><div class="hlbl">Cierre Forzado<small>Registrado permanentemente</small></div><div class="hright"><div class="hval hf">📅 '+esc(fFH(p.f_forzado)||p.f_forzado)+'</div><button class="hbtn hb-done" disabled>Registrado</button></div></div>';
   h+='</div></div>';
@@ -1068,6 +1067,10 @@ function hOK(idx,key,lbl,p,ico,cer){
   else h+='<button class="hbtn hb-ok" onclick="mkOK('+idx+',\''+key+'\',event)">✓ Marcar OK</button>';
   h+='</div></div>';
   return h;
+}
+
+function hBotonAccion(icono,label,sub,botonHtml){
+  return '<div class="hito"><div class="hico">'+icono+'</div><div class="hlbl">'+label+(sub?'<small>'+sub+'</small>':'')+'</div><div class="hright">'+botonHtml+'</div></div>';
 }
 
 function hDevITO(idx,p,cer){
@@ -1417,7 +1420,7 @@ function expCSV(){
     'Carga N°1','Carga N°2','Carga N°3','Carga N°4','Carga N°5',
     'Carga N°6','Carga N°7','Carga N°8','Carga N°9','Carga N°10',
     'TC2','Sello Verde','TC6','IR','TC7','Pago 1','Pago 2','Pago 3','Pago 4',
-    'Gestor Documental','Devuelto ITO','Cierre Forzado','Días Totales','Observaciones'];
+    'Término Ejecución','Gestor Documental','Devuelto ITO','Cierre Forzado','Días Totales','Observaciones'];
   function ce(v){if(v===null||v===undefined)return '';var s=String(v).replace(/"/g,'""');return(s.indexOf(',')>=0||s.indexOf('"')>=0||s.indexOf('\n')>=0)?'"'+s+'"':s;}
   var rows=BD.map(function(p){
     return [p.item,p.codigo,p.cliente,p.region,p.comuna,p.tipo,p.construccion,p.status,p.etapa,
@@ -1425,7 +1428,7 @@ function expCSV(){
       p.f_v_coord,p.f_rev_ant,p.f_visita,p.f_liberar,p.f_liberado,p.f_oc,p.f_trabajos,p.f_tc8,p.f_montaje,
       p.f_c1,p.f_c2,p.f_c3,p.f_c4,p.f_c5,p.f_c6,p.f_c7,p.f_c8,p.f_c9,p.f_c10,
       p.tc2,p.sello,p.tc6,p.ir,p.tc7,p.pago1,p.pago2,p.pago3,p.pago4,
-      p.f_gestor,p.dev_ito,p.f_forzado,diasProy(p),p.obs].map(ce).join(',');
+      p.f_termino_ejecucion,p.f_gestor,p.dev_ito,p.f_forzado,diasProy(p),p.obs].map(ce).join(',');
   });
   var blob=new Blob([BOM+HDR.join(',')+'\n'+rows.join('\n')],{type:'text/csv;charset=utf-8;'});
   var a=document.createElement('a');a.href=URL.createObjectURL(blob);

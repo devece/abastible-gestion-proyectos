@@ -187,3 +187,6 @@ alter table public.proyectos add column if not exists apoyo_cliente text;
 -- ── Stage: sincronización en vivo entre navegadores (Supabase Realtime) ──
 -- habilita que la tabla transmita cambios en vivo a todos los que tengan la app abierta
 alter publication supabase_realtime add table public.proyectos;
+
+-- ── Stage: Término de Ejecución (dispara el recordatorio de End Pack) ──
+alter table public.proyectos add column if not exists f_termino_ejecucion timestamptz;
