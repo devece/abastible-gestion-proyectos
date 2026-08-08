@@ -331,7 +331,7 @@ const OCR_LABELS_CONSTRUCTORA = [
   ['cantidadpisos','const_cant_pisos'],
   ['cantidadinstalaciones','const_cant_instalaciones'],
   ['anoconstruccion','const_anio_construccion'],
-  ['vividendasocial','const_vivienda_social'],
+  ['viviendasocial','const_vivienda_social'],
   ['conductoscolectivos','const_conductos_colectivos'],
   ['cantidadconductosindividuales','const_cant_conductos'],
   ['cantidadcalderas','const_cant_calderas']
@@ -395,25 +395,47 @@ function dividirFilaEnColumnas(fila, umbralGapX){
   columnas.push(actual);
   return columnas.map(function(c){ return c.map(function(w){ return w.text; }).join(' '); });
 }
+var RE_DOMINIO = /^[a-z0-9][a-z0-9-]*(\.[a-z0-9-]+)*\.[a-z]{2,4}$/i;
 function corregirArroba(txt){
-  // el "@" suele leerse mal (Q, (o, (0, espacio, etc.) justo antes del dominio del correo
-  var m = /(gmail|hotmail|outlook|yahoo|abastible)\.(com|cl)/i.exec(txt);
-  if(!m) return txt;
-  var antes = txt.slice(0, m.index).replace(/\s+$/,'');
-  var resto = txt.slice(m.index);
-  var ultimo = antes.slice(-1);
-  if(ultimo && /[a-zA-Z]/.test(ultimo) && antes.length>1){
-    antes = antes.slice(0,-1).replace(/\s+$/,''); // esa letra suelta era el "@" mal reconocido
-  } else {
-    antes = antes.replace(/[^a-z0-9._-]+$/i,'');
+  // el "@" suele leerse mal (Q, espacio+letra, etc.) justo antes del dominio del correo.
+  if(!txt || txt.indexOf('@')>=0) return txt;
+  var t = txt.trim();
+
+  // caso más común: el OCR partió el correo en dos palabras y la 2a trae 1 caracter de basura pegado al inicio
+  var partes = t.split(/\s+/);
+  if(partes.length===2){
+    var intentos = [partes[1].slice(1), partes[1], partes[1].slice(2)];
+    for(var k=0;k<intentos.length;k++){
+      if(RE_DOMINIO.test(intentos[k])) return partes[0] + '@' + intentos[k];
+    }
   }
-  return antes + '@' + resto;
+
+  // sin espacio, dominio conocido (gmail, etc.)
+  var m = /(gmail|hotmail|outlook|yahoo|abastible)\.(com|cl)/i.exec(t);
+  if(m){
+    var antes = t.slice(0, m.index);
+    var dominio = t.slice(m.index);
+    var ultimo = antes.slice(-1);
+    if(ultimo && /[a-zA-Z]/.test(ultimo) && antes.length>1){
+      antes = antes.slice(0,-1).replace(/\s+$/,''); // esa letra suelta era el "@" mal reconocido
+    } else {
+      antes = antes.replace(/[^a-z0-9._-]+$/i,'');
+    }
+    return antes + '@' + dominio;
+  }
+
+  // sin espacio, dominio propio/desconocido: el "@" mal leído casi siempre queda como
+  // UNA letra mayúscula suelta en medio de texto en minúsculas (ej. "pazQinmoalerces.cl")
+  var m2 = /^(.*?[a-z0-9])[A-Z]([a-z][a-z0-9.-]*\.[a-z]{2,4})$/.exec(t);
+  if(m2 && RE_DOMINIO.test(m2[2])) return m2[1] + '@' + m2[2];
+
+  return txt;
 }
-function limpiarValorOCR(txt){
+function limpiarValorOCR(txt, esCorreo){
   if(!txt) return '';
   txt = txt.trim();
   txt = txt.replace(/\s+[vV]$/,''); // flecha de <select> mal leída como "v"
-  txt = corregirArroba(txt);
+  if(esCorreo) txt = corregirArroba(txt);
   txt = txt.replace(/N[°ºª*]/gi, 'N°');
   return txt.trim();
 }
@@ -486,9 +508,17 @@ function mapearFilasACampos(filas){
       var el = document.getElementById(id);
       if(!el) return;
       var valorCrudo = filaValores[idx] !== undefined ? filaValores[idx] : (filaValores.length===1 ? filaValores[0] : '');
-      var valor = limpiarValorOCR(valorCrudo);
+      var valor = limpiarValorOCR(valorCrudo, id.indexOf('correo')>=0);
       if(!valor) return;
 
+      if(id==='const_vivienda_social' || id==='const_conductos_colectivos'){
+        // "SI"/"NO" en letras chicas se lee mal seguido (ej. "ES") -> se valida por letra dominante, no por texto exacto
+        var vNorm = normalizar(valor);
+        var val = vNorm==='si' || (vNorm.indexOf('s')>=0 && vNorm.indexOf('n')<0) ? 'SI'
+                 : vNorm==='no' || vNorm.indexOf('n')>=0 ? 'NO' : '';
+        if(val){ el.value = val; encontrados++; }
+        return;
+      }
       if(id==='fecha' || id==='com_fecha_fundacion'){
         var m = valor.match(/(\d{2})-(\d{2})-(\d{4})/);
         if(m){ el.value = m[3]+'-'+m[2]+'-'+m[1]; encontrados++; }
