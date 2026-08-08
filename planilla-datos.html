@@ -798,18 +798,20 @@ async function guardarYGenerarPDF(){
   btn.disabled=true; btn.textContent='Guardando...';
 
   try{
+    var cliente=payload.hab_nombre_cliente||payload.const_razon_social||payload.com_razon_social||'';
     var existente=await sb.from('proyectos').select('id,item').eq('codigo',codigo).limit(1);
     if(existente.error) throw existente.error;
 
     if(existente.data && existente.data.length){
-      var upd=await sb.from('proyectos').update(payload).eq('id',existente.data[0].id);
+      var payloadUpd=Object.assign({},payload);
+      if(cliente) payloadUpd.cliente=cliente;
+      var upd=await sb.from('proyectos').update(payloadUpd).eq('id',existente.data[0].id);
       if(upd.error) throw upd.error;
       mostrarBanner('✅ Proyecto '+codigo+' actualizado en la Planilla Maestra (ya existía).','ok');
     } else {
       var maxRes=await sb.from('proyectos').select('item').order('item',{ascending:false}).limit(1);
       if(maxRes.error) throw maxRes.error;
       var nextItem=(maxRes.data&&maxRes.data.length?maxRes.data[0].item:0)+1;
-      var cliente=payload.hab_nombre_cliente||payload.const_razon_social||payload.com_razon_social||'';
       var nuevo=Object.assign({},payload,{
         item:nextItem, cliente:cliente, tipo:'00 Sin Tipo de proyecto asignado',
         status:'2. Entregado a coordinador', etapa:'Validación',

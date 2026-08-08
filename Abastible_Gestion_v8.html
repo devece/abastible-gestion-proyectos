@@ -129,6 +129,7 @@ tbody td:first-child{padding-left:20px}
 .mhdr-navy{background:var(--navy);border-bottom:3px solid var(--brand)}
 .mhdr-green{background:#064E3B;border-bottom:3px solid #059669}
 .mhdr-red{background:#7F1D1D;border-bottom:3px solid #DC2626}
+.mhdr-amber{background:#78350F;border-bottom:3px solid #F59E0B}
 .mhdr h2{font-size:18px;font-weight:800;color:#fff;letter-spacing:-.01em}
 .mhdr .msub{font-size:12px;color:rgba(255,255,255,.6);margin-top:3px}
 .mx{background:rgba(255,255,255,.12);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:background .15s;flex-shrink:0}
@@ -510,6 +511,7 @@ tbody td:first-child{padding-left:20px}
       <button class="mx" onclick="closeOv('ov-new')">✕</button>
     </div>
     <div class="mbody">
+      <div class="alerta al-b" style="margin-bottom:16px">💡 &nbsp;Los datos del cliente (dirección, RUT, correo, etc.) no se escriben aquí — se cargan después desde <strong>Planilla de Datos</strong> (con el mismo Código), incluyendo con lectura automática del PDF.</div>
       <div class="fgrid">
         <div class="fg"><label>Código *</label><input id="nc" placeholder="Ej: 18700000"></div>
         <div class="fg"><label>Cliente *</label><input id="ncl" placeholder="Nombre completo"></div>
@@ -544,16 +546,6 @@ tbody td:first-child{padding-left:20px}
         <div class="fg"><label>Cant. Reguladores</label><input id="nreg" type="number" placeholder="1" min="0"></div>
         <div class="fg"><label>Cant. Medidores</label><input id="nmed" type="number" placeholder="0" min="0"></div>
         <div class="fg"><label>Toneladas Estimadas</label><input id="nton" type="number" step="0.01" placeholder="2.5"></div>
-        <div class="fg full" style="margin:6px 0 -4px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--brand)">Datos para Welcome Pack / End Pack</div>
-        <div class="fg"><label>Nombre Proyecto</label><input id="nnp" placeholder="Ej: StarTrek"></div>
-        <div class="fg"><label>Dirección Proyecto</label><input id="ndir" placeholder="Calle, número, módulo"></div>
-        <div class="fg"><label>RUT Cliente</label><input id="nrut" placeholder="14.567.890-k"></div>
-        <div class="fg"><label>Correo Cliente</label><input id="ncoc" type="email" placeholder="cliente@correo.com"></div>
-        <div class="fg"><label>Correo ITO</label><input id="ncoi" type="email" placeholder="ito@abastible.cl"></div>
-        <div class="fg"><label>Teléfono ITO</label><input id="ntei" placeholder="+56 9 xxxx xxxx"></div>
-        <div class="fg"><label>Plazo (días)</label><input id="npla" type="number" placeholder="35"></div>
-        <div class="fg full"><label>Trabajos a Desarrollar</label><textarea id="ntra" placeholder="Excavaciones, bases, redes..."></textarea></div>
-        <div class="fg full"><label>Apoyo requerido del Cliente</label><textarea id="napo" placeholder="Celosías, suministro artefactos..."></textarea></div>
         <div class="fg full"><label>Observaciones</label><textarea id="no" placeholder="Notas, contexto, condiciones especiales..."></textarea></div>
       </div>
     </div>
@@ -580,6 +572,26 @@ tbody td:first-child{padding-left:20px}
     <div class="mfoot">
       <button class="btn btn-ghost" onclick="closeOv('ov-cf')">Cancelar</button>
       <button class="btn btn-red" id="btn-cf">⛔ &nbsp;Confirmar Cierre Forzado</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DEVUELTO A ITO -->
+<div class="ov" id="ov-dito">
+  <div class="modal modal-sm">
+    <div class="mhdr mhdr-amber">
+      <div><h2>↩️ Devuelto a ITO</h2><div class="msub">Se registra fecha/hora exacta · el proyecto sigue activo</div></div>
+      <button class="mx" onclick="closeOv('ov-dito')">✕</button>
+    </div>
+    <div class="mbody">
+      <div class="alerta al-a" style="margin-bottom:16px">↩️ &nbsp;El proyecto queda marcado como <strong>pendiente de corrección por el ITO</strong> hasta que se registre la liberación.</div>
+      <div class="fg"><label>Motivo / falla a corregir *</label>
+        <textarea id="mdito" style="min-height:95px" placeholder="Ej: Falta plano actualizado · Dato de potencia no coincide · Falta firma del cliente..."></textarea>
+      </div>
+    </div>
+    <div class="mfoot">
+      <button class="btn btn-ghost" onclick="closeOv('ov-dito')">Cancelar</button>
+      <button class="btn" style="background:#F59E0B;color:#fff" id="btn-dito">↩️ &nbsp;Confirmar Devuelto a ITO</button>
     </div>
   </div>
 </div>
@@ -626,6 +638,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
   document.getElementById('btn-crear').addEventListener('click', crearProyecto);
   document.getElementById('btn-cf').addEventListener('click', okForzado);
+  document.getElementById('btn-dito').addEventListener('click', okDevITO);
   document.getElementById('nr').addEventListener('change', sugerirCertificador);
   document.getElementById('nct').addEventListener('input', sugerirCertificador);
   document.getElementById('nce').addEventListener('input', function(){certManual=true;});
@@ -758,8 +771,23 @@ function fechaLarga(s){
 }
 
 // ─── WELCOME PACK / END PACK ──────────────────────────────────────────────
+// Datos del cliente según lo cargado en Planilla de Datos (varían de campo según la rama)
+function datosClientePD(p){
+  if(p.pd_tipo_instalacion==='habitacional'){
+    return {rut:p.hab_rut, correo:p.hab_correo, telefono:p.hab_telefono};
+  }
+  if(p.pd_tipo_instalacion==='constructora'){
+    return {rut:p.const_rut_empresa, correo:p.const_rep_legal_correo||p.const_contacto_obra_correo, telefono:p.const_rep_legal_telefono||p.const_contacto_obra_telefono};
+  }
+  if(p.pd_tipo_instalacion==='comercial'){
+    return {rut:p.com_rut_empresa, correo:p.com_rep_legal_correo||p.com_contacto_correo, telefono:p.com_contacto_telefono};
+  }
+  return {rut:null, correo:null, telefono:null};
+}
+
 function abrirWPEP(idx,tipo){
   var p=BD[idx];
+  var dc=datosClientePD(p);
   var qs=new URLSearchParams({
     tipo:tipo,
     numeroProyecto:p.codigo||'',
@@ -767,11 +795,11 @@ function abrirWPEP(idx,tipo){
     direccionProyecto:p.direccion||'',
     ciudad:p.comuna||'',
     nombreCliente:p.cliente||'',
-    rut:p.rut_cliente||'',
-    correoCliente:p.correo_cliente||'',
+    rut:dc.rut||'',
+    correoCliente:dc.correo||'',
     nombreITO:p.ito||'',
     correoITO:p.correo_ito||'',
-    telefonoITO:p.telefono_ito||'',
+    telefonoITO:p.telefono_ito||dc.telefono||'',
     socioInstalador:p.contratista||'',
     trabajos:p.trabajos||'',
     fechaInicio:fechaLarga(p.f_trabajos||p.f_liberado),
@@ -901,6 +929,7 @@ function abrirDet(id){
   if(dg!==null)h+='<div class="alerta '+(dg>15?'al-r':'al-b')+'">📁 &nbsp;En <strong>Gestor Documental</strong> hace <strong>'+dg+' días</strong>'+(dg>15?' — revisar urgente':'')+'</div>';
   if(p.f_v_coord&&!p.f_rev_ant){var dv=diasDesde(p.f_v_coord);if(dv>4)h+='<div class="alerta al-r">⚠️ &nbsp;Revisión de antecedentes vencida — <strong>'+dv+' días</strong> sin validar (máx. 4 días)</div>';}
   if(p.f_oc&&!p.f_trabajos){var doc=diasDesde(p.f_oc);if(doc>7)h+='<div class="alerta al-a">📦 &nbsp;<strong>Welcome Pack pendiente</strong> — O.C. enviada hace <strong>'+doc+' días</strong></div>';}
+  if(p.dev_ito&&!p.f_liberado)h+='<div class="alerta al-a">↩️ &nbsp;<strong>Devuelto a ITO</strong> — pendiente de corrección desde el '+esc(fFH(p.dev_ito))+' (ver motivo en Observaciones)</div>';
   if(cer)h+='<div class="alerta al-g">✅ &nbsp;Proyecto cerrado — solo lectura</div>';
 
   // Info
@@ -912,9 +941,10 @@ function abrirDet(id){
   h+=inf('Tanque',p.tanque?(p.tanque+(p.cant_tanque?' × '+p.cant_tanque:'')):null);
   h+=inf('Costo',p.costo?'$ '+Number(p.costo).toLocaleString('es-CL'):null);
   h+=inf('Reguladores',p.reguladores_cant)+inf('Medidores',p.medidores_cant)+inf('Toneladas Estimadas',p.toneladas_estimadas);
-  h+=inf('Dirección',p.direccion)+inf('RUT Cliente',p.rut_cliente)+inf('Correo Cliente',p.correo_cliente);
-  h+=inf('Correo ITO',p.correo_ito)+inf('Teléfono ITO',p.telefono_ito)+inf('Plazo',p.plazo_dias?p.plazo_dias+' días':null);
+  var dcInfo=datosClientePD(p);
+  h+=inf('Dirección',p.direccion)+inf('RUT Cliente',dcInfo.rut)+inf('Correo Cliente',dcInfo.correo)+inf('Teléfono Cliente',dcInfo.telefono);
   h+='</div>';
+  if(!p.pd_tipo_instalacion)h+='<div class="alerta al-b" style="margin-top:-6px;margin-bottom:16px">💡 &nbsp;Todavía no se ha cargado la <strong>Planilla de Datos</strong> de este proyecto (dirección, RUT, correo del cliente).</div>';
 
   h+='<div class="pie" style="margin-top:0;padding-top:0;border-top:none;margin-bottom:18px">';
   h+='<button class="btn btn-outline" onclick="abrirWPEP('+idx+',\'WP\')">📧 Generar Welcome Pack</button>';
@@ -928,6 +958,7 @@ function abrirDet(id){
   h+=hF(idx,'f_rev_ant','Revisión de Antecedentes (ITO / Coordinador)',p,'🔍','',cer);
   h+=hF(idx,'f_visita','Primera Visita al Cliente',p,'🏠','',cer);
   h+=hF(idx,'f_liberar','Envío a Liberar',p,'📨','',cer);
+  h+=hDevITO(idx,p,cer);
   h+='</div>';
 
   h+='<div class="etapa e2"><div class="ehdr">🏗 Etapa 2 &nbsp;·&nbsp; Construcción y Ejecución</div>';
@@ -972,7 +1003,6 @@ function abrirDet(id){
 
   h+='<div class="etapa e6"><div class="ehdr">🏁 Etapa 6 &nbsp;·&nbsp; Cierre del Proyecto</div>';
   h+=hF(idx,'f_gestor','Enviado a Gestor Documental',p,'📁','Días en gestor se calculan automáticamente',cer);
-  if(p.dev_ito)h+='<div class="hito"><div class="hico">↩️</div><div class="hlbl">Devuelto a ITO</div><div class="hright"><div class="hval hf">📅 '+esc(fFH(p.dev_ito)||p.dev_ito)+'</div></div></div>';
   if(p.f_forzado)h+='<div class="hito"><div class="hico">⛔</div><div class="hlbl">Cierre Forzado<small>Registrado permanentemente</small></div><div class="hright"><div class="hval hf">📅 '+esc(fFH(p.f_forzado)||p.f_forzado)+'</div><button class="hbtn hb-done" disabled>Registrado</button></div></div>';
   h+='</div></div>';
 
@@ -1040,6 +1070,21 @@ function hOK(idx,key,lbl,p,ico,cer){
   return h;
 }
 
+function hDevITO(idx,p,cer){
+  var h='<div class="hito"><div class="hico">↩️</div><div class="hlbl">Devuelto a ITO<small>Falla que impide seguir con la liberación — corrige y vuelve a enviar</small></div><div class="hright">';
+  if(p.dev_ito){
+    h+='<div class="fecha-edit"><span class="hval hf">📅 '+esc(fFH(p.dev_ito))+'</span>';
+    if(!cer)h+='<button class="hbtn hb-reg" onclick="abrirDevITO('+idx+')">↩️ Devolver de nuevo</button>';
+    h+='</div>';
+  } else if(cer){
+    h+='<div class="hval" style="color:#BDC5DC">—</div>';
+  } else {
+    h+='<button class="hbtn hb-reg" onclick="abrirDevITO('+idx+')">↩️ Devolver a ITO</button>';
+  }
+  h+='</div></div>';
+  return h;
+}
+
 // ─── ACCIONES HITOS ───────────────────────────────────────────────────────
 function mkF(idx,key,ev){ev.stopPropagation();var ts=ahora();BD[idx][key]=ts;autoStatus(BD[idx]);guardar(idx);filtrar();toast('📅 '+key+' · '+ts,'ok');setTimeout(function(){abrirDet(BD[idx]._id);},60);}
 function mkOK(idx,key,ev){ev.stopPropagation();BD[idx][key]='OK';guardar(idx);filtrar();toast('✅ '+key+' OK','ok');setTimeout(function(){abrirDet(BD[idx]._id);},60);}
@@ -1053,6 +1098,18 @@ function okForzado(){
   var ts=ahora();BD[CFI].status='8. Cierre Forzado';BD[CFI].f_forzado=ts;
   BD[CFI].obs=(BD[CFI].obs||'')+'\n[CIERRE FORZADO '+ts+']: '+m;
   guardar(CFI);filtrar();closeOv('ov-cf');closeOv('ov-det');toast('⛔ Cierre forzado registrado','err');
+}
+
+var DITOI=null;
+function abrirDevITO(idx){DITOI=idx;document.getElementById('mdito').value='';document.getElementById('ov-dito').classList.add('open');}
+function okDevITO(){
+  var m=(document.getElementById('mdito').value||'').trim();
+  if(!m){toast('⚠️ Ingresa el motivo de la devolución','warn');return;}
+  var ts=ahora();BD[DITOI].dev_ito=ts;
+  BD[DITOI].obs=(BD[DITOI].obs||'')+'\n[DEVUELTO A ITO '+ts+']: '+m;
+  guardar(DITOI);filtrar();closeOv('ov-dito');
+  toast('↩️ Devuelto a ITO registrado','warn');
+  setTimeout(function(){abrirDet(BD[DITOI]._id);},60);
 }
 
 // ─── NUEVO PROYECTO ───────────────────────────────────────────────────────
@@ -1074,18 +1131,13 @@ async function crearProyecto(){
     costo:document.getElementById('ncs').value||null,obs:document.getElementById('no').value,
     reguladores_cant:document.getElementById('nreg').value||null,medidores_cant:document.getElementById('nmed').value||null,
     toneladas_estimadas:document.getElementById('nton').value||null,
-    nombre_proyecto:document.getElementById('nnp').value,direccion:document.getElementById('ndir').value,
-    rut_cliente:document.getElementById('nrut').value,correo_cliente:document.getElementById('ncoc').value,
-    correo_ito:document.getElementById('ncoi').value,telefono_ito:document.getElementById('ntei').value,
-    plazo_dias:document.getElementById('npla').value||null,trabajos:document.getElementById('ntra').value,
-    apoyo_cliente:document.getElementById('napo').value,
     status:'2. Entregado a coordinador',etapa:'Validación',f_v_coord:ts.replace(' ','T')};
   try{
     var res=await sb.from('proyectos').insert(nuevo).select().single();
     if(res.error) throw res.error;
     var creado=res.data; creado._id=String(creado.id);
     BD.push(creado);
-    ['nc','ncl','nco','ni','nct','nj','nv','nce','np','nta','nca','ncs','nreg','nmed','nton','no','nnp','ndir','nrut','ncoc','ncoi','ntei','npla','ntra','napo'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
+    ['nc','ncl','nco','ni','nct','nj','nv','nce','np','nta','nca','ncs','nreg','nmed','nton','no'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
     document.getElementById('nr').value='';
     closeOv('ov-new'); filtrar();
     toast('✅ Proyecto '+cod+' creado · '+ts,'ok');
