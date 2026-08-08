@@ -84,6 +84,13 @@ textarea{min-height:90px}
 
 <div id="banner" class="banner"></div>
 
+<div class="section" style="background:#fff3ee;border-color:#ffd5c0">
+<h3 style="margin-bottom:8px">📄 Autocompletar desde el PDF de antecedentes</h3>
+<p style="font-size:.85rem;color:var(--muted);margin-bottom:10px">Sube el PDF que llega desde el área comercial (el que se genera desde este mismo formulario) — se lee automáticamente con reconocimiento de texto e intenta llenar los campos de abajo. <strong>Revisa siempre antes de guardar</strong>, el reconocimiento no es 100% perfecto.</p>
+<input type="file" id="pdfInput" accept="application/pdf">
+<div id="ocrProgress" style="display:none;margin-top:10px;font-size:.85rem;color:var(--accent);font-weight:600"></div>
+</div>
+
 <!-- 1 -->
 <div class="section">
 <h3>1. Datos Generales</h3>
@@ -272,12 +279,261 @@ textarea{min-height:90px}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
 <script>
 
 const SUPABASE_URL='https://aocbetucqvgxxjopjbjm.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvY2JldHVjcXZneHhqb3BqYmptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxMzI1ODEsImV4cCI6MjEwMTcwODU4MX0.QfsInd_7iyeUHInGEMMSzLUh_FILaG4QPVn9pC8RByI';
 const sb=supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+
+/* ================= OCR: leer el PDF de antecedentes y autocompletar ================= */
+
+function quitarAcentos(s){ return (s||'').normalize('NFD').replace(/[̀-ͯ]/g,''); }
+function normalizar(s){ return quitarAcentos((s||'').toLowerCase()).replace(/[^a-z0-9]/g,''); }
+
+/* etiqueta (normalizada, sin acentos/espacios) -> id del campo en este formulario.
+   Separado por sección porque varias etiquetas se repiten igual entre secciones
+   (ej. "RUT Empresa" en Constructora y en Comercial) apuntando a campos distintos;
+   como en el PDF impreso solo aparece la sección elegida, hay que resolver primero
+   el tipo de instalación y recién ahí usar el mapa de esa sección. */
+const OCR_LABELS_COMUNES = [
+  ['nombreproyecto','nombreProyecto'],
+  ['fecha','fecha'],
+  ['direcciondelproyecto','direccion'],
+  ['region','region'],
+  ['comuna','comuna'],
+  ['tipodeinstalacion','tipoInstalacion']
+];
+const OCR_LABELS_HABITACIONAL = [
+  ['nombrecliente','hab_nombre'],
+  ['rut','hab_rut'],
+  ['correo','hab_correo'],
+  ['telefono','hab_telefono'],
+  ['nombrecontactoenobra','hab_contacto_nombre'],
+  ['telefonocontacto','hab_contacto_telefono']
+];
+const OCR_LABELS_CONSTRUCTORA = [
+  ['razonsocial','const_razon_social'],
+  ['rutempresa','const_rut_empresa'],
+  ['nombrerepresentantelegal','const_rep_nombre'],
+  ['rutrepresentantelegal','const_rep_rut'],
+  ['telefonorepresentante','const_rep_telefono'],
+  ['correorepresentante','const_rep_correo'],
+  ['nombrecontactoenobra','const_contacto_nombre'],
+  ['telefonocontacto','const_contacto_telefono'],
+  ['correocontacto','const_contacto_correo'],
+  ['correofacturacion','const_correo_facturacion'],
+  ['cantidadedificios','const_cant_edificios'],
+  ['cantidadpisos','const_cant_pisos'],
+  ['cantidadinstalaciones','const_cant_instalaciones'],
+  ['anoconstruccion','const_anio_construccion'],
+  ['vividendasocial','const_vivienda_social'],
+  ['conductoscolectivos','const_conductos_colectivos'],
+  ['cantidadconductosindividuales','const_cant_conductos'],
+  ['cantidadcalderas','const_cant_calderas']
+];
+const OCR_LABELS_COMERCIAL = [
+  ['razonsocialnombre','com_razon_social'],
+  ['rutempresa','com_rut_empresa'],
+  ['norubrosii','com_rubro_sii'],
+  ['giroorubrosii','com_rubro_sii'],
+  ['giroorubrosil','com_rubro_sii'], // "SII" suele leerse "Sil" por OCR (I/l confundidas)
+  ['nombrerepresentantelegal','com_rep_nombre'],
+  ['rutrepresentante','com_rep_rut'],
+  ['correorepresentante','com_rep_correo'],
+  ['correofacturacion','com_correo_facturacion'],
+  ['fechafundacion','com_fecha_fundacion'],
+  ['tamanoempresa','com_tamano_empresa'],
+  ['estacionalidad','com_estacionalidad'],
+  ['nombrecontacto','com_contacto_nombre'],
+  ['telefonocontacto','com_contacto_telefono'],
+  ['correocontacto','com_contacto_correo']
+];
+function mapaParaTipo(tipo){
+  var extra = tipo==='habitacional' ? OCR_LABELS_HABITACIONAL
+            : tipo==='constructora' ? OCR_LABELS_CONSTRUCTORA
+            : tipo==='comercial' ? OCR_LABELS_COMERCIAL : [];
+  return OCR_LABELS_COMUNES.concat(extra);
+}
+function buscarEtiqueta(mapa, norm){
+  var exacto = mapa.find(function(l){ return norm===l[0]; });
+  if(exacto) return exacto;
+  return mapa.find(function(l){ return norm.indexOf(l[0])===0 || l[0].indexOf(norm)===0; });
+}
+
+function agruparPalabrasEnFilas(words, umbralY){
+  umbralY = umbralY || 10;
+  var filas = [];
+  words = words.slice().sort(function(a,b){ return a.bbox.y0 - b.bbox.y0; });
+  words.forEach(function(w){
+    var cy = (w.bbox.y0 + w.bbox.y1) / 2;
+    var fila = null;
+    for (var i=0;i<filas.length;i++){ if (Math.abs(filas[i].y - cy) < umbralY){ fila = filas[i]; break; } }
+    if (fila){ fila.palabras.push(w); fila.y = (fila.y*(fila.palabras.length-1) + cy) / fila.palabras.length; }
+    else filas.push({y:cy, palabras:[w]});
+  });
+  filas.forEach(function(f){ f.palabras.sort(function(a,b){ return a.bbox.x0 - b.bbox.x0; }); });
+  filas.sort(function(a,b){ return a.y - b.y; });
+  return filas;
+}
+function dividirFilaEnColumnas(fila, umbralGapX){
+  umbralGapX = umbralGapX || 35;
+  // ignora la flechita de los <select> (Tesseract la lee como una "v" suelta) para que no se cuente como columna aparte
+  var palabras = fila.palabras.filter(function(w){ return w.text.trim().toLowerCase()!=='v'; });
+  if(!palabras.length) return [];
+  var columnas = [];
+  var actual = [palabras[0]];
+  for (var i=1;i<palabras.length;i++){
+    var prev = palabras[i-1], cur = palabras[i];
+    if (cur.bbox.x0 - prev.bbox.x1 > umbralGapX){ columnas.push(actual); actual = [cur]; }
+    else actual.push(cur);
+  }
+  columnas.push(actual);
+  return columnas.map(function(c){ return c.map(function(w){ return w.text; }).join(' '); });
+}
+function corregirArroba(txt){
+  // el "@" suele leerse mal (Q, (o, (0, espacio, etc.) justo antes del dominio del correo
+  var m = /(gmail|hotmail|outlook|yahoo|abastible)\.(com|cl)/i.exec(txt);
+  if(!m) return txt;
+  var antes = txt.slice(0, m.index).replace(/\s+$/,'');
+  var resto = txt.slice(m.index);
+  var ultimo = antes.slice(-1);
+  if(ultimo && /[a-zA-Z]/.test(ultimo) && antes.length>1){
+    antes = antes.slice(0,-1).replace(/\s+$/,''); // esa letra suelta era el "@" mal reconocido
+  } else {
+    antes = antes.replace(/[^a-z0-9._-]+$/i,'');
+  }
+  return antes + '@' + resto;
+}
+function limpiarValorOCR(txt){
+  if(!txt) return '';
+  txt = txt.trim();
+  txt = txt.replace(/\s+[vV]$/,''); // flecha de <select> mal leída como "v"
+  txt = corregirArroba(txt);
+  txt = txt.replace(/N[°ºª*]/gi, 'N°');
+  return txt.trim();
+}
+
+async function extraerFilasDePDF(file){
+  var buf = await file.arrayBuffer();
+  var pdf = await pdfjsLib.getDocument({data:buf}).promise;
+  var filas = [];
+  for(var n=1; n<=pdf.numPages; n++){
+    document.getElementById('ocrProgress').textContent = 'Leyendo página '+n+' de '+pdf.numPages+'...';
+    var page = await pdf.getPage(n);
+    var viewport = page.getViewport({scale:2});
+    var canvas = document.createElement('canvas');
+    canvas.width = viewport.width; canvas.height = viewport.height;
+    await page.render({canvasContext:canvas.getContext('2d'), viewport:viewport}).promise;
+
+    document.getElementById('ocrProgress').textContent = 'Reconociendo texto en página '+n+' de '+pdf.numPages+'...';
+    var result = await Tesseract.recognize(canvas, 'spa');
+    var filasPagina = agruparPalabrasEnFilas(result.data.words);
+    filasPagina.forEach(function(f){ filas.push(dividirFilaEnColumnas(f)); });
+  }
+  return filas.filter(function(fila){ return !esFilaBasura(fila); });
+}
+
+/* encabezado/pie que el navegador agrega automáticamente en cada hoja al "Guardar como PDF" —
+   se filtran para que no se cuelen entre una etiqueta y su valor cuando caen justo al borde de una página */
+function esFilaBasura(fila){
+  return fila.some(function(txt){
+    return /^file:\/\//i.test(txt) ||
+           /^\d{1,2}\/\d{1,2}\/\d{2,4},?\s/.test(txt) ||
+           /^\d+\/\d+$/.test(txt.trim()) ||
+           /formulario datos instalaci/i.test(txt) ||
+           /^informe de datos instalaci/i.test(txt) ||
+           /^abastible s\.?a\.?$/i.test(txt);
+  });
+}
+
+function detectarTipoInstalacion(filas){
+  for(var i=0; i<filas.length-1; i++){
+    var idx = filas[i].findIndex(function(txt){ return normalizar(txt)==='tipodeinstalacion'; });
+    if(idx<0) continue;
+    var valor = normalizar(limpiarValorOCR(filas[i+1][idx]||filas[i+1][0]||''));
+    if(valor.indexOf('habitacional')>=0) return 'habitacional';
+    if(valor.indexOf('construc')>=0) return 'constructora';
+    if(valor.indexOf('comerc')>=0 || valor.indexOf('industr')>=0) return 'comercial';
+  }
+  return '';
+}
+
+function mapearFilasACampos(filas){
+  var tipo = detectarTipoInstalacion(filas);
+  var mapa = mapaParaTipo(tipo);
+  if(tipo){
+    document.getElementById('tipoInstalacion').value = tipo;
+    document.getElementById('tipoInstalacion').dispatchEvent(new Event('change'));
+  }
+  var encontrados = 0, total = 0;
+  for(var i=0; i<filas.length-1; i++){
+    var filaEtiquetas = filas[i], filaValores = filas[i+1];
+    var idsColumna = filaEtiquetas.map(function(txt){
+      var norm = normalizar(txt);
+      var match = buscarEtiqueta(mapa, norm);
+      return match ? match[1] : null;
+    });
+    if(idsColumna.every(function(id){ return !id; })) continue; // esta fila no tiene ninguna etiqueta conocida
+
+    idsColumna.forEach(function(id, idx){
+      if(!id) return;
+      total++;
+      var el = document.getElementById(id);
+      if(!el) return;
+      var valorCrudo = filaValores[idx] !== undefined ? filaValores[idx] : (filaValores.length===1 ? filaValores[0] : '');
+      var valor = limpiarValorOCR(valorCrudo);
+      if(!valor) return;
+
+      if(id==='fecha' || id==='com_fecha_fundacion'){
+        var m = valor.match(/(\d{2})-(\d{2})-(\d{4})/);
+        if(m){ el.value = m[3]+'-'+m[2]+'-'+m[1]; encontrados++; }
+        return;
+      }
+      if(id==='region'){
+        var opt = Array.from(el.options).find(function(o){ return o.value && (normalizar(o.value).indexOf(normalizar(valor))===0 || normalizar(valor).indexOf(normalizar(o.value))===0); });
+        if(opt){ el.value = opt.value; el.dispatchEvent(new Event('change')); encontrados++; }
+        return;
+      }
+      if(id==='comuna'){
+        var optC = Array.from(el.options).find(function(o){ return o.value!=='' && normalizar(o.textContent)===normalizar(valor); });
+        if(optC){ el.value = optC.value || optC.textContent; encontrados++; }
+        return;
+      }
+      if(id==='tipoInstalacion'){
+        var v = normalizar(valor);
+        var val = v.indexOf('habitacional')>=0 ? 'habitacional' : v.indexOf('construc')>=0 ? 'constructora' : v.indexOf('comerc')>=0||v.indexOf('industr')>=0 ? 'comercial' : '';
+        if(val){ el.value = val; el.dispatchEvent(new Event('change')); encontrados++; }
+        return;
+      }
+      el.value = valor;
+      encontrados++;
+    });
+  }
+  return {encontrados:encontrados, total:total};
+}
+
+document.getElementById('pdfInput').addEventListener('change', async function(){
+  var file = this.files[0];
+  if(!file) return;
+  var progreso = document.getElementById('ocrProgress');
+  progreso.style.display='block';
+  progreso.textContent = 'Procesando PDF...';
+  try{
+    var filas = await extraerFilasDePDF(file);
+    var res = mapearFilasACampos(filas);
+    mostrarBanner('✅ Se completaron '+res.encontrados+' campos automáticamente desde el PDF. Revisa todo antes de guardar — el reconocimiento de texto puede tener errores.','ok');
+  }catch(e){
+    console.error('Error leyendo PDF', e);
+    mostrarBanner('⚠️ No se pudo leer el PDF automáticamente: '+(e.message||e)+'. Completa los datos a mano.','err');
+  }finally{
+    progreso.style.display='none';
+  }
+});
 
 /* REGIONES COMPLETAS */
 const regiones = {

@@ -514,6 +514,9 @@ tbody td:first-child{padding-left:20px}
         <div class="fg"><label>Tanque</label><input id="nta" placeholder="Ej: TQ1000S"></div>
         <div class="fg"><label>Cant. Tanques</label><input id="nca" type="number" placeholder="1" min="1"></div>
         <div class="fg"><label>Costo Inversión ($)</label><input id="ncs" type="number" placeholder="5000000"></div>
+        <div class="fg"><label>Cant. Reguladores</label><input id="nreg" type="number" placeholder="1" min="0"></div>
+        <div class="fg"><label>Cant. Medidores</label><input id="nmed" type="number" placeholder="0" min="0"></div>
+        <div class="fg"><label>Toneladas Estimadas</label><input id="nton" type="number" step="0.01" placeholder="2.5"></div>
         <div class="fg full" style="margin:6px 0 -4px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--brand)">Datos para Welcome Pack / End Pack</div>
         <div class="fg"><label>Nombre Proyecto</label><input id="nnp" placeholder="Ej: StarTrek"></div>
         <div class="fg"><label>Dirección Proyecto</label><input id="ndir" placeholder="Calle, número, módulo"></div>
@@ -845,6 +848,7 @@ function abrirDet(id){
   h+=inf('Potencia',p.potencia?p.potencia+' Mcal/h':null);
   h+=inf('Tanque',p.tanque?(p.tanque+(p.cant_tanque?' × '+p.cant_tanque:'')):null);
   h+=inf('Costo',p.costo?'$ '+Number(p.costo).toLocaleString('es-CL'):null);
+  h+=inf('Reguladores',p.reguladores_cant)+inf('Medidores',p.medidores_cant)+inf('Toneladas Estimadas',p.toneladas_estimadas);
   h+=inf('Dirección',p.direccion)+inf('RUT Cliente',p.rut_cliente)+inf('Correo Cliente',p.correo_cliente);
   h+=inf('Correo ITO',p.correo_ito)+inf('Teléfono ITO',p.telefono_ito)+inf('Plazo',p.plazo_dias?p.plazo_dias+' días':null);
   h+='</div>';
@@ -1005,6 +1009,8 @@ async function crearProyecto(){
     cert:document.getElementById('nce').value,potencia:document.getElementById('np').value||null,
     tanque:document.getElementById('nta').value,cant_tanque:document.getElementById('nca').value||null,
     costo:document.getElementById('ncs').value||null,obs:document.getElementById('no').value,
+    reguladores_cant:document.getElementById('nreg').value||null,medidores_cant:document.getElementById('nmed').value||null,
+    toneladas_estimadas:document.getElementById('nton').value||null,
     nombre_proyecto:document.getElementById('nnp').value,direccion:document.getElementById('ndir').value,
     rut_cliente:document.getElementById('nrut').value,correo_cliente:document.getElementById('ncoc').value,
     correo_ito:document.getElementById('ncoi').value,telefono_ito:document.getElementById('ntei').value,
@@ -1016,7 +1022,7 @@ async function crearProyecto(){
     if(res.error) throw res.error;
     var creado=res.data; creado._id=String(creado.id);
     BD.push(creado);
-    ['nc','ncl','nco','ni','nct','nj','nv','nce','np','nta','nca','ncs','no','nnp','ndir','nrut','ncoc','ncoi','ntei','npla','ntra','napo'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
+    ['nc','ncl','nco','ni','nct','nj','nv','nce','np','nta','nca','ncs','nreg','nmed','nton','no','nnp','ndir','nrut','ncoc','ncoi','ntei','npla','ntra','napo'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
     document.getElementById('nr').value='';
     closeOv('ov-new'); filtrar();
     toast('✅ Proyecto '+cod+' creado · '+ts,'ok');
@@ -1035,13 +1041,15 @@ function renderDash(){
   var venc=BD.filter(function(p){return vencido(p);}).length;
 
   var esteMes=BD.filter(function(p){var d=diasDesde(p.f_v_coord);return d!==null&&d<=30;}).length;
+  var toneladas=BD.reduce(function(a,p){return a+(Number(p.toneladas_estimadas)||0);},0);
 
   document.getElementById('dash-kpis').innerHTML=
     kpi('Total proyectos',total,'Histórico acumulado','kpi-navy',esteMes?'+'+esteMes+' últimos 30 días':null)+
     kpi('En ejecución',activos,'Proyectos activos','kpi-brand')+
     kpi('Cerrados',cerrados,'Cierre exitoso','kpi-ok')+
     kpi('Cierre Forzado',forzados,'Proyectos cancelados','kpi-warn')+
-    kpi('Requieren atención',venc,'Plazos vencidos','kpi-err');
+    kpi('Requieren atención',venc,'Plazos vencidos','kpi-err')+
+    kpi('Toneladas Gestionadas',toneladas.toLocaleString('es-CL',{maximumFractionDigits:1}),'Suma de toneladas estimadas','kpi-ok');
 
   function barChart(el,arr,max,colorFn){
     var h='';
