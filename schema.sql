@@ -183,3 +183,7 @@ alter table public.proyectos add column if not exists telefono_ito text;
 alter table public.proyectos add column if not exists trabajos text;
 alter table public.proyectos add column if not exists plazo_dias int;
 alter table public.proyectos add column if not exists apoyo_cliente text;
+
+-- ── Stage: sincronización en vivo entre navegadores (Supabase Realtime) ──
+-- habilita que la tabla transmita cambios en vivo a todos los que tengan la app abierta
+alter publication supabase_realtime add table public.proyectos;
