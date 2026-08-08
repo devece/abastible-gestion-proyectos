@@ -43,6 +43,11 @@ header{background:var(--panel);border-bottom:1px solid var(--line);position:stic
 .tab{padding:11px 20px;font-size:13px;font-weight:700;color:rgba(255,255,255,.55);cursor:pointer;border-bottom:3px solid transparent;transition:all .15s;white-space:nowrap;font-family:var(--sans);background:none;border-top:none;border-left:none;border-right:none;letter-spacing:.01em}
 .tab:hover{color:rgba(255,255,255,.85)}
 .tab.on{color:#fff;border-bottom-color:var(--brand)}
+.nav-tools{display:flex;align-items:center;gap:2px;margin-left:auto}
+.nav-divider{width:1px;height:22px;background:rgba(255,255,255,.18);margin:0 6px}
+.tab-link{padding:11px 16px;font-size:12.5px;font-weight:700;color:rgba(255,255,255,.55);cursor:pointer;text-decoration:none;white-space:nowrap;font-family:var(--sans);display:inline-flex;align-items:center;gap:6px;border-bottom:3px solid transparent;transition:all .15s}
+.tab-link:hover{color:#fff;border-bottom-color:rgba(255,255,255,.35)}
+.tab-link svg{width:11px;height:11px;opacity:.7}
 .page{display:none}.page.on{display:block}
 
 /* BOTONES */
@@ -296,6 +301,12 @@ tbody td:first-child{padding-left:20px}
     <button class="tab" onclick="showTab('p-dash',this)">📊 Dashboard</button>
     <button class="tab" onclick="showTab('p-resumen',this)">🚦 Resumen / Alertas</button>
     <button class="tab" onclick="showTab('p-tanques',this)">🛢 Despacho Tanques</button>
+    <div class="nav-tools">
+      <div class="nav-divider"></div>
+      <a class="tab-link" href="planilla-datos.html" target="_blank">📋 Planilla de Datos <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+      <a class="tab-link" href="panel-wp-ep.html" target="_blank">📧 Welcome/End Pack <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+      <a class="tab-link" href="manual.html" target="_blank">❓ Manual <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></a>
+    </div>
   </div>
 </nav>
 

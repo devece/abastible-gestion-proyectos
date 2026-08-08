@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Manual · Gestión de Proyectos Abastible</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Ubuntu+Sans:wght@400;500;600;700;800&display=swap');
+:root{
+  --navy:#001489;--navy2:#0025C4;--brand:#F36C22;--brand2:#FF8040;
+  --ink:#1A2035;--ink2:#3D4A6B;--muted:#6B7A9E;
+  --line:#E0E4F0;--bg:#F0F2F8;--panel:#fff;
+  --ok:#065F46;--ok-bg:#D1FAE5;--warn:#92400E;--warn-bg:#FEF3C7;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Ubuntu Sans",Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.6;padding-bottom:60px}
+header{background:var(--navy);color:#fff;padding:28px 5vw 22px;box-shadow:0 2px 14px rgba(0,20,137,.25)}
+header h1{font-size:24px;font-weight:800}
+header p{font-size:13.5px;color:rgba(255,255,255,.65);margin-top:6px}
+nav.toc{background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50;padding:10px 5vw;display:flex;gap:4px;flex-wrap:wrap;box-shadow:0 1px 6px rgba(0,20,137,.06)}
+nav.toc a{font-size:12px;font-weight:700;color:var(--ink2);text-decoration:none;padding:7px 12px;border-radius:20px;transition:all .15s;white-space:nowrap}
+nav.toc a:hover{background:var(--bg);color:var(--navy)}
+main{max-width:880px;margin:0 auto;padding:0 5vw}
+section{background:var(--panel);border-radius:12px;padding:26px 30px;margin-top:22px;box-shadow:0 1px 4px rgba(0,20,137,.06),0 4px 16px rgba(0,20,137,.04)}
+section h2{color:var(--navy);font-size:19px;font-weight:800;margin-bottom:4px;display:flex;align-items:center;gap:10px}
+section .sub{color:var(--muted);font-size:13px;margin-bottom:16px}
+h3{color:var(--brand);font-size:14px;font-weight:800;margin:18px 0 8px;text-transform:uppercase;letter-spacing:.03em}
+h3:first-of-type{margin-top:4px}
+p{margin-bottom:10px;font-size:14.5px}
+ul,ol{margin:8px 0 14px 22px;font-size:14.5px}
+li{margin-bottom:6px}
+.badge{display:inline-block;background:var(--bg);color:var(--navy);font-weight:700;font-size:12.5px;padding:2px 9px;border-radius:5px;font-family:monospace}
+.tip{background:#EFF6FF;border-left:4px solid var(--navy2);border-radius:0 8px 8px 0;padding:12px 16px;margin:14px 0;font-size:13.5px}
+.tip strong{color:var(--navy)}
+.warn{background:var(--warn-bg);border-left:4px solid #F59E0B;border-radius:0 8px 8px 0;padding:12px 16px;margin:14px 0;font-size:13.5px;color:var(--warn)}
+.warn strong{color:#7A3405}
+.step{display:flex;gap:12px;margin-bottom:12px;align-items:flex-start}
+.step-n{background:var(--navy);color:#fff;font-weight:800;font-size:12px;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.link-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.link-row a{background:var(--brand);color:#fff;font-weight:700;font-size:13px;padding:9px 16px;border-radius:8px;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.link-row a:hover{background:#d44200}
+.link-row a.sec{background:var(--panel);color:var(--navy);border:1.5px solid var(--line)}
+.link-row a.sec:hover{border-color:var(--navy)}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13.5px}
+th{background:var(--bg);color:var(--navy);text-align:left;padding:8px 10px;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em}
+td{padding:8px 10px;border-top:1px solid var(--line)}
+footer{max-width:880px;margin:30px auto 0;padding:0 5vw;color:var(--muted);font-size:12px;text-align:center}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Manual · Sistema de Gestión de Proyectos GLP</h1>
+  <p>Guía práctica de las tres herramientas y de todo lo que se agregó en 2026. Pensada para que cualquiera pueda usarlas sin depender de que otra persona explique cada función.</p>
+</header>
+
+<nav class="toc">
+  <a href="#panorama">Panorama general</a>
+  <a href="#gestion">Gestión de Proyectos</a>
+  <a href="#nuevo">Crear un proyecto</a>
+  <a href="#hitos">Marcar hitos</a>
+  <a href="#wpep">Welcome Pack / End Pack</a>
+  <a href="#planilla-datos">Planilla de Datos (con lectura automática)</a>
+  <a href="#dashboard">Dashboard</a>
+  <a href="#tecnico">Notas técnicas</a>
+</nav>
+
+<main>
+
+<section id="panorama">
+  <h2>🗺️ Panorama general</h2>
+  <p class="sub">Son tres páginas separadas que comparten la misma base de datos.</p>
+  <table>
+    <tr><th>Herramienta</th><th>Para qué sirve</th></tr>
+    <tr><td><span class="badge">Abastible_Gestion_v8.html</span></td><td>La planilla maestra: lista de todos los proyectos, hitos, dashboard, alertas.</td></tr>
+    <tr><td><span class="badge">planilla-datos.html</span></td><td>Formulario de antecedentes del cliente. Se puede llenar a mano o cargar el PDF que llega de comercial y se autocompleta.</td></tr>
+    <tr><td><span class="badge">panel-wp-ep.html</span></td><td>Genera el correo de Welcome Pack (inicio) y End Pack (cierre), ya redactado y listo para pegar en Outlook.</td></tr>
+  </table>
+  <div class="tip"><strong>Todo se guarda en la misma base de datos (Supabase).</strong> Si dos personas abren la Planilla Maestra en computadores distintos, ambas ven los mismos proyectos — no hace falta enviarse archivos.</div>
+  <p>Desde dentro de la Planilla Maestra, arriba a la derecha del menú, hay accesos directos a las otras dos páginas y a este manual.</p>
+</section>
+
+<section id="gestion">
+  <h2>📋 Gestión de Proyectos</h2>
+  <p class="sub">La pantalla principal — lista de todos los proyectos.</p>
+  <h3>Buscar y filtrar</h3>
+  <ul>
+    <li>El cuadro de búsqueda busca por código, cliente, región, contratista, ITO, supervisor, vendedor, comuna, tipo y <strong>jefe de instalaciones</strong>.</li>
+    <li>Los desplegables filtran por Estado, Región, Supervisor y Tipo. Los chips de colores debajo del buscador son un atajo para filtrar por estado con un clic.</li>
+    <li>La columna <strong>⚠</strong> marca en rojo los proyectos con la revisión de antecedentes vencida (más de 4 días sin validar).</li>
+  </ul>
+  <h3>Colores de estado</h3>
+  <p>Cada estado tiene un color de badge fijo (igual que en el Excel anterior) para reconocer de un vistazo en qué etapa va cada proyecto.</p>
+</section>
+
+<section id="nuevo">
+  <h2>➕ Crear un proyecto</h2>
+  <p class="sub">Botón "Nuevo Proyecto", arriba a la derecha.</p>
+  <div class="step"><div class="step-n">1</div><div>Completa Código, Cliente y Región — son los únicos obligatorios.</div></div>
+  <div class="step"><div class="step-n">2</div><div>Al elegir la Región, el campo <strong>Certificador se sugiere solo</strong> según la tabla de certificadores (GASTEK, GASSI, Patricio Sandoval, Soporte Ingeniería, o el nombre del contratista si esa región normaliza directo con él). Puedes cambiarlo si no calza.</div></div>
+  <div class="step"><div class="step-n">3</div><div>Los campos de Reguladores, Medidores y Toneladas Estimadas son nuevos — se usan para el indicador de toneladas del Dashboard.</div></div>
+  <div class="step"><div class="step-n">4</div><div>Los campos bajo "Datos para Welcome Pack / End Pack" (dirección, RUT cliente, correo, teléfono ITO, plazo, trabajos, apoyo cliente) alimentan los correos automáticos — mientras más completos, menos hay que escribir después.</div></div>
+</section>
+
+<section id="hitos">
+  <h2>✅ Marcar hitos</h2>
+  <p class="sub">Haz clic en cualquier fila de la tabla para abrir el detalle del proyecto.</p>
+  <ul>
+    <li>Cada hito tiene un botón <strong>"📌 Ahora"</strong> (registra la fecha/hora actual) o puedes elegir manualmente la fecha y presionar "Guardar" — útil si el correo se envió un día antes de cargarlo al sistema.</li>
+    <li><strong>Montaje de Tanque</strong> y <strong>Ampliación de Cliente</strong> ahora son dos fechas independientes.</li>
+    <li>La Etapa 5 (pagos) muestra un contador "X de 4 estados de pago registrados".</li>
+    <li>Arriba del detalle hay dos indicadores: <strong>Tiempo total del proyecto</strong> y <strong>Días en liberación</strong> (desde que se asigna al coordinador hasta que se libera).</li>
+    <li><strong>Cierre Forzado</strong> siempre pide escribir el motivo — queda guardado en las Observaciones del proyecto.</li>
+  </ul>
+  <div class="warn"><strong>No hay botón para eliminar proyectos ni hitos desde la app</strong> (a propósito, para evitar que un clic accidental borre datos reales). Si de verdad hay que borrar algo, hay que hacerlo desde el panel de Supabase.</div>
+</section>
+
+<section id="wpep">
+  <h2>📧 Welcome Pack / End Pack</h2>
+  <p class="sub">El correo de bienvenida (inicio de obra) y de cierre, ya redactados.</p>
+  <div class="step"><div class="step-n">1</div><div>Desde el detalle de un proyecto en la Planilla Maestra, presiona <strong>"Generar Welcome Pack"</strong> o <strong>"Generar End Pack"</strong>. Se abre el panel en una pestaña nueva, con los datos que ya se conocen del proyecto prellenados.</div></div>
+  <div class="step"><div class="step-n">2</div><div>Revisa y completa lo que falte (el panel no tiene forma de saber, por ejemplo, el RUT del cliente si nunca se cargó en el proyecto).</div></div>
+  <div class="step"><div class="step-n">3</div><div>Presiona <strong>"Copiar HTML"</strong> o <strong>"Abrir en Outlook"</strong> — este último copia el correo al portapapeles y abre Outlook con el destinatario y asunto ya puestos. Solo falta pegar (Ctrl+V) el cuerpo del correo.</div></div>
+  <p>También se puede abrir directo (sin pasar por un proyecto) desde el acceso del menú principal, y llenar todo a mano — funciona igual que antes.</p>
+</section>
+
+<section id="planilla-datos">
+  <h2>📄 Planilla de Datos — con lectura automática de PDF</h2>
+  <p class="sub">El formulario de antecedentes del cliente (Habitacional / Constructora / Comercial-Industrial).</p>
+  <h3>Cargar el PDF que llega de comercial</h3>
+  <div class="step"><div class="step-n">1</div><div>Al principio del formulario hay un botón para subir el PDF de antecedentes.</div></div>
+  <div class="step"><div class="step-n">2</div><div>El sistema lee el texto de la imagen del PDF (tarda unos 15-20 segundos) y llena automáticamente los campos que logra reconocer — región, comuna, tipo de instalación, y todos los datos de la sección que corresponda (cliente, empresa, representante legal, contacto, etc.).</div></div>
+  <div class="step"><div class="step-n">3</div><div><strong>Revisa siempre antes de guardar.</strong> La lectura automática no es perfecta — el error más común es el símbolo "@" de los correos, que a veces hay que corregir a mano.</div></div>
+  <div class="step"><div class="step-n">4</div><div>Escribe el <strong>Código / N° Renova</strong> (ese dato no viene en el PDF) y presiona <strong>"Guardar en Planilla Maestra + PDF"</strong>.</div></div>
+  <h3>Qué pasa al guardar</h3>
+  <ul>
+    <li>Si el código <strong>no existe</strong> en la Planilla Maestra, se crea un proyecto nuevo con esos datos.</li>
+    <li>Si el código <strong>ya existe</strong>, se actualiza ese mismo proyecto (no se duplica) — sirve tanto para cargar antecedentes de un proyecto recién creado como para completar uno que ya estaba en el sistema.</li>
+    <li>El PDF para el cliente se descarga igual que siempre, sin cambios en ese formato.</li>
+  </ul>
+  <div class="tip"><strong>También se puede llenar a mano</strong>, sin subir ningún PDF — el botón de autocompletar es un atajo, no un requisito.</div>
+</section>
+
+<section id="dashboard">
+  <h2>📊 Dashboard</h2>
+  <p class="sub">Pestaña "Dashboard" dentro de la Planilla Maestra.</p>
+  <ul>
+    <li><strong>Proyectos ingresados por mes</strong> — tendencia de los últimos 12 meses.</li>
+    <li>Distribución por Tipo, Región y Estado (estos últimos con los mismos colores que las badges de la tabla).</li>
+    <li>Proyectos por Supervisor, en un gráfico de dona.</li>
+    <li><strong>Toneladas Gestionadas</strong> — suma de las toneladas estimadas de todos los proyectos (requiere que ese dato se haya cargado al crear el proyecto).</li>
+  </ul>
+</section>
+
+<section id="tecnico">
+  <h2>⚙️ Notas técnicas (por si algo falla)</h2>
+  <h3>Acceso</h3>
+  <p>Por ahora no hay usuario ni contraseña — cualquiera con el link puede ver y editar. Es una decisión a propósito, para cuando se formalice la repartición entre supervisores se puede agregar login sin rehacer nada.</p>
+  <h3>Respaldo</h3>
+  <p>El botón "Exportar" (arriba a la derecha en Gestión de Proyectos) descarga un CSV o un respaldo completo en JSON. Sirve como copia de seguridad manual, aunque los datos ya viven en una base de datos real (Supabase), no en el navegador.</p>
+  <h3>Si algo no carga</h3>
+  <p>Las tres páginas necesitan internet (se conectan a la base de datos en Supabase). Si aparece un aviso de "No se pudo conectar a la base de datos", revisa la conexión y recarga la página.</p>
+</section>
+
+</main>
+
+<footer>Manual escrito en agosto de 2026 · Sistema de Gestión de Proyectos GLP · Abastible</footer>
+
+</body>
+</html>
