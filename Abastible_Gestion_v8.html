@@ -237,8 +237,8 @@ tbody td:first-child{padding-left:20px}
 .donut-wrap{display:flex;align-items:center;gap:24px;padding:6px 4px 2px}
 .donut-wrap.legend-wide{align-items:flex-start;gap:18px}
 .donut-legend{display:flex;flex-direction:column;gap:11px;flex:1}
-.donut-legend.cols2{display:block;column-count:2;column-gap:12px;min-width:290px;max-width:320px}
-.donut-legend.cols2 .legend-row{break-inside:avoid;margin-bottom:7px;font-size:11px;gap:5px}
+.donut-legend.cols2{display:block;flex:0 1 auto;max-width:600px;columns:4 130px;column-gap:14px}
+.donut-legend.cols2 .legend-row{break-inside:avoid;margin-bottom:6px;font-size:11px;gap:5px}
 .donut-legend.cols2 .legend-pct{min-width:20px;margin-left:4px}
 .legend-row{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--ink2);font-weight:600}
 .legend-dot{width:11px;height:11px;border-radius:3px;flex-shrink:0}
@@ -1720,7 +1720,7 @@ function renderExplorer(){
     var total2=arr2.reduce(function(a,e){return a+e[1];},0);
     var legendLarga=arr2.length>6;
     // con leyenda en 2 columnas más angostas queda espacio libre: se aprovecha para un donut más grande
-    var r=legendLarga?116:92, cx=legendLarga?136:110, cy=legendLarga?136:110, sw=legendLarga?32:26;
+    var r=legendLarga?134:92, cx=legendLarga?150:110, cy=legendLarga?150:110, sw=legendLarga?38:26;
     var svgSize=cx*2, circ=2*Math.PI*r, acc=0;
     var arcs=arr2.map(function(e,i){
       var frac=total2?e[1]/total2:0;
@@ -1737,8 +1737,8 @@ function renderExplorer(){
     }).join('');
     document.getElementById('chart-explorer').innerHTML=
       '<div class="donut-wrap'+(legendLarga?' legend-wide':'')+'"><svg width="'+svgSize+'" height="'+svgSize+'" viewBox="0 0 '+svgSize+' '+svgSize+'">'+arcs+
-      '<text x="'+cx+'" y="'+(cy-6)+'" text-anchor="middle" font-size="'+(legendLarga?48:40)+'" font-weight="800" fill="var(--navy)" font-family="var(--mono)">'+total2+'</text>'+
-      '<text x="'+cx+'" y="'+(cy+18)+'" text-anchor="middle" font-size="'+(legendLarga?15:14)+'" fill="var(--muted)">proyectos</text></svg>'+
+      '<text x="'+cx+'" y="'+(cy-(legendLarga?8:6))+'" text-anchor="middle" font-size="'+(legendLarga?56:40)+'" font-weight="800" fill="var(--navy)" font-family="var(--mono)">'+total2+'</text>'+
+      '<text x="'+cx+'" y="'+(cy+(legendLarga?22:18))+'" text-anchor="middle" font-size="'+(legendLarga?16:14)+'" fill="var(--muted)">proyectos</text></svg>'+
       '<div class="donut-legend'+(legendLarga?' cols2':'')+'">'+legend+'</div></div>';
   }
 
