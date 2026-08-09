@@ -235,11 +235,16 @@ tbody td:first-child{padding-left:20px}
 
 /* Donut (proyectos por supervisor) */
 .donut-wrap{display:flex;align-items:center;gap:24px;padding:6px 4px 2px}
+.donut-wrap.legend-wide{align-items:flex-start;gap:18px}
 .donut-legend{display:flex;flex-direction:column;gap:11px;flex:1}
+.donut-legend.cols2{display:block;column-count:2;column-gap:12px;min-width:290px;max-width:320px}
+.donut-legend.cols2 .legend-row{break-inside:avoid;margin-bottom:7px;font-size:11px;gap:5px}
+.donut-legend.cols2 .legend-pct{min-width:20px;margin-left:4px}
 .legend-row{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--ink2);font-weight:600}
 .legend-dot{width:11px;height:11px;border-radius:3px;flex-shrink:0}
-.legend-val{margin-left:auto;font-family:var(--mono);font-weight:800;color:var(--ink)}
-.legend-pct{font-size:11px;color:var(--muted);font-weight:600;margin-left:6px;min-width:34px;text-align:right}
+.legend-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.legend-val{margin-left:auto;font-family:var(--mono);font-weight:800;color:var(--ink);flex-shrink:0}
+.legend-pct{font-size:11px;color:var(--muted);font-weight:600;margin-left:6px;min-width:34px;text-align:right;flex-shrink:0}
 
 /* Tendencia mensual */
 .trend-wrap{display:flex;align-items:flex-end;gap:6px;height:150px;padding:10px 2px 0}
@@ -392,6 +397,23 @@ tbody td:first-child{padding-left:20px}
 <div class="page" id="p-dash">
   <div class="dash-wrap">
     <div class="dash-grid" id="dash-kpis"></div>
+    <div class="card-panel dash-full" id="dash-explorer">
+      <div class="section-title">🔍 Explorador — arma tu propio gráfico</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px">
+        <select class="fi" id="ex-tipo" onchange="onExTipoChange()">
+          <option value="barras">📊 Barras por categoría</option>
+          <option value="comparativo">⚖️ Comparativo — dos métricas</option>
+          <option value="versus">🆚 Versus — dos valores enfrentados</option>
+          <option value="distribucion">🍩 Distribución (donut)</option>
+        </select>
+        <select class="fi" id="ex-dim" onchange="onExDimChange()"></select>
+        <select class="fi" id="ex-met" onchange="renderExplorer()"></select>
+        <select class="fi" id="ex-met2" onchange="renderExplorer()"></select>
+        <select class="fi" id="ex-val-a" onchange="renderExplorer()"></select>
+        <select class="fi" id="ex-val-b" onchange="renderExplorer()"></select>
+      </div>
+      <div id="chart-explorer"></div>
+    </div>
     <div class="card-panel dash-full">
       <div class="section-title">📈 Proyectos ingresados por mes &nbsp;<span style="font-weight:500;color:var(--muted);font-size:11px;text-transform:none;letter-spacing:0">(últimos 12 meses, según envío a coordinador)</span></div>
       <div id="chart-tendencia" class="trend-wrap"></div>
@@ -930,6 +952,7 @@ document.addEventListener('DOMContentLoaded', async function() {
   await cargarDesdeSupabase();
   await cargarCertificadores();
   poblarContratistas();
+  poblarExplorerSelects();
 
   filtrar();
   renderDash();
@@ -1121,6 +1144,10 @@ function vencido(p){
 
 // ─── BADGE ────────────────────────────────────────────────────────────────
 var SMAP={'1. Evaluación Previa':['b1','Evaluación Previa'],'2. Entregado a coordinador':['b2','Coordinador'],'4. Liberacion':['b4','Liberación'],'5. Proyecto en ejecucion':['b5','En Ejecución'],'5.1 Envío O.C':['b51','Envío O.C.'],'5.2 Inicio de Trabajos':['b52','Inicio Trabajos'],'5.4 Solicitud de carga al 20%':['b54','Carga 20%'],'6. Enviado a Gestor Doc':['b6','Gestor Doc'],'7. Cierre Proyecto':['b7','Cerrado'],'8. Cierre Forzado':['b8','Cierre Forzado']};
+// mismos colores que las badges de estado, para que cualquier gráfico hable el mismo idioma visual
+var SMAP_COLOR={'1. Evaluación Previa':'#5B21B6','2. Entregado a coordinador':'#1E40AF','4. Liberacion':'#B45309',
+  '5. Proyecto en ejecucion':'#065F46','5.1 Envío O.C':'#0F766E','5.2 Inicio de Trabajos':'#3730A3',
+  '5.4 Solicitud de carga al 20%':'#6B21A8','6. Enviado a Gestor Doc':'#9A3412','7. Cierre Proyecto':'#14532D','8. Cierre Forzado':'#991B1B'};
 function mkBadge(s){var m=SMAP[s]||['b2',s||'—'];return '<span class="badge '+m[0]+'">'+m[1]+'</span>';}
 function mkDias(d){if(d===null||d===undefined)return '—';var cls=d<=30?'dg-ok':d<=90?'dg-w':'dg-bad';return '<span class="dg '+cls+'">'+d+'d</span>';}
 function autoStatus(p){
@@ -1504,10 +1531,7 @@ function renderDash(){
   var regArr=Object.entries(regs).sort(function(a,b){return b[1]-a[1];});
   barChart('chart-regiones',regArr,regArr.length?regArr[0][1]:1,function(){return 'var(--brand)';});
 
-  // Estados — mismos colores que las badges de la tabla, para que el gráfico hable el mismo idioma
-  var SMAP_COLOR={'1. Evaluación Previa':'#5B21B6','2. Entregado a coordinador':'#1E40AF','4. Liberacion':'#B45309',
-    '5. Proyecto en ejecucion':'#065F46','5.1 Envío O.C':'#0F766E','5.2 Inicio de Trabajos':'#3730A3',
-    '5.4 Solicitud de carga al 20%':'#6B21A8','6. Enviado a Gestor Doc':'#9A3412','7. Cierre Proyecto':'#14532D','8. Cierre Forzado':'#991B1B'};
+  // Estados — SMAP_COLOR definido arriba junto a SMAP
   var ests={};
   BD.forEach(function(p){if(p.status)ests[p.status]=(ests[p.status]||0)+1;});
   var estArr=Object.entries(ests).sort(function(a,b){return b[1]-a[1];}).map(function(e){return [e[0],e[1],(SMAP[e[0]]||['',''+e[0]])[1]];});
@@ -1519,22 +1543,22 @@ function renderDash(){
   var supArr=Object.entries(sups).sort(function(a,b){return b[1]-a[1];});
   var supTotal=supArr.reduce(function(a,s){return a+s[1];},0);
   var supColors=['var(--navy)','var(--brand)','#059669','#7C3AED','#0891B2'];
-  var accSup=0, r=52, cx=60, cy=60, circ=2*Math.PI*r;
+  var accSup=0, r=92, cx=110, cy=110, circ=2*Math.PI*r;
   var arcsH=supArr.map(function(s,i){
     var frac=supTotal?s[1]/supTotal:0;
     var dash=(frac*circ).toFixed(1)+' '+circ.toFixed(1);
     var rot=(accSup/supTotal)*360-90;
     accSup+=s[1];
-    return '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+supColors[i%supColors.length]+'" stroke-width="16" stroke-dasharray="'+dash+'" transform="rotate('+rot+' '+cx+' '+cy+')"><title>'+esc(s[0])+': '+s[1]+'</title></circle>';
+    return '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+supColors[i%supColors.length]+'" stroke-width="26" stroke-dasharray="'+dash+'" transform="rotate('+rot+' '+cx+' '+cy+')"><title>'+esc(s[0])+': '+s[1]+'</title></circle>';
   }).join('');
   var legendH=supArr.map(function(s,i){
     var pct=supTotal?Math.round(s[1]/supTotal*100):0;
-    return '<div class="legend-row"><span class="legend-dot" style="background:'+supColors[i%supColors.length]+'"></span>'+esc(s[0])+'<span class="legend-pct">'+pct+'%</span><span class="legend-val">'+s[1]+'</span></div>';
+    return '<div class="legend-row"><span class="legend-dot" style="background:'+supColors[i%supColors.length]+'"></span><span class="legend-name" title="'+esc(s[0])+'">'+esc(s[0])+'</span><span class="legend-pct">'+pct+'%</span><span class="legend-val">'+s[1]+'</span></div>';
   }).join('');
   document.getElementById('chart-sups').innerHTML=
-    '<div class="donut-wrap"><svg width="120" height="120" viewBox="0 0 120 120">'+arcsH+
-    '<text x="60" y="56" text-anchor="middle" font-size="22" font-weight="800" fill="var(--navy)" font-family="var(--mono)">'+supTotal+'</text>'+
-    '<text x="60" y="73" text-anchor="middle" font-size="9" fill="var(--muted)">proyectos</text></svg>'+
+    '<div class="donut-wrap"><svg width="220" height="220" viewBox="0 0 220 220">'+arcsH+
+    '<text x="110" y="104" text-anchor="middle" font-size="40" font-weight="800" fill="var(--navy)" font-family="var(--mono)">'+supTotal+'</text>'+
+    '<text x="110" y="128" text-anchor="middle" font-size="14" fill="var(--muted)">proyectos</text></svg>'+
     '<div class="donut-legend">'+legendH+'</div></div>';
 
   // Tendencia: proyectos ingresados por mes (últimos 12 meses, según f_v_coord)
@@ -1556,9 +1580,194 @@ function renderDash(){
     return '<div class="trend-col"><div class="trend-val">'+(m.n||'')+'</div><div class="trend-bar" style="height:'+h+'%" title="'+m.lbl+': '+m.n+' proyectos"></div><div class="trend-lbl">'+m.lbl+'</div></div>';
   }).join('');
   document.getElementById('chart-tendencia').innerHTML=trendH;
+
+  renderExplorer();
 }
 
 function kpi(t,n,s,cls,delta){return '<div class="kpi '+cls+'"><div class="kpi-t">'+t+'</div><div class="kpi-n">'+n+'</div><div class="kpi-s">'+s+'</div>'+(delta?'<div class="kpi-delta">▲ '+delta+'</div>':'')+'</div>';}
+
+// ─── EXPLORADOR DE DATOS (dashboard) ───────────────────────────────────────
+// Cuadro de control para que el usuario pida qué gráfico/comparativo/estadística/versus quiere ver,
+// sobre las mismas dimensiones/valores que ya se usan en los filtros de Gestión de Proyectos.
+var EX_DIMS=[
+  {key:'status',label:'Estado',opts:function(){return Object.keys(SMAP);},fmt:function(v){return (SMAP[v]||['',v])[1];},color:function(v){return SMAP_COLOR[v]||'#54585A';}},
+  {key:'region',label:'Región',opts:function(){return ['IV Coquimbo','V Valparaíso','RM Metropolitana','VI Ohiggins','VII Maule','XVI Ñuble','VIII Biobío','IX Araucanía','XIV Los Ríos','X Los Lagos'];}},
+  {key:'tipo',label:'Tipo',opts:function(){return ['P01 Habitacional','P11 Comercial','P20 Sobrecosto','P20 Fidelización','P20 Gran Cliente','P20 Mantención','P20 Regularización Normativa','P20 Aumento de consumo'];}},
+  {key:'supervisor',label:'Supervisor',opts:function(){return ['Oscar Bravo','Fernando Martinez'];}},
+  {key:'contratista',label:'Contratista',opts:function(){return Array.from(new Set(BD.map(function(p){return p.contratista;}).filter(function(c){return c&&c!=='—'&&c.toUpperCase()!=='N/A';}))).sort(function(a,b){return a.localeCompare(b,'es');});}}
+];
+var EX_METS=[
+  {key:'count',label:'N° de proyectos',agg:'count'},
+  {key:'costo_sum',label:'Costo total',field:'costo',agg:'sum',money:true},
+  {key:'costo_avg',label:'Costo promedio',field:'costo',agg:'avg',money:true},
+  {key:'potencia_sum',label:'Potencia total (Mcal/h)',field:'potencia',agg:'sum'},
+  {key:'potencia_avg',label:'Potencia promedio (Mcal/h)',field:'potencia',agg:'avg'},
+  {key:'ton_sum',label:'Toneladas totales',field:'toneladas_estimadas',agg:'sum'},
+  {key:'ton_avg',label:'Toneladas promedio',field:'toneladas_estimadas',agg:'avg'},
+  {key:'dias_avg',label:'Días promedio en etapa actual',agg:'avg',derive:diasProy}
+];
+var EX_COLORS=['var(--navy)','var(--brand)','#059669','#7C3AED','#0891B2','#B45309','#DC2626','#0F766E'];
+
+function exDim(key){return EX_DIMS.find(function(d){return d.key===key;});}
+function exMet(key){return EX_METS.find(function(m){return m.key===key;});}
+function exVal(m,p){return m.derive?m.derive(p):(Number(p[m.field])||0);}
+function exFmt(m,v){
+  if(m.agg==='count')return String(v);
+  if(m.money)return '$ '+Math.round(v).toLocaleString('es-CL');
+  return (Math.round(v*10)/10).toLocaleString('es-CL',{maximumFractionDigits:1});
+}
+function aggList(list,m){
+  if(m.agg==='count')return list.length;
+  if(!list.length)return 0;
+  var sum=0; list.forEach(function(p){sum+=exVal(m,p);});
+  return m.agg==='avg'?sum/list.length:sum;
+}
+function exGroup(dim,met){
+  var acc={};
+  BD.forEach(function(p){
+    var raw=p[dim.key];
+    if(!raw)return;
+    if(!acc[raw])acc[raw]={n:0,sum:0};
+    acc[raw].n++;
+    acc[raw].sum+=exVal(met,p);
+  });
+  var arr=Object.keys(acc).map(function(k){
+    var a=acc[k];
+    var val=met.agg==='count'?a.n:(met.agg==='avg'?(a.n?a.sum/a.n:0):a.sum);
+    return [k,val,a.n];
+  });
+  arr.sort(function(a,b){return b[1]-a[1];});
+  return arr;
+}
+
+function poblarExplorerSelects(){
+  document.getElementById('ex-dim').innerHTML=EX_DIMS.map(function(d){return '<option value="'+d.key+'">'+d.label+'</option>';}).join('');
+  document.getElementById('ex-met').innerHTML=EX_METS.map(function(m){return '<option value="'+m.key+'">'+m.label+'</option>';}).join('');
+  document.getElementById('ex-met2').innerHTML=EX_METS.filter(function(m){return m.key!=='count';}).map(function(m,i){return '<option value="'+m.key+'"'+(i===1?' selected':'')+'>'+m.label+'</option>';}).join('');
+  onExTipoChange();
+}
+function onExTipoChange(){
+  var tipo=document.getElementById('ex-tipo').value;
+  document.getElementById('ex-dim').style.display=(tipo==='barras'||tipo==='comparativo'||tipo==='distribucion')?'':'none';
+  document.getElementById('ex-met').style.display=(tipo==='barras'||tipo==='comparativo')?'':'none';
+  document.getElementById('ex-met2').style.display=(tipo==='comparativo')?'':'none';
+  document.getElementById('ex-val-a').style.display=(tipo==='versus')?'':'none';
+  document.getElementById('ex-val-b').style.display=(tipo==='versus')?'':'none';
+  if(tipo==='versus')poblarExplorerValores();
+  renderExplorer();
+}
+function onExDimChange(){
+  poblarExplorerValores();
+  renderExplorer();
+}
+function poblarExplorerValores(){
+  var dim=exDim(document.getElementById('ex-dim').value)||EX_DIMS[0];
+  var valores=dim.opts();
+  var selA=document.getElementById('ex-val-a'), selB=document.getElementById('ex-val-b');
+  var prevA=selA.value, prevB=selB.value;
+  var optsHtml=valores.map(function(v){return '<option value="'+esc(v)+'">'+esc(dim.fmt?dim.fmt(v):v)+'</option>';}).join('');
+  selA.innerHTML=optsHtml; selB.innerHTML=optsHtml;
+  if(valores.indexOf(prevA)>=0)selA.value=prevA;
+  if(valores.indexOf(prevB)>=0)selB.value=prevB; else if(valores.length>1)selB.selectedIndex=1;
+}
+
+function exBarChart(el,arr,colorFn){
+  if(!arr.length){document.getElementById(el).innerHTML='<div style="color:var(--muted);font-size:13px;padding:8px 0">Sin datos para graficar.</div>';return;}
+  var max=arr.reduce(function(m,e){return Math.max(m,Math.abs(e[1]));},1e-9)||1;
+  var h='';
+  arr.forEach(function(e,i){
+    var pct=Math.max(2,Math.round(Math.abs(e[1])/max*100));
+    h+='<div class="bar-row"><div class="bar-lbl">'+esc(e[0])+'</div><div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:'+colorFn(e,i)+'" title="'+esc(e[0])+': '+esc(e[3])+' ('+e[2]+' proyecto'+(e[2]===1?'':'s')+')"></div></div><div class="bar-val">'+esc(e[3])+'</div></div>';
+  });
+  document.getElementById(el).innerHTML=h;
+}
+
+function renderExplorer(){
+  var elDim=document.getElementById('ex-dim');
+  if(!elDim)return; // aún no se pobló el HTML del explorador (primer render)
+  var tipo=document.getElementById('ex-tipo').value;
+  var dim=exDim(elDim.value)||EX_DIMS[0];
+
+  if(tipo==='barras'){
+    var met=exMet(document.getElementById('ex-met').value)||EX_METS[0];
+    var arr=exGroup(dim,met).map(function(e){return [dim.fmt?dim.fmt(e[0]):e[0],e[1],e[2],exFmt(met,e[1]),e[0]];});
+    exBarChart('chart-explorer',arr,function(e,i){return dim.color?dim.color(e[4]):EX_COLORS[i%EX_COLORS.length];});
+  }
+
+  if(tipo==='comparativo'){
+    var metA=exMet(document.getElementById('ex-met').value)||EX_METS[1];
+    var metB=exMet(document.getElementById('ex-met2').value)||EX_METS[2];
+    var arrA=exGroup(dim,metA), arrB=exGroup(dim,metB);
+    var maxA=arrA.reduce(function(m,e){return Math.max(m,e[1]);},1e-9)||1;
+    var maxB=arrB.reduce(function(m,e){return Math.max(m,e[1]);},1e-9)||1;
+    var mapB={}; arrB.forEach(function(e){mapB[e[0]]=e;});
+    var h='<div style="font-size:11.5px;color:var(--muted);margin-bottom:12px">'+esc(metA.label)+' vs '+esc(metB.label)+' por '+dim.label.toLowerCase()+' — cada métrica indexada a % de su propio máximo</div>';
+    arrA.forEach(function(eA){
+      var k=eA[0];
+      var eB=mapB[k]||[k,0,0];
+      var pctA=Math.max(2,Math.round(eA[1]/maxA*100));
+      var pctB=Math.max(2,Math.round(eB[1]/maxB*100));
+      var lbl=dim.fmt?dim.fmt(k):k;
+      h+='<div style="margin-bottom:12px"><div class="bar-lbl" style="margin-bottom:4px">'+esc(lbl)+'</div>';
+      h+='<div class="bar-row"><div class="bar-lbl" style="min-width:26px;font-size:11px;color:var(--muted)">A</div><div class="bar-track"><div class="bar-fill" style="width:'+pctA+'%;background:var(--navy)" title="'+esc(metA.label)+': '+esc(exFmt(metA,eA[1]))+'"></div></div><div class="bar-val">'+esc(exFmt(metA,eA[1]))+'</div></div>';
+      h+='<div class="bar-row"><div class="bar-lbl" style="min-width:26px;font-size:11px;color:var(--muted)">B</div><div class="bar-track"><div class="bar-fill" style="width:'+pctB+'%;background:var(--brand)" title="'+esc(metB.label)+': '+esc(exFmt(metB,eB[1]))+'"></div></div><div class="bar-val">'+esc(exFmt(metB,eB[1]))+'</div></div></div>';
+    });
+    document.getElementById('chart-explorer').innerHTML=h;
+  }
+
+  if(tipo==='distribucion'){
+    var arr2=exGroup(dim,EX_METS[0]);
+    var total2=arr2.reduce(function(a,e){return a+e[1];},0);
+    var legendLarga=arr2.length>6;
+    // con leyenda en 2 columnas más angostas queda espacio libre: se aprovecha para un donut más grande
+    var r=legendLarga?116:92, cx=legendLarga?136:110, cy=legendLarga?136:110, sw=legendLarga?32:26;
+    var svgSize=cx*2, circ=2*Math.PI*r, acc=0;
+    var arcs=arr2.map(function(e,i){
+      var frac=total2?e[1]/total2:0;
+      var dash=(frac*circ).toFixed(1)+' '+circ.toFixed(1);
+      var rot=(acc/total2)*360-90; acc+=e[1];
+      var color=dim.color?dim.color(e[0]):EX_COLORS[i%EX_COLORS.length];
+      return '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+color+'" stroke-width="'+sw+'" stroke-dasharray="'+dash+'" transform="rotate('+rot+' '+cx+' '+cy+')"><title>'+esc(dim.fmt?dim.fmt(e[0]):e[0])+': '+e[1]+'</title></circle>';
+    }).join('');
+    var legend=arr2.map(function(e,i){
+      var pct=total2?Math.round(e[1]/total2*100):0;
+      var color=dim.color?dim.color(e[0]):EX_COLORS[i%EX_COLORS.length];
+      var nombre=dim.fmt?dim.fmt(e[0]):e[0];
+      return '<div class="legend-row"><span class="legend-dot" style="background:'+color+'"></span><span class="legend-name" title="'+esc(nombre)+'">'+esc(nombre)+'</span><span class="legend-pct">'+pct+'%</span><span class="legend-val">'+e[1]+'</span></div>';
+    }).join('');
+    document.getElementById('chart-explorer').innerHTML=
+      '<div class="donut-wrap'+(legendLarga?' legend-wide':'')+'"><svg width="'+svgSize+'" height="'+svgSize+'" viewBox="0 0 '+svgSize+' '+svgSize+'">'+arcs+
+      '<text x="'+cx+'" y="'+(cy-6)+'" text-anchor="middle" font-size="'+(legendLarga?48:40)+'" font-weight="800" fill="var(--navy)" font-family="var(--mono)">'+total2+'</text>'+
+      '<text x="'+cx+'" y="'+(cy+18)+'" text-anchor="middle" font-size="'+(legendLarga?15:14)+'" fill="var(--muted)">proyectos</text></svg>'+
+      '<div class="donut-legend'+(legendLarga?' cols2':'')+'">'+legend+'</div></div>';
+  }
+
+  if(tipo==='versus'){
+    var valA=document.getElementById('ex-val-a').value, valB=document.getElementById('ex-val-b').value;
+    if(!valA||!valB){document.getElementById('chart-explorer').innerHTML='<div style="color:var(--muted);font-size:13px;padding:8px 0">Elige dos valores de "'+dim.label+'" para comparar.</div>';return;}
+    var grupoA=BD.filter(function(p){return p[dim.key]===valA;});
+    var grupoB=BD.filter(function(p){return p[dim.key]===valB;});
+    var nombreA=dim.fmt?dim.fmt(valA):valA, nombreB=dim.fmt?dim.fmt(valB):valB;
+    var h2='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;font-weight:700;margin-bottom:16px">';
+    h2+='<span style="width:11px;height:11px;border-radius:3px;display:inline-block;background:var(--navy)"></span>'+esc(nombreA)+' <span style="font-weight:400;color:var(--muted);font-size:11.5px">('+grupoA.length+' proyectos)</span>';
+    h2+='<span style="color:var(--muted);font-size:11px;text-transform:uppercase">vs</span>';
+    h2+='<span style="width:11px;height:11px;border-radius:3px;display:inline-block;background:var(--brand)"></span>'+esc(nombreB)+' <span style="font-weight:400;color:var(--muted);font-size:11.5px">('+grupoB.length+' proyectos)</span>';
+    h2+='</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px">';
+    EX_METS.forEach(function(m){
+      var vA=aggList(grupoA,m), vB=aggList(grupoB,m);
+      var maxV=Math.max(Math.abs(vA),Math.abs(vB),1e-9);
+      var wA=Math.max(3,Math.round(Math.abs(vA)/maxV*100));
+      var wB=Math.max(3,Math.round(Math.abs(vB)/maxV*100));
+      h2+='<div style="background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:12px 14px">';
+      h2+='<div style="font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:9px">'+esc(m.label)+'</div>';
+      h2+='<div class="bar-row"><div class="bar-track"><div class="bar-fill" style="width:'+wA+'%;background:var(--navy)"></div></div><div class="bar-val">'+esc(exFmt(m,vA))+'</div></div>';
+      h2+='<div class="bar-row"><div class="bar-track"><div class="bar-fill" style="width:'+wB+'%;background:var(--brand)"></div></div><div class="bar-val">'+esc(exFmt(m,vB))+'</div></div>';
+      h2+='</div>';
+    });
+    h2+='</div>';
+    document.getElementById('chart-explorer').innerHTML=h2;
+  }
+}
 
 // ─── RESUMEN / ALERTAS ────────────────────────────────────────────────────
 function renderResumen(){
