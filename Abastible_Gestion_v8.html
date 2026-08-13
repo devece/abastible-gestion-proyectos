@@ -345,7 +345,7 @@ tbody td:first-child{padding-left:20px}
     </select>
     <select class="fi" id="fi-sup" onchange="filtrar()">
       <option value="">Supervisor — todos</option>
-      <option>Oscar Bravo</option><option>Fernando Martinez</option>
+      <option>Oscar Bravo</option><option>Fernando Martinez</option><option>Daniel Villalobos</option>
     </select>
     <select class="fi" id="fi-tip" onchange="filtrar()">
       <option value="">Tipo — todos</option>
@@ -563,7 +563,7 @@ tbody td:first-child{padding-left:20px}
         <div class="fg"><label>Construcción</label>
           <select id="ncon"><option>Inmediata</option><option>Tardía</option></select></div>
         <div class="fg"><label>Supervisor</label>
-          <select id="ns"><option value="">—</option><option>Oscar Bravo</option><option>Fernando Martinez</option></select></div>
+          <select id="ns"><option value="">—</option><option>Oscar Bravo</option><option>Fernando Martinez</option><option>Daniel Villalobos</option></select></div>
         <div class="fg"><label>ITO / Coordinador</label><input id="ni" placeholder="Nombre"></div>
         <div class="fg"><label>Contratista</label><input id="nct" placeholder="Empresa o persona"></div>
         <div class="fg"><label>Jefe Instalaciones</label><input id="nj" placeholder="Nombre"></div>
@@ -1593,7 +1593,7 @@ var EX_DIMS=[
   {key:'status',label:'Estado',opts:function(){return Object.keys(SMAP);},fmt:function(v){return (SMAP[v]||['',v])[1];},color:function(v){return SMAP_COLOR[v]||'#54585A';}},
   {key:'region',label:'Región',opts:function(){return ['IV Coquimbo','V Valparaíso','RM Metropolitana','VI Ohiggins','VII Maule','XVI Ñuble','VIII Biobío','IX Araucanía','XIV Los Ríos','X Los Lagos'];}},
   {key:'tipo',label:'Tipo',opts:function(){return ['P01 Habitacional','P11 Comercial','P20 Sobrecosto','P20 Fidelización','P20 Gran Cliente','P20 Mantención','P20 Regularización Normativa','P20 Aumento de consumo'];}},
-  {key:'supervisor',label:'Supervisor',opts:function(){return ['Oscar Bravo','Fernando Martinez'];}},
+  {key:'supervisor',label:'Supervisor',opts:function(){return ['Oscar Bravo','Fernando Martinez','Daniel Villalobos'];}},
   {key:'contratista',label:'Contratista',opts:function(){return Array.from(new Set(BD.map(function(p){return p.contratista;}).filter(function(c){return c&&c!=='—'&&c.toUpperCase()!=='N/A';}))).sort(function(a,b){return a.localeCompare(b,'es');});}}
 ];
 var EX_METS=[
