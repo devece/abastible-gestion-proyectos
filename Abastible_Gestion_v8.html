@@ -155,6 +155,8 @@ tbody td:first-child{padding-left:20px}
 .inf label{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700}
 .inf span{font-size:13px;font-weight:700;color:var(--ink)}
 .inf span.nd{color:#BDC5DC;font-weight:400;font-style:italic;font-size:12px}
+.inf-e input,.inf-e select{border:1.5px solid var(--line2);border-radius:6px;padding:5px 8px;font-size:12.5px;font-weight:600;font-family:var(--sans);color:var(--ink);outline:none;width:100%;box-sizing:border-box;transition:border-color .15s}
+.inf-e input:focus,.inf-e select:focus{border-color:var(--navy)}
 .etapas{display:flex;flex-direction:column;gap:12px}
 .etapa{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:0 1px 3px rgba(0,20,137,.04)}
 .ehdr{padding:9px 16px;display:flex;align-items:center;gap:9px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--line)}
@@ -1282,17 +1284,17 @@ function abrirDet(id){
   if(p.dev_ito&&!p.f_liberado)h+='<div class="alerta al-a">↩️ &nbsp;<strong>Devuelto a ITO</strong> — pendiente de corrección desde el '+esc(fFH(p.dev_ito))+' (ver motivo en Observaciones)</div>';
   if(cer)h+='<div class="alerta al-g">✅ &nbsp;Proyecto cerrado — solo lectura</div>';
 
-  // Info
+  // Info (editable — datos ingresados al inicio del proyecto)
   h+='<div class="igrid">';
-  h+=inf('Código',p.codigo)+inf('Región',p.region)+inf('Comuna',p.comuna)+inf('Tipo',p.tipo)+inf('Construcción',p.construccion);
-  h+=inf('Supervisor',p.supervisor)+inf('ITO / Coordinador',p.ito)+inf('Contratista',p.contratista);
-  h+=inf('Certificador',p.cert)+inf('Jefe Instalaciones',p.jefe)+inf('Vendedor',p.vendedor);
-  h+=inf('Potencia',p.potencia?p.potencia+' Mcal/h':null);
-  h+=inf('Tanque',p.tanque?(p.tanque+(p.cant_tanque?' × '+p.cant_tanque:'')):null);
-  h+=inf('Costo',p.costo?'$ '+Number(p.costo).toLocaleString('es-CL'):null);
-  h+=inf('Reguladores',p.reguladores_cant)+inf('Medidores',p.medidores_cant)+inf('Toneladas Estimadas',p.toneladas_estimadas);
+  h+=infE(idx,'codigo','Código',p.codigo,cer)+infE(idx,'cliente','Cliente',p.cliente,cer)+infE(idx,'region','Región',p.region,cer,'select',SEL_REGION)+infE(idx,'comuna','Comuna',p.comuna,cer)+infE(idx,'tipo','Tipo',p.tipo,cer,'select',SEL_TIPO)+infE(idx,'construccion','Construcción',p.construccion,cer,'select',SEL_CONSTRUCCION);
+  h+=infE(idx,'supervisor','Supervisor',p.supervisor,cer,'select',SEL_SUPERVISOR)+infE(idx,'ito','ITO / Coordinador',p.ito,cer)+infE(idx,'contratista','Contratista',p.contratista,cer);
+  h+=infE(idx,'cert','Certificador',p.cert,cer)+infE(idx,'jefe','Jefe Instalaciones',p.jefe,cer)+infE(idx,'vendedor','Vendedor',p.vendedor,cer);
+  h+=infE(idx,'potencia','Potencia (Mcal/h)',p.potencia,cer,'number');
+  h+=infE(idx,'tanque','Tanque',p.tanque,cer)+infE(idx,'cant_tanque','Cant. Tanques',p.cant_tanque,cer,'number');
+  h+=infE(idx,'costo','Costo Inversión ($)',p.costo,cer,'number');
+  h+=infE(idx,'reguladores_cant','Reguladores',p.reguladores_cant,cer,'number')+infE(idx,'medidores_cant','Medidores',p.medidores_cant,cer,'number')+infE(idx,'toneladas_estimadas','Toneladas Estimadas',p.toneladas_estimadas,cer,'number');
   var dcInfo=datosClientePD(p);
-  h+=inf('Dirección',p.direccion)+inf('RUT Cliente',dcInfo.rut)+inf('Correo Cliente',dcInfo.correo)+inf('Teléfono Cliente',dcInfo.telefono);
+  h+=infE(idx,'direccion','Dirección',p.direccion,cer)+inf('RUT Cliente',dcInfo.rut)+inf('Correo Cliente',dcInfo.correo)+inf('Teléfono Cliente',dcInfo.telefono);
   h+='</div>';
   if(!p.pd_tipo_instalacion)h+='<div class="alerta al-b" style="margin-top:-6px;margin-bottom:16px">💡 &nbsp;Todavía no se ha cargado la <strong>Planilla de Datos</strong> de este proyecto (dirección, RUT, correo del cliente).</div>';
 
@@ -1366,6 +1368,31 @@ function abrirDet(id){
 }
 
 function inf(l,v){var nd=!v||v==='null'||v==='None'||v==='N/A';return '<div class="inf"><label>'+l+'</label><span'+(nd?' class="nd"':'')+'>'+( nd?'Sin datos':esc(v))+'</span></div>';}
+
+// ─── CAMPO INFO EDITABLE (datos ingresados al inicio del proyecto) ────────
+var SEL_REGION=['IV Coquimbo','V Valparaíso','RM Metropolitana','VI Ohiggins','VII Maule','XVI Ñuble','VIII Biobío','IX Araucanía','XIV Los Ríos','X Los Lagos'];
+var SEL_TIPO=['P01 Habitacional','P11 Comercial','P20 Sobrecosto','P20 Fidelización','P20 Gran Cliente','P20 Mantención','P20 Regularización Normativa','P20 Aumento de consumo'];
+var SEL_CONSTRUCCION=['Inmediata','Tardía'];
+var SEL_SUPERVISOR=['Oscar Bravo','Fernando Martinez','Daniel Villalobos'];
+function infE(idx,key,l,v,cer,tipo,opts){
+  if(cer)return inf(l,v);
+  var id='fi-'+idx+'-'+key, field;
+  if(tipo==='select'){
+    field='<select id="'+id+'" onchange="saveCampoEdit('+idx+',\''+key+'\')"><option value=""'+(!v?' selected':'')+'>—</option>'+opts.map(function(o){return '<option'+(o===v?' selected':'')+'>'+esc(o)+'</option>';}).join('')+'</select>';
+  } else {
+    field='<input id="'+id+'" type="'+(tipo||'text')+'" value="'+esc(v===null||v===undefined?'':v)+'" onchange="saveCampoEdit('+idx+',\''+key+'\')">';
+  }
+  return '<div class="inf inf-e"><label>'+l+'</label>'+field+'</div>';
+}
+function saveCampoEdit(idx,key){
+  var el=document.getElementById('fi-'+idx+'-'+key);
+  if(!el||!BD[idx])return;
+  var val=el.value;
+  BD[idx][key]=(val===''?null:(el.type==='number'?Number(val):val));
+  guardar(idx);
+  filtrar();
+  toast('💾 '+key+' actualizado','ok');
+}
 
 // ─── HITO FECHA EDITABLE ──────────────────────────────────────────────────
 function hF(idx, key, lbl, p, ico, sub, cer){
