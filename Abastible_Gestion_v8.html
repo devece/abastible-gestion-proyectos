@@ -1102,7 +1102,7 @@ function diasDesde(s){
   var d=new Date(String(s).replace(' ','T')); if(isNaN(d.getTime()))return null;
   return Math.floor((Date.now()-d.getTime())/86400000);
 }
-function diasProy(p){return diasDesde(p.f_v_coord||p.f_liberado)||0;}
+function diasProy(p){return diasDesde(p.f_liberado||p.f_v_coord)||0;}
 function diasEntreFechas(a,b){
   var da=new Date(String(a).replace(' ','T')), db=new Date(String(b).replace(' ','T'));
   if(isNaN(da.getTime())||isNaN(db.getTime()))return null;
@@ -1271,7 +1271,7 @@ function abrirDet(id){
   var h='';
 
   // Timer
-  h+='<div class="timer"><div><div class="tlbl">Tiempo total del proyecto</div><div class="tnum">'+(dias||'—')+'</div><div class="tunit">días corridos desde inicio</div></div>';
+  h+='<div class="timer"><div><div class="tlbl">Tiempo total del proyecto</div><div class="tnum">'+(dias||'—')+'</div><div class="tunit">días corridos desde liberación</div></div>';
   h+='<div><div class="tlbl">Días en liberación</div><div class="tnum" style="font-size:26px">'+(diasLib!==null?diasLib:'—')+'</div><div class="tunit">coordinador → liberado</div></div>';
   h+='<div style="text-align:right"><div class="tlbl">Estado actual</div><div style="margin-top:8px">'+mkBadge(p.status)+'</div><div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:3px">'+esc(p.etapa||'')+'</div></div></div>';
 
