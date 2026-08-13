@@ -194,9 +194,11 @@ tbody td:first-child{padding-left:20px}
 .pico{font-size:20px;display:block;margin-bottom:4px}
 .plbl{font-size:12px;font-weight:700;color:var(--ink2)}.pcard.pok .plbl{color:var(--ok)}
 .cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:8px;padding:11px 16px}
-.cc{border:1px solid var(--line);border-radius:7px;padding:8px 11px;background:var(--bg)}
+.cc{border:1px solid var(--line);border-radius:7px;padding:8px 11px;background:var(--bg);position:relative}
 .cc label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:3px}
 .cv{font-size:11.5px;color:var(--navy);font-weight:700;font-family:var(--mono);line-height:1.4}
+.cc-del{position:absolute;top:6px;right:6px;background:transparent;border:none;cursor:pointer;font-size:12px;line-height:1;padding:2px;opacity:.55;border-radius:4px}
+.cc-del:hover{opacity:1;background:var(--danger-bg,#fde8e8)}
 .cv.nd{color:#BDC5DC;font-style:italic;font-weight:400;font-family:var(--sans)}
 .btn-carga{display:block;margin:5px 16px 11px;background:var(--panel);border:2px dashed var(--navy);color:var(--navy);border-radius:7px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;transition:background .14s;font-family:var(--sans)}
 .btn-carga:hover{background:var(--info-bg)}
@@ -586,6 +588,23 @@ tbody td:first-child{padding-left:20px}
   </div>
 </div>
 
+<!-- MODAL ELIMINAR CARGA -->
+<div class="ov" id="ov-delc">
+  <div class="modal modal-sm">
+    <div class="mhdr mhdr-red">
+      <div><h2>🗑 Eliminar Carga</h2><div class="msub" id="delc-sub">Acción permanente</div></div>
+      <button class="mx" onclick="closeOv('ov-delc')">✕</button>
+    </div>
+    <div class="mbody">
+      <div class="alerta al-r" style="margin-bottom:0">⚠️ &nbsp;Se borrará la fecha registrada de esta carga. Esta acción no se puede deshacer.</div>
+    </div>
+    <div class="mfoot">
+      <button class="btn btn-ghost" onclick="closeOv('ov-delc')">Cancelar</button>
+      <button class="btn btn-red" id="btn-delc">🗑 &nbsp;Confirmar Eliminación</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL CIERRE FORZADO -->
 <div class="ov" id="ov-cf">
   <div class="modal modal-sm">
@@ -653,7 +672,7 @@ tbody td:first-child{padding-left:20px}
 var SUPABASE_URL='https://aocbetucqvgxxjopjbjm.supabase.co';
 var SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvY2JldHVjcXZneHhqb3BqYmptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxMzI1ODEsImV4cCI6MjEwMTcwODU4MX0.QfsInd_7iyeUHInGEMMSzLUh_FILaG4QPVn9pC8RByI';
 var sb=supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-var BD=[], FLT=[], PAG=1, PPP=50, SC='item', SA=true, CFI=null;
+var BD=[], FLT=[], PAG=1, PPP=50, SC='item', SA=true, CFI=null, DELCI=null, DELCK='';
 var CERT_POR_REGION={}, certManual=false;
 
 // ─── LECTURA AUTOMÁTICA DE PLANILLA DE DATOS (PDF/OCR) ─────────────────────
@@ -962,6 +981,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
   document.getElementById('btn-crear').addEventListener('click', crearProyecto);
   document.getElementById('btn-cf').addEventListener('click', okForzado);
+  document.getElementById('btn-delc').addEventListener('click', okDelCarga);
   document.getElementById('btn-dito').addEventListener('click', okDevITO);
   document.getElementById('nr').addEventListener('change', sugerirCertificador);
   document.getElementById('nct').addEventListener('input', sugerirCertificador);
@@ -1302,7 +1322,9 @@ function abrirDet(id){
   h+='<div class="etapa e3"><div class="ehdr">⛽ Etapa 3 &nbsp;·&nbsp; Solicitudes de Carga al 20%</div><div class="cgrid">';
   CK.forEach(function(k,i){
     var v=p[k], ok=v&&v!=='null';
-    h+='<div class="cc"><label>Carga N°'+(i+1)+'</label><div class="cv'+(ok?'':' nd')+'">'+(ok?'📅 '+(fFH(v)||v):'Pendiente')+'</div></div>';
+    h+='<div class="cc"><label>Carga N°'+(i+1)+'</label><div class="cv'+(ok?'':' nd')+'">'+(ok?'📅 '+(fFH(v)||v):'Pendiente')+'</div>'
+      +(ok&&!cer?'<button class="cc-del" onclick="abrirDelCarga('+idx+',\''+k+'\','+(i+1)+',event)" title="Eliminar carga N°'+(i+1)+'">🗑</button>':'')
+      +'</div>';
     if(!ok&&nextN<0){nextN=i+1;nextK=k;}
   });
   h+='</div>';
@@ -1422,6 +1444,12 @@ function mkF(idx,key,ev){ev.stopPropagation();var ts=ahora();BD[idx][key]=ts;aut
 function mkOK(idx,key,ev){ev.stopPropagation();BD[idx][key]='OK';guardar(idx);filtrar();toast('✅ '+key+' OK','ok');setTimeout(function(){abrirDet(BD[idx]._id);},60);}
 function mkPago(idx,key,ev){ev.stopPropagation();BD[idx][key]='OK';guardar(idx);filtrar();toast('💰 '+key+' registrado','ok');setTimeout(function(){abrirDet(BD[idx]._id);},60);}
 function mkCarga(idx,key,ev){ev.stopPropagation();var ts=ahora();BD[idx][key]=ts;autoStatus(BD[idx]);guardar(idx);filtrar();toast('⛽ Carga · '+ts,'ok');setTimeout(function(){abrirDet(BD[idx]._id);},60);}
+function abrirDelCarga(idx,key,n,ev){ev.stopPropagation();DELCI=idx;DELCK=key;document.getElementById('delc-sub').textContent='Carga N°'+n+' · Acción permanente';document.getElementById('ov-delc').classList.add('open');}
+function okDelCarga(){
+  if(DELCI===null||!BD[DELCI])return;
+  BD[DELCI][DELCK]=null;autoStatus(BD[DELCI]);guardar(DELCI);filtrar();closeOv('ov-delc');toast('🗑 Carga eliminada','ok');
+  setTimeout(function(){abrirDet(BD[DELCI]._id);},60);
+}
 function mkCierre(idx){BD[idx].status='7. Cierre Proyecto';BD[idx].etapa='Post Venta';guardar(idx);filtrar();closeOv('ov-det');toast('🏁 Proyecto cerrado','ok');}
 function abrirCF(idx){CFI=idx;document.getElementById('mcf').value='';document.getElementById('ov-cf').classList.add('open');}
 function okForzado(){
