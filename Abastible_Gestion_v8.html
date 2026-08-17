@@ -549,6 +549,12 @@ tbody td:first-child{padding-left:20px}
         <div id="nPdfProgress" style="display:none;margin-top:8px;font-size:12.5px;color:var(--brand);font-weight:600"></div>
         <div id="nPdfResumen" style="display:none;margin-top:8px;font-size:12.5px;color:var(--ok);font-weight:600"></div>
       </div>
+      <div style="background:var(--info-bg);border:1.5px dashed var(--info);border-radius:var(--r);padding:14px 16px;margin-bottom:16px">
+        <label style="display:block;margin-bottom:8px">🧾 Cargar Detalle Comercial (PDF) — llena Código/Cliente/Región/Comuna/Tipo de Proyecto/Costo/Tanque automáticamente</label>
+        <input type="file" id="dcPdfInput" accept="application/pdf">
+        <div id="dcPdfProgress" style="display:none;margin-top:8px;font-size:12.5px;color:var(--info);font-weight:600"></div>
+        <div id="dcPdfResumen" style="display:none;margin-top:8px;font-size:12.5px;color:var(--ok);font-weight:600"></div>
+      </div>
       <div class="fgrid">
         <div class="fg"><label>Código *</label><input id="nc" placeholder="Ej: 18700000"></div>
         <div class="fg"><label>Cliente *</label><input id="ncl" placeholder="Nombre completo"></div>
@@ -701,6 +707,7 @@ var CERT_POR_REGION={}, certManual=false;
 // ─── LECTURA AUTOMÁTICA DE PLANILLA DE DATOS (PDF/OCR) ─────────────────────
 pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
 var PD_EXTRAIDO=null;
+var DC_EXTRAIDO=null;
 
 function quitarAcentos(s){ return (s||'').normalize('NFD').replace(/[̀-ͯ]/g,''); }
 function normalizar(s){ return quitarAcentos((s||'').toLowerCase()).replace(/[^a-z0-9]/g,''); }
@@ -958,6 +965,154 @@ function mapearFilasACamposObjeto(filas){
   return {campos:campos, encontrados:encontrados, total:total};
 }
 
+// ─── LECTURA AUTOMÁTICA DE DETALLE COMERCIAL (PDF con texto real, sin OCR) ─
+function parseNumeroCL(s){
+  if(!s) return null;
+  var limpio = String(s).replace(/[^\d.,]/g,'');
+  if(!limpio) return null;
+  if(limpio.indexOf(',')>=0 && limpio.lastIndexOf(',')>limpio.lastIndexOf('.')){
+    limpio = limpio.replace(/\./g,'').replace(',','.');
+  } else {
+    limpio = limpio.replace(/\./g,'');
+  }
+  var n = parseFloat(limpio);
+  return isNaN(n) ? null : n;
+}
+
+async function extraerTextoPDF(file){
+  var buf = await file.arrayBuffer();
+  var pdf = await pdfjsLib.getDocument({data:buf}).promise;
+  var lineas = [];
+  for(var n=1; n<=pdf.numPages; n++){
+    var page = await pdf.getPage(n);
+    var content = await page.getTextContent();
+    var porFila = [];
+    content.items.forEach(function(it){
+      var y = Math.round(it.transform[5]);
+      var fila = porFila.find(function(f){ return Math.abs(f.y-y)<3; });
+      if(!fila){ fila={y:y,partes:[]}; porFila.push(fila); }
+      fila.partes.push({x:it.transform[4], texto:it.str});
+    });
+    porFila.sort(function(a,b){ return b.y-a.y; });
+    porFila.forEach(function(f){
+      f.partes.sort(function(a,b){ return a.x-b.x; });
+      var texto = f.partes.map(function(p){ return p.texto; }).join(' ').replace(/\s+/g,' ').trim();
+      if(texto) lineas.push(texto);
+    });
+  }
+  return lineas.join('\n');
+}
+
+function extraerCamposDetalleComercial(texto){
+  var campos = {}, m;
+
+  m = /C[oó]digo Proyecto:\s*([^\n]+)/i.exec(texto);
+  if(m) campos.codigo = m[1].trim();
+
+  m = /Nombre Proyecto:\s*([^\n]+)/i.exec(texto);
+  if(m) campos.nombre_proyecto = m[1].trim();
+
+  m = /Direcci[oó]n\/Poblaci[oó]n:\s*([\s\S]*?)\n\s*Persona Contacto:/i.exec(texto);
+  if(m){
+    var dir = m[1].replace(/\n/g,' ').replace(/\s+/g,' ').trim();
+    dir = dir.replace(/Regi[oó]n\s+[IVXL]+\s*-\s*[^,]+,?\s*/i,'').trim();
+    if(dir) campos.direccion = dir;
+  }
+
+  m = /Persona Contacto:\s*([^\n]+)/i.exec(texto);
+  if(m && normalizar(m[1])!=='null') campos.contacto = m[1].trim();
+
+  m = /\bRegi[oó]n:\s*([^\n]+)/i.exec(texto);
+  if(m) campos.region_dc = m[1].trim();
+
+  m = /\bComuna:\s*([^\n]+)/i.exec(texto);
+  if(m) campos.comuna = m[1].trim();
+
+  m = /Tipo de proyecto:\s*([^\n(]+)\(([A-Za-z]\d{2})\)/i.exec(texto);
+  if(m){ campos.tipo_desc = m[1].trim(); campos.tipo_codigo = m[2].toUpperCase(); }
+
+  m = /Total Costo Proyecto\s*\n\$?\s*([\d.,]+)/i.exec(texto);
+  if(m) campos.costo = parseNumeroCL(m[1]);
+
+  var bloqueTanques = /\bTANQUES\b([\s\S]*?)Subtotal Tanques/i.exec(texto);
+  if(bloqueTanques){
+    var tanqueRe = /\b(T[A-Z]\d[A-Z0-9]*)\b[\s\S]{0,60}?\bUn\b\s*(\d+)/gi;
+    var tm, codigos=[], cantTotal=0;
+    while((tm=tanqueRe.exec(bloqueTanques[1]))){ codigos.push(tm[1]); cantTotal+=parseInt(tm[2],10)||0; }
+    if(codigos.length){ campos.tanque = codigos.join(', '); campos.cant_tanque = cantTotal || codigos.length; }
+  }
+
+  return campos;
+}
+
+function mapearRegionDC(valor){
+  if(!valor) return '';
+  var m = /^\s*(RM|[IVXL]+)\b/i.exec(valor);
+  if(!m) return '';
+  var numeral = m[1].toUpperCase();
+  var sel = document.getElementById('nr');
+  var opt = Array.from(sel.options).find(function(o){
+    if(!o.value) return false;
+    var om = /^(RM|[IVXL]+)\s/.exec(o.value);
+    return om && om[1]===numeral;
+  });
+  return opt ? opt.value : '';
+}
+
+function mapearTipoDC(codigo, desc){
+  if(!codigo) return '';
+  var sel = document.getElementById('ntp');
+  var candidatos = Array.from(sel.options).filter(function(o){ return normalizar(o.value).indexOf(normalizar(codigo))===0; });
+  if(!candidatos.length) return '';
+  if(candidatos.length===1) return candidatos[0].value;
+  var dn = normalizar(desc||'');
+  var mejor = dn && candidatos.find(function(o){ return normalizar(o.value).indexOf(dn)>=0; });
+  return (mejor||candidatos[0]).value;
+}
+
+async function manejarPdfDetalleComercial(){
+  var input = document.getElementById('dcPdfInput');
+  var file = input.files[0];
+  if(!file) return;
+  var prog = document.getElementById('dcPdfProgress');
+  var resumen = document.getElementById('dcPdfResumen');
+  resumen.style.display='none';
+  prog.style.display='block';
+  prog.textContent='Leyendo Detalle Comercial...';
+  try{
+    var texto = await extraerTextoPDF(file);
+    var campos = extraerCamposDetalleComercial(texto);
+    var llenados = 0;
+
+    if(campos.codigo){ document.getElementById('nc').value = campos.codigo; llenados++; }
+    if(campos.contacto && !document.getElementById('ncl').value.trim()){ document.getElementById('ncl').value = campos.contacto; llenados++; }
+    if(campos.region_dc){
+      var regionMatch = mapearRegionDC(campos.region_dc);
+      if(regionMatch && !document.getElementById('nr').value){ document.getElementById('nr').value = regionMatch; sugerirCertificador(); llenados++; }
+    }
+    if(campos.comuna && !document.getElementById('nco').value.trim()){ document.getElementById('nco').value = campos.comuna; llenados++; }
+    if(campos.tipo_codigo){
+      var tipoMatch = mapearTipoDC(campos.tipo_codigo, campos.tipo_desc);
+      if(tipoMatch){ document.getElementById('ntp').value = tipoMatch; llenados++; }
+    }
+    if(campos.costo){ document.getElementById('ncs').value = campos.costo; llenados++; }
+    if(campos.tanque){ document.getElementById('nta').value = campos.tanque; llenados++; }
+    if(campos.cant_tanque){ document.getElementById('nca').value = campos.cant_tanque; llenados++; }
+
+    DC_EXTRAIDO = {};
+    if(campos.nombre_proyecto) DC_EXTRAIDO.nombre_proyecto = campos.nombre_proyecto;
+    if(campos.direccion) DC_EXTRAIDO.direccion = campos.direccion;
+
+    prog.style.display='none';
+    resumen.style.display='block';
+    resumen.textContent = '✅ '+llenados+' campos extraídos del Detalle Comercial. Revisa los datos antes de crear el proyecto.';
+  }catch(e){
+    console.error('Error leyendo Detalle Comercial', e);
+    prog.style.display='none';
+    toast('⚠️ No se pudo leer el Detalle Comercial: '+(e.message||e),'err');
+  }
+}
+
 async function manejarPdfNuevoProyecto(){
   var input = document.getElementById('nPdfInput');
   var file = input.files[0];
@@ -1015,6 +1170,7 @@ document.addEventListener('DOMContentLoaded', async function() {
   document.getElementById('nct').addEventListener('input', sugerirCertificador);
   document.getElementById('nce').addEventListener('input', function(){certManual=true;});
   document.getElementById('nPdfInput').addEventListener('change', manejarPdfNuevoProyecto);
+  document.getElementById('dcPdfInput').addEventListener('change', manejarPdfDetalleComercial);
   document.querySelectorAll('.ov').forEach(function(el){
     el.addEventListener('click', function(e){if(e.target===el)el.classList.remove('open');});
   });
@@ -1559,10 +1715,13 @@ function okDevITO(){
 
 // ─── NUEVO PROYECTO ───────────────────────────────────────────────────────
 function abrirNuevo(){
-  certManual=false; PD_EXTRAIDO=null;
+  certManual=false; PD_EXTRAIDO=null; DC_EXTRAIDO=null;
   document.getElementById('nPdfInput').value='';
   document.getElementById('nPdfProgress').style.display='none';
   document.getElementById('nPdfResumen').style.display='none';
+  document.getElementById('dcPdfInput').value='';
+  document.getElementById('dcPdfProgress').style.display='none';
+  document.getElementById('dcPdfResumen').style.display='none';
   document.getElementById('ov-new').classList.add('open');
 }
 async function crearProyecto(){
@@ -1572,7 +1731,7 @@ async function crearProyecto(){
   if(!cod||!cli||!reg){toast('⚠️ Código, cliente y región son obligatorios','warn');return;}
   var ts=ahora();
   var maxItem=BD.reduce(function(m,p){return Math.max(m,p.item||0);},0);
-  var nuevo=Object.assign({}, PD_EXTRAIDO||{}, {
+  var nuevo=Object.assign({}, DC_EXTRAIDO||{}, PD_EXTRAIDO||{}, {
     item:maxItem+1,codigo:cod,cliente:cli,region:reg,
     comuna:document.getElementById('nco').value,tipo:document.getElementById('ntp').value,
     construccion:document.getElementById('ncon').value,supervisor:document.getElementById('ns').value,
@@ -1594,7 +1753,9 @@ async function crearProyecto(){
     document.getElementById('nr').value='';
     document.getElementById('nPdfInput').value='';
     document.getElementById('nPdfResumen').style.display='none';
-    PD_EXTRAIDO=null;
+    document.getElementById('dcPdfInput').value='';
+    document.getElementById('dcPdfResumen').style.display='none';
+    PD_EXTRAIDO=null; DC_EXTRAIDO=null;
     closeOv('ov-new'); filtrar();
     toast('✅ Proyecto '+cod+' creado · '+ts,'ok');
   }catch(e){
