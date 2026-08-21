@@ -585,7 +585,7 @@ tbody td:first-child{padding-left:20px}
           <div class="fg"><label>Comuna</label><input id="nco" placeholder="Ej: Temuco"><div class="field-note">Opcional, pero ayuda mucho al control operativo.</div></div>
           <div class="fg"><label>Tipo Proyecto</label>
             <select id="ntp"><option>P01 Habitacional</option><option>P11 Comercial</option>
-              <option>P20 Sobrecosto</option><option>P20 Fidelización</option>
+              <option>P20 Sobrecosto</option><option>P20 Reparación y/o Administración</option><option>P20 Fidelización</option>
               <option>P20 Gran Cliente</option><option>P20 Mantención</option>
               <option>P20 Regularización Normativa</option><option>P20 Aumento de consumo</option>
             </select><div class="field-note">Se usa para agrupar por tipo de ejecución.</div></div>
@@ -604,7 +604,7 @@ tbody td:first-child{padding-left:20px}
           <div class="fg"><label>Costo Inversión ($)</label><input id="ncs" type="number" placeholder="5000000"><div class="field-note">Costo total en pesos.</div></div>
           <div class="fg"><label>Cant. Reguladores</label><input id="nreg" type="number" placeholder="1" min="0"><div class="field-note">Cantidad estimada de reguladores.</div></div>
           <div class="fg"><label>Cant. Medidores</label><input id="nmed" type="number" placeholder="0" min="0"><div class="field-note">Cantidad estimada de medidores.</div></div>
-          <div class="fg"><label>Toneladas Estimadas</label><input id="nton" type="number" step="0.01" placeholder="2.5"><div class="field-note">Cálculo estimado para proyecto.</div></div>
+          <div class="fg"><label>Toneladas Estimadas</label><input id="nton" type="number" step="0.00001" placeholder="0.00047"><div class="field-note">Se calcula desde Kgs/año/instal. del Detalle Comercial.</div></div>
           <div class="fg full"><label>Observaciones</label><textarea id="no" placeholder="Notas, contexto, condiciones especiales..."></textarea><div class="field-note">Aquí va cualquier detalle relevante para coordinación, cliente o obra.</div></div>
         </div>
       </div>
@@ -931,6 +931,18 @@ const REGION_A_V8 = {
   "Los Ríos":"XIV Los Ríos",
   "Los Lagos":"X Los Lagos"
 };
+const JEFE_POR_REGION = {
+  'IV Coquimbo':'LUIS BERRIOS',
+  'V Valparaíso':'LUIS BERRIOS',
+  'VI Ohiggins':'LUIS BERRIOS',
+  'VII Maule':'LUIS BERRIOS',
+  'XIV Los Ríos':'MANUEL ESTAY',
+  'X Los Lagos':'MANUEL ESTAY',
+  'RM Metropolitana':'MANUEL ESTAY',
+  'XVI Ñuble':'MANUEL ESTAY',
+  'VIII Biobío':'MANUEL ESTAY',
+  'IX Araucanía':'MANUEL ESTAY'
+};
 
 function mapearFilasACamposObjeto(filas){
   var tipo = detectarTipoInstalacion(filas);
@@ -999,6 +1011,56 @@ function parseNumeroCL(s){
   return isNaN(n) ? null : n;
 }
 
+function limpiarTextoDC(texto){
+  return String(texto || '')
+    .replace(/\r/g,'\n')
+    .replace(/\u00a0/g,' ')
+    .replace(/[ \t]+/g,' ')
+    .replace(/[ \t]*\n[ \t]*/g,'\n')
+    .replace(/\n{3,}/g,'\n\n')
+    .trim();
+}
+
+function tomarValorDC(texto, patrones){
+  if(!texto) return '';
+  var txt = limpiarTextoDC(texto);
+  for(var i=0;i<patrones.length;i++){
+    var m = patrones[i].exec(txt);
+    if(!m) continue;
+    var val = (m[1] || '').replace(/\s+/g,' ').trim();
+    if(val && !/^null$/i.test(val)) return val;
+  }
+  return '';
+}
+
+function limpiarValorCampoDC(valor){
+  if(!valor) return '';
+  return String(valor)
+    .replace(/\s+/g,' ')
+    .replace(/^[\-:\s]+|[\-:\s]+$/g,'')
+    .trim();
+}
+
+function extraerConsumoAnualDC(texto){
+  var lineas = limpiarTextoDC(texto).split('\n');
+  var activo = false;
+  var kilosAnuales = 0;
+  var filas = 0;
+  lineas.forEach(function(linea){
+    if(/Cantidad\s+de\s+Instalaciones\s*-/i.test(linea)){ activo = true; return; }
+    if(!activo) return;
+    if(/^Total\b/i.test(linea)){ activo = false; return; }
+    if(/^(?:Artefacto|Cil\s+45|Kgs\.|Hora\/D[ií]a|D[ií]as\/A[nñ]o)/i.test(linea)) return;
+    var numeros = linea.match(/\b\d+(?:[.,]\d+)?\b/g) || [];
+    if(numeros.length < 7) return;
+    var valorKg = parseNumeroCL(numeros[numeros.length-1]);
+    if(valorKg === null) return;
+    kilosAnuales += valorKg;
+    filas++;
+  });
+  return filas ? {kilos:kilosAnuales, toneladas:kilosAnuales/1000} : null;
+}
+
 async function extraerTextoPDF(file){
   var buf = await file.arrayBuffer();
   var pdf = await pdfjsLib.getDocument({data:buf}).promise;
@@ -1026,33 +1088,80 @@ async function extraerTextoPDF(file){
 function extraerCamposDetalleComercial(texto){
   var campos = {}, m;
 
-  m = /C[oó]digo Proyecto:\s*([^\n]+)/i.exec(texto);
-  if(m) campos.codigo = m[1].trim();
+  var txt = limpiarTextoDC(texto);
 
-  m = /Nombre Proyecto:\s*([^\n]+)/i.exec(texto);
-  if(m) campos.nombre_proyecto = m[1].trim();
+  var codigo = tomarValorDC(txt, [
+    /C[oó]digo\s*(?:de)?\s*Proyecto\s*[:\-]?\s*([A-Za-z0-9\-]+)/i,
+    /C[oó]digo\s*[:\-]?\s*([A-Za-z0-9\-]+)/i
+  ]);
+  if(codigo) campos.codigo = codigo;
 
-  m = /Direcci[oó]n\/Poblaci[oó]n:\s*([\s\S]*?)\n\s*Persona Contacto:/i.exec(texto);
-  if(m){
-    var dir = m[1].replace(/\n/g,' ').replace(/\s+/g,' ').trim();
-    dir = dir.replace(/Regi[oó]n\s+[IVXL]+\s*-\s*[^,]+,?\s*/i,'').trim();
-    if(dir) campos.direccion = dir;
+  var nombreProyecto = tomarValorDC(txt, [
+    /Nombre\s*Proyecto\s*[:\-]?\s*([\s\S]*?)(?=\s+C[oó]digo\s*Proyecto\s*:|\n\s*C[oó]digo\s*Proyecto\s*:)/i,
+    /Proyecto\s*[:\-]?\s*([^\n]+)/i
+  ]);
+  if(nombreProyecto) campos.nombre_proyecto = nombreProyecto;
+
+  var direccion = tomarValorDC(txt, [
+    /Direcci[oó]n\s*(?:\/|\|)?\s*Poblaci[oó]n\s*[:\-]?\s*([\s\S]*?)(?=\n\s*(?:Persona|Nombre)\s*Contacto|\n\s*Contacto:|$)/i,
+    /Direcci[oó]n\s*[:\-]?\s*([^\n]+)(?=\n\s*(?:Poblaci[oó]n|Comuna|Persona|Contacto))/i,
+    /Poblaci[oó]n\s*[:\-]?\s*([^\n]+)/i
+  ]);
+  if(direccion){
+    direccion = direccion.replace(/Regi[oó]n\s+[IVXL]+\s*-?\s*[^,]+,?\s*/i,'');
+    direccion = direccion.replace(/^[^,]*Comuna\s*[^,]+,?\s*/i,'');
+    var desdeCalle = direccion.match(/\bCalle\s+(.+)$/i);
+    if(desdeCalle) direccion = desdeCalle[1];
+    direccion = limpiarValorCampoDC(direccion);
+    if(direccion) campos.direccion = direccion;
   }
 
-  m = /Persona Contacto:\s*([^\n]+)/i.exec(texto);
-  if(m && normalizar(m[1])!=='null') campos.contacto = m[1].trim();
+  var contacto = tomarValorDC(txt, [
+    /Persona\s*Contacto\s*[:\-]?\s*([\s\S]*?)(?=\s+Fono\/Fax\s*:|\n\s*Fono\/Fax\s*:)/i,
+    /Nombre\s*Contacto\s*[:\-]?\s*([^\n]+)/i,
+    /Contacto\s*[:\-]?\s*([^\n]+)/i
+  ]);
+  if(contacto && normalizar(contacto)!=='null') campos.contacto = limpiarValorCampoDC(contacto);
 
-  m = /\bRegi[oó]n:\s*([^\n]+)/i.exec(texto);
-  if(m) campos.region_dc = m[1].trim();
+  var region = tomarValorDC(txt, [
+    /\bRegi[oó]n\s*[:\-]?\s*([^\n]+)/i,
+    /\bRegion\s*[:\-]?\s*([^\n]+)/i
+  ]);
+  if(region) campos.region_dc = limpiarValorCampoDC(region);
 
-  m = /\bComuna:\s*([^\n]+)/i.exec(texto);
-  if(m) campos.comuna = m[1].trim();
+  var comuna = tomarValorDC(txt, [
+    /\bComuna\s*[:\-]?\s*([^\n]+?)(?=\s+Clasificaci[oó]n\s+Proyecto\s*:|\s+Tipo\s+de\s+proyecto\s*:|\n|$)/i,
+    /\bPoblaci[oó]n\s*[:\-]?\s*([^\n]+)/i
+  ]);
+  if(comuna) campos.comuna = limpiarValorCampoDC(comuna);
 
-  m = /Tipo de proyecto:\s*([^\n(]+)\(([A-Za-z]\d{2})\)/i.exec(texto);
-  if(m){ campos.tipo_desc = m[1].trim(); campos.tipo_codigo = m[2].toUpperCase(); }
+  var tipoProyecto = tomarValorDC(txt, [
+    /Tipo\s*(?:de)?\s*Proyecto\s*[:\-]?\s*([^\n\(]+?)\s*(?:\(([A-Za-z]\d{2})\)|\(([^\)]+)\))?/i,
+    /Tipo\s*[:\-]?\s*([^\n\(]+?)\s*(?:\(([A-Za-z]\d{2})\)|\(([^\)]+)\))?/i
+  ]);
+  if(tipoProyecto){
+    var matchTipo = txt.match(/Tipo\s*(?:de)?\s*Proyecto\s*[:\-]?\s*([^\n\(]+?)\s*(?:\(([A-Za-z]\d{2})\)|\(([^\)]+)\))?/i);
+    if(matchTipo){
+      campos.tipo_desc = limpiarValorCampoDC(matchTipo[1]);
+      campos.tipo_codigo = (matchTipo[2] || matchTipo[3] || '').toUpperCase();
+    }
+  }
 
-  m = /Total Costo Proyecto\s*\n\$?\s*([\d.,]+)/i.exec(texto);
-  if(m) campos.costo = parseNumeroCL(m[1]);
+  var potencia = txt.match(/\bTotal\s+(?:\d+)\s+([\d.,]+)\s+([\d.,]+)/i);
+  if(potencia) campos.potencia = parseNumeroCL(potencia[1]);
+
+  var consumo = extraerConsumoAnualDC(txt);
+  if(consumo){
+    campos.consumo_kgs_anio = consumo.kilos;
+    campos.toneladas_estimadas = consumo.toneladas;
+  }
+
+  var costo = tomarValorDC(txt, [
+    /Total\s*Costo\s*Proyecto\s*[:\-]?\s*\$?\s*([\d\.\s,]+)/i,
+    /Costo\s*Proyecto\s*[:\-]?\s*\$?\s*([\d\.\s,]+)/i,
+    /Total\s*[:\-]?\s*\$?\s*([\d\.\s,]+)/i
+  ]);
+  if(costo) campos.costo = parseNumeroCL(costo);
 
   var bloqueTanques = /\bTANQUES\b([\s\S]*?)Subtotal Tanques/i.exec(texto);
   if(bloqueTanques){
@@ -1062,12 +1171,35 @@ function extraerCamposDetalleComercial(texto){
     if(codigos.length){ campos.tanque = codigos.join(', '); campos.cant_tanque = cantTotal || codigos.length; }
   }
 
+  var bloqueEquipos = /\bEQUIPOS\b([\s\S]*?)Subtotal Equipos/i.exec(txt);
+  if(bloqueEquipos){
+    var reguladorRe = /REGULADOR[\s\S]{0,130}?\bUn\b\s*(\d+)/gi;
+    var rm, reguladores = 0;
+    while((rm=reguladorRe.exec(bloqueEquipos[1]))) reguladores += parseInt(rm[1],10) || 0;
+    if(reguladores) campos.reguladores_cant = reguladores;
+  }
+
+  if(!campos.codigo){
+    var codigoFallback = txt.match(/\b(?:Proyecto|Código)\s*[:\-]?\s*([A-Z0-9\-]{6,})\b/i);
+    if(codigoFallback) campos.codigo = codigoFallback[1].trim();
+  }
+
+  if(!campos.tipo_codigo && !campos.tipo_desc){
+    var tipoFallback = txt.match(/\b(?:P\d{1,2}|[A-Z]\d{2})\b/i);
+    if(tipoFallback){
+      campos.tipo_codigo = tipoFallback[0].toUpperCase();
+      var descFallback = txt.match(/(?:HABITACIONAL|COMERCIAL|CONSTRUCTORA|REGULARIZACION|MANTENCION|FIDELIZACION|GRAN CLIENTE)/i);
+      if(descFallback) campos.tipo_desc = descFallback[0];
+    }
+  }
+
   return campos;
 }
 
 function mapearRegionDC(valor){
   if(!valor) return '';
-  var m = /^\s*(RM|[IVXL]+)\b/i.exec(valor);
+  var texto = String(valor).trim();
+  var m = /^\s*(RM|[IVXL]+)\b/i.exec(texto) || /\b(RM|[IVXL]+)\b/i.exec(texto);
   if(!m) return '';
   var numeral = m[1].toUpperCase();
   var sel = document.getElementById('nr');
@@ -1076,7 +1208,20 @@ function mapearRegionDC(valor){
     var om = /^(RM|[IVXL]+)\s/.exec(o.value);
     return om && om[1]===numeral;
   });
-  return opt ? opt.value : '';
+  if(opt) return opt.value;
+  var byName = Object.keys(REGION_A_V8).find(function(k){ return normalizar(k).indexOf(normalizar(texto))>=0 || normalizar(texto).indexOf(normalizar(k))>=0; });
+  return byName ? REGION_A_V8[byName] : '';
+}
+
+function mapearJefePorRegion(region){
+  if(!region) return '';
+  return JEFE_POR_REGION[region] || '';
+}
+
+function sugerirJefeInstalaciones(){
+  var reg = document.getElementById('nr').value;
+  var jefe = mapearJefePorRegion(reg);
+  if(jefe){ document.getElementById('nj').value = jefe; }
 }
 
 function mapearTipoDC(codigo, desc){
@@ -1086,6 +1231,10 @@ function mapearTipoDC(codigo, desc){
   if(!candidatos.length) return '';
   if(candidatos.length===1) return candidatos[0].value;
   var dn = normalizar(desc||'');
+  if(dn.indexOf('reparacion')>=0 || dn.indexOf('administracion')>=0){
+    var reparacion = candidatos.find(function(o){ return normalizar(o.value).indexOf('reparacion')>=0 || normalizar(o.value).indexOf('administracion')>=0; });
+    if(reparacion) return reparacion.value;
+  }
   var mejor = dn && candidatos.find(function(o){ return normalizar(o.value).indexOf(dn)>=0; });
   return (mejor||candidatos[0]).value;
 }
@@ -1108,7 +1257,12 @@ async function manejarPdfDetalleComercial(){
     if(campos.contacto && !document.getElementById('ncl').value.trim()){ document.getElementById('ncl').value = campos.contacto; llenados++; }
     if(campos.region_dc){
       var regionMatch = mapearRegionDC(campos.region_dc);
-      if(regionMatch && !document.getElementById('nr').value){ document.getElementById('nr').value = regionMatch; sugerirCertificador(); llenados++; }
+      if(regionMatch){
+        if(!document.getElementById('nr').value) document.getElementById('nr').value = regionMatch;
+        sugerirCertificador();
+        sugerirJefeInstalaciones();
+        llenados++;
+      }
     }
     if(campos.comuna && !document.getElementById('nco').value.trim()){ document.getElementById('nco').value = campos.comuna; llenados++; }
     if(campos.tipo_codigo){
@@ -1118,11 +1272,28 @@ async function manejarPdfDetalleComercial(){
     if(campos.costo){ document.getElementById('ncs').value = campos.costo; llenados++; }
     if(campos.tanque){ document.getElementById('nta').value = campos.tanque; llenados++; }
     if(campos.cant_tanque){ document.getElementById('nca').value = campos.cant_tanque; llenados++; }
+    if(campos.potencia){ document.getElementById('np').value = campos.potencia; llenados++; }
+    if(campos.reguladores_cant){ document.getElementById('nreg').value = campos.reguladores_cant; llenados++; }
+    if(campos.toneladas_estimadas !== undefined){ document.getElementById('nton').value = campos.toneladas_estimadas; llenados++; }
+    if(campos.nombre_proyecto || campos.direccion){
+      var detalleDC = [];
+      if(campos.nombre_proyecto) detalleDC.push('Nombre DC: '+campos.nombre_proyecto);
+      if(campos.direccion) detalleDC.push('Dirección: '+campos.direccion);
+      var observaciones = document.getElementById('no');
+      if(!observaciones.value.trim()) observaciones.value = detalleDC.join(' | ');
+    }
 
     DC_EXTRAIDO = {};
-    if(campos.nombre_proyecto) DC_EXTRAIDO.nombre_proyecto = campos.nombre_proyecto;
-    if(campos.direccion) DC_EXTRAIDO.direccion = campos.direccion;
+    if(campos.comuna) DC_EXTRAIDO.comuna = campos.comuna;
+    if(campos.region_dc) DC_EXTRAIDO.region = mapearRegionDC(campos.region_dc) || campos.region_dc;
+    if(campos.tipo_codigo) DC_EXTRAIDO.tipo = mapearTipoDC(campos.tipo_codigo, campos.tipo_desc) || campos.tipo_desc;
+    if(campos.costo) DC_EXTRAIDO.costo = campos.costo;
+    if(campos.tanque) DC_EXTRAIDO.tanque = campos.tanque;
+    if(campos.cant_tanque) DC_EXTRAIDO.cant_tanque = campos.cant_tanque;
+    if(campos.reguladores_cant) DC_EXTRAIDO.reguladores_cant = campos.reguladores_cant;
+    if(document.getElementById('nj').value) DC_EXTRAIDO.jefe = document.getElementById('nj').value;
 
+    actualizarResumenNuevoProyecto();
     prog.style.display='none';
     resumen.style.display='block';
     resumen.textContent = '✅ '+llenados+' campos extraídos del Detalle Comercial. Revisa los datos antes de crear el proyecto.';
@@ -1186,7 +1357,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     document.getElementById('btn-delp').disabled=!ok;
   });
   document.getElementById('btn-dito').addEventListener('click', okDevITO);
-  document.getElementById('nr').addEventListener('change', function(){ sugerirCertificador(); actualizarResumenNuevoProyecto(); });
+  document.getElementById('nr').addEventListener('change', function(){ sugerirCertificador(); sugerirJefeInstalaciones(); actualizarResumenNuevoProyecto(); });
   document.getElementById('nct').addEventListener('input', sugerirCertificador);
   document.getElementById('nce').addEventListener('input', function(){certManual=true;});
   ['nc','ncl','nr','ntp','ns'].forEach(function(id){
