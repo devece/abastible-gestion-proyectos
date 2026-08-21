@@ -1,4 +1,12 @@
 {
+  "headers": [
+    {
+      "source": "/Abastible_Gestion_v8.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, max-age=0" }
+      ]
+    }
+  ],
   "rewrites": [
     { "source": "/", "destination": "/Abastible_Gestion_v8.html" }
   ]
