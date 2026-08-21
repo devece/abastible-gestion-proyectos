@@ -1187,10 +1187,12 @@ function activarRealtime(){
     .on('postgres_changes', {event:'*', schema:'public', table:'proyectos'}, function(payload){
       if(payload.eventType==='INSERT'){
         var nuevo=payload.new; nuevo._id=String(nuevo.id);
+        autoStatus(nuevo);
         if(codigoPermitido(nuevo)&&!BD.some(function(p){return p.id===nuevo.id;})) BD.push(nuevo);
       } else if(payload.eventType==='UPDATE'){
         var idx=BD.findIndex(function(p){return p.id===payload.new.id;});
         var actualizado=payload.new; actualizado._id=String(actualizado.id);
+        autoStatus(actualizado);
         if(codigoPermitido(actualizado)){if(idx>=0) BD[idx]=actualizado; else BD.push(actualizado);}
         else if(idx>=0) BD.splice(idx,1);
       } else if(payload.eventType==='DELETE'){
@@ -1210,6 +1212,13 @@ async function cargarDesdeSupabase(){
     var res=await sb.from('proyectos').select('*').order('item');
     if(res.error) throw res.error;
     BD=res.data.filter(codigoPermitido).map(function(p){p._id=String(p.id);return p;});
+    var cambios=[];
+    BD.forEach(function(p,i){
+      var anterior=p.status;
+      autoStatus(p);
+      if(p.status!==anterior)cambios.push(guardar(i));
+    });
+    if(cambios.length)await Promise.all(cambios);
   }catch(e){
     console.error('Error cargando proyectos desde Supabase', e);
     toast('⚠️ No se pudo conectar a la base de datos','err');
@@ -1357,15 +1366,23 @@ var SMAP_COLOR={'1. Evaluación Previa':'#5B21B6','2. Entregado a coordinador':'
   '5.4 Solicitud de carga al 20%':'#6B21A8','6. Enviado a Gestor Doc':'#9A3412','7. Cierre Proyecto':'#14532D','8. Cierre Forzado':'#991B1B'};
 function mkBadge(s){var m=SMAP[s]||['b2',s||'—'];return '<span class="badge '+m[0]+'">'+m[1]+'</span>';}
 function mkDias(d){if(d===null||d===undefined)return '—';var cls=d<=30?'dg-ok':d<=90?'dg-w':'dg-bad';return '<span class="dg '+cls+'">'+d+'d</span>';}
+function tieneFecha(v){
+  if(!v||v==='null'||v==='None'||v==='N/A'||v==='OK')return false;
+  var d=new Date(String(v).replace(' ','T'));
+  return !isNaN(d.getTime());
+}
 function autoStatus(p){
-  if(p.f_forzado){p.status='8. Cierre Forzado';return;}
-  if(p.f_gestor){p.status='6. Enviado a Gestor Doc';return;}
-  if(p.f_c1){p.status='5.4 Solicitud de carga al 20%';return;}
-  if(p.f_trabajos){p.status='5.2 Inicio de Trabajos';return;}
-  if(p.f_oc){p.status='5.1 Envío O.C';return;}
-  if(p.f_liberado){p.status='5. Proyecto en ejecucion';return;}
-  if(p.f_rev_ant){p.status='4. Liberacion';return;}
-  if(p.f_v_coord){p.status='2. Entregado a coordinador';return;}
+  if(tieneFecha(p.f_forzado)||p.status==='8. Cierre Forzado'){p.status='8. Cierre Forzado';return;}
+  if(p.status==='7. Cierre Proyecto')return;
+  if(tieneFecha(p.f_gestor)){p.status='6. Enviado a Gestor Doc';return;}
+  if(Array.from({length:10},function(_,i){return p['f_c'+(i+1)];}).some(tieneFecha)){
+    p.status='5.4 Solicitud de carga al 20%';return;
+  }
+  if(tieneFecha(p.f_trabajos)){p.status='5.2 Inicio de Trabajos';return;}
+  if(tieneFecha(p.f_oc)){p.status='5.1 Envío O.C';return;}
+  if(tieneFecha(p.f_liberado)){p.status='5. Proyecto en ejecucion';return;}
+  if(tieneFecha(p.f_rev_ant)){p.status='4. Liberacion';return;}
+  if(tieneFecha(p.f_v_coord)){p.status='2. Entregado a coordinador';return;}
   p.status='1. Evaluación Previa';
 }
 
