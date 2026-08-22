@@ -1320,8 +1320,7 @@ async function manejarPdfDetalleComercial(){
   try{
     var texto = await extraerTextoPDF(file);
     var campos = extraerCamposDetalleComercial(texto);
-    console.log('[DC debug] texto extraído (pdf.js):\n'+texto);
-    console.log('[DC debug] campos (pre-OCR):', JSON.parse(JSON.stringify(campos)));
+    var debugLog = '=== TEXTO EXTRAÍDO (pdf.js) ===\n'+texto+'\n\n=== CAMPOS (pre-OCR) ===\n'+JSON.stringify(campos,null,2);
     var necesitaOCR = campos.potencia === undefined ||
       campos.toneladas_estimadas === undefined || campos.toneladas_estimadas > 100 ||
       (campos.cant_tanque === 1 && /\bTQ\d+[A-Z0-9]*\b/i.test(texto));
@@ -1329,13 +1328,20 @@ async function manejarPdfDetalleComercial(){
       prog.textContent='Ordenando tablas del DC...';
       var textoOCR = await extraerTextoOCRDC(file);
       var camposOCR = extraerCamposDetalleComercial(textoOCR);
-      console.log('[DC debug] texto extraído (OCR):\n'+textoOCR);
-      console.log('[DC debug] campos (OCR):', JSON.parse(JSON.stringify(camposOCR)));
+      debugLog += '\n\n=== TEXTO EXTRAÍDO (OCR) ===\n'+textoOCR+'\n\n=== CAMPOS (OCR) ===\n'+JSON.stringify(camposOCR,null,2);
       ['potencia','toneladas_estimadas','consumo_kgs_anio','tanque','cant_tanque','reguladores_cant'].forEach(function(campo){
         if(camposOCR[campo] !== undefined) campos[campo] = camposOCR[campo];
       });
     }
-    console.log('[DC debug] campos (final):', JSON.parse(JSON.stringify(campos)));
+    debugLog += '\n\n=== CAMPOS (final) ===\n'+JSON.stringify(campos,null,2);
+    console.log('[DC debug]\n'+debugLog);
+    try{
+      var debugBlob = new Blob([debugLog],{type:'text/plain;charset=utf-8;'});
+      var debugA = document.createElement('a');
+      debugA.href = URL.createObjectURL(debugBlob);
+      debugA.download = 'DC_debug_'+ahora().slice(0,10)+'.txt';
+      debugA.click();
+    }catch(eDebug){ console.error('No se pudo descargar el debug DC', eDebug); }
     var llenados = 0;
 
     if(campos.codigo){ document.getElementById('nc').value = campos.codigo; llenados++; }
