@@ -1052,6 +1052,7 @@ function extraerConsumoAnualDC(texto){
     if(/^Cañer[ií]as\b/i.test(linea) || /^Servicio\s+Cañer[ií]as\b/i.test(linea)){ activo = false; return; }
     if(/^Total\b/i.test(linea)) return;
     if(/^(?:Artefacto|Cil\s+45|Kgs\.|Hora\/D[ií]a|D[ií]as\/A[nñ]o)/i.test(linea)) return;
+    if(linea.replace(/[\d.,\s\$]+/g,'').length < 3) return;
     var numeros = linea.match(/\b\d+(?:[.,]\d+)?\b/g) || [];
     if(numeros.length < 7) return;
     var valorKg = parseNumeroCL(numeros[numeros.length-1]);
@@ -1081,6 +1082,7 @@ function extraerPotenciaTotalDC(texto){
     if(/^Cañer[ií]as\b/i.test(linea) || /^Servicio\s+Cañer[ií]as\b/i.test(linea)){ activo = false; return; }
     if(/^Total\b/i.test(linea)) return;
     if(/^(?:Artefacto|Cil\s+45|Kgs\.|Hora\/D[ií]a|D[ií]as\/A[nñ]o)/i.test(linea)) return;
+    if(linea.replace(/[\d.,\s\$]+/g,'').length < 3) return;
     var numeros = linea.match(/\b\d+(?:[.,]\d+)?\b/g) || [];
     if(numeros.length < 7) return;
     var valorPot = parseNumeroCL(numeros[2]);
@@ -1139,7 +1141,7 @@ async function extraerBloqueIdentificacionDC(file){
       var t = filaTexto(f);
       if(yInicio===null && /Identificaci[oó]n\s+Obra/i.test(t)) yInicio = f.y;
       if(yFin===null && /VALORES\s+TOTALES/i.test(t)) yFin = f.y;
-      if(filaCol===null && /^Nombre\b/i.test(t)) filaCol = f;
+      if(filaCol===null && f.partes.some(function(p){ return /^Nombre\b/i.test(p.texto); })) filaCol = f;
     });
     if(yInicio===null || !filaCol) return null;
 
@@ -1454,7 +1456,7 @@ async function manejarPdfDetalleComercial(){
         if(campos[campo] === undefined && camposOCR[campo] !== undefined) campos[campo] = camposOCR[campo];
       });
       ['potencia','toneladas_estimadas','consumo_kgs_anio','tanque','cant_tanque','reguladores_cant'].forEach(function(campo){
-        if(camposOCR[campo] !== undefined) campos[campo] = camposOCR[campo];
+        if(camposOCR[campo] !== undefined && (camposOCR[campo] || campos[campo] === undefined)) campos[campo] = camposOCR[campo];
       });
     }
     debugLog += '\n\n=== CAMPOS (final) ===\n'+JSON.stringify(campos,null,2);
