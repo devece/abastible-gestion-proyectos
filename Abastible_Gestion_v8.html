@@ -1320,6 +1320,8 @@ async function manejarPdfDetalleComercial(){
   try{
     var texto = await extraerTextoPDF(file);
     var campos = extraerCamposDetalleComercial(texto);
+    console.log('[DC debug] texto extraído (pdf.js):\n'+texto);
+    console.log('[DC debug] campos (pre-OCR):', JSON.parse(JSON.stringify(campos)));
     var necesitaOCR = campos.potencia === undefined ||
       campos.toneladas_estimadas === undefined || campos.toneladas_estimadas > 100 ||
       (campos.cant_tanque === 1 && /\bTQ\d+[A-Z0-9]*\b/i.test(texto));
@@ -1327,10 +1329,13 @@ async function manejarPdfDetalleComercial(){
       prog.textContent='Ordenando tablas del DC...';
       var textoOCR = await extraerTextoOCRDC(file);
       var camposOCR = extraerCamposDetalleComercial(textoOCR);
+      console.log('[DC debug] texto extraído (OCR):\n'+textoOCR);
+      console.log('[DC debug] campos (OCR):', JSON.parse(JSON.stringify(camposOCR)));
       ['potencia','toneladas_estimadas','consumo_kgs_anio','tanque','cant_tanque','reguladores_cant'].forEach(function(campo){
         if(camposOCR[campo] !== undefined) campos[campo] = camposOCR[campo];
       });
     }
+    console.log('[DC debug] campos (final):', JSON.parse(JSON.stringify(campos)));
     var llenados = 0;
 
     if(campos.codigo){ document.getElementById('nc').value = campos.codigo; llenados++; }
