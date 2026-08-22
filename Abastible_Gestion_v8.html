@@ -1098,6 +1098,7 @@ function extraerCamposDetalleComercial(texto){
   var campos = {}, m;
 
   var txt = limpiarTextoDC(texto);
+  var identificacionDC = txt.split(/\n\s*VALORES\s+TOTALES\b/i)[0].replace(/\s+/g,' ').trim();
 
   var codigo = tomarValorDC(txt, [
     /C[oó]digo\s*(?:de)?\s*Proyecto\s*[:\-]?\s*([A-Za-z0-9\-]+)/i,
@@ -1105,13 +1106,13 @@ function extraerCamposDetalleComercial(texto){
   ]);
   if(codigo) campos.codigo = codigo;
 
-  var nombreProyecto = tomarValorDC(txt, [
+  var nombreProyecto = tomarValorDC(identificacionDC, [
     /Nombre\s*Proyecto\s*[:\-]?\s*([\s\S]*?)(?=\s+C[oó]digo\s*Proyecto\s*:|\n\s*C[oó]digo\s*Proyecto\s*:)/i,
     /Proyecto\s*[:\-]?\s*([^\n]+)/i
   ]);
   if(nombreProyecto) campos.nombre_proyecto = nombreProyecto;
 
-  var direccion = tomarValorDC(txt, [
+  var direccion = tomarValorDC(identificacionDC, [
     /Direcci[oó]n\s*(?:\/|\|)?\s*Poblaci[oó]n\s*[:\-]?\s*([\s\S]*?)(?=\n\s*(?:Persona|Nombre)\s*Contacto|\n\s*Contacto:|$)/i,
     /Direcci[oó]n\s*[:\-]?\s*([^\n]+)(?=\n\s*(?:Poblaci[oó]n|Comuna|Persona|Contacto))/i,
     /Poblaci[oó]n\s*[:\-]?\s*([^\n]+)/i
@@ -1125,20 +1126,20 @@ function extraerCamposDetalleComercial(texto){
     if(direccion) campos.direccion = direccion;
   }
 
-  var contacto = tomarValorDC(txt, [
+  var contacto = tomarValorDC(identificacionDC, [
     /Persona\s*Contacto\s*[:\-]?\s*([\s\S]*?)(?=\s+Fono\/Fax\s*:|\n\s*Fono\/Fax\s*:)/i,
     /Nombre\s*Contacto\s*[:\-]?\s*([^\n]+)/i,
     /Contacto\s*[:\-]?\s*([^\n]+)/i
   ]);
   if(contacto && normalizar(contacto)!=='null') campos.contacto = limpiarValorCampoDC(contacto);
 
-  var region = tomarValorDC(txt, [
+  var region = tomarValorDC(identificacionDC, [
     /\bRegi[oó]n\s*[:\-]?\s*([^\n]+)/i,
     /\bRegion\s*[:\-]?\s*([^\n]+)/i
   ]);
   if(region) campos.region_dc = limpiarValorCampoDC(region);
 
-  var comuna = tomarValorDC(txt, [
+  var comuna = tomarValorDC(identificacionDC, [
     /\bComuna\s*[:\-]?\s*([^\n]+?)(?=\s+Clasificaci[oó]n\s+Proyecto\s*:|\s+Tipo\s+de\s+proyecto\s*:|\n|$)/i
   ]);
   if(comuna){
@@ -1150,15 +1151,15 @@ function extraerCamposDetalleComercial(texto){
     if(comuna) campos.comuna = comuna;
   }
 
-  var tipoProyecto = tomarValorDC(txt, [
+  var tipoProyecto = tomarValorDC(identificacionDC, [
     /Tipo\s*(?:de)?\s*Proyecto\s*[:\-]?\s*([^\n\(]+?)\s*(?:\(([A-Za-z]\d{2})\)|\(([^\)]+)\))?/i,
     /Tipo\s*[:\-]?\s*([^\n\(]+?)\s*(?:\(([A-Za-z]\d{2})\)|\(([^\)]+)\))?/i
   ]);
   if(tipoProyecto){
-    var matchTipo = txt.match(/Tipo\s*(?:de)?\s*Proyecto\s*[:\-]?\s*([^\n\(]+?)\s*(?:\(([A-Za-z]\d{2})\)|\(([^\)]+)\))?/i);
+    var matchTipo = identificacionDC.match(/Tipo\s*(?:de)?\s*Proyecto\s*[:\-]?\s*([^\(]+?)\s*\(([A-Za-z]\d{2})\)/i);
     if(matchTipo){
       campos.tipo_desc = limpiarValorCampoDC(matchTipo[1]);
-      campos.tipo_codigo = (matchTipo[2] || matchTipo[3] || '').toUpperCase();
+      campos.tipo_codigo = matchTipo[2].toUpperCase();
     }
   }
 
@@ -1191,6 +1192,13 @@ function extraerCamposDetalleComercial(texto){
     }
     if(codigos.length){ campos.tanque = codigos.join(', '); campos.cant_tanque = cantTotal || codigos.length; }
   }
+  if(!campos.tanque){
+    var estanquesTotal = txt.match(/\bEstanques\s+([\d.,]+)/i);
+    if(estanquesTotal && parseNumeroCL(estanquesTotal[1])===0){
+      campos.tanque = '';
+      campos.cant_tanque = 0;
+    }
+  }
 
   var bloqueEquipos = /\bEQUIPOS\b([\s\S]*?)Subtotal\s+Equipos/i.exec(txt);
   if(bloqueEquipos){
@@ -1207,6 +1215,10 @@ function extraerCamposDetalleComercial(texto){
       });
     }
     if(reguladores) campos.reguladores_cant = reguladores;
+  }
+  if(campos.reguladores_cant === undefined){
+    var equiposReg = txt.match(/\bEquipos\s*,\s*Reg\s+([\d.,]+)/i);
+    if(equiposReg) campos.reguladores_cant = parseNumeroCL(equiposReg[1]) || 0;
   }
 
   if(!campos.codigo){
@@ -1300,10 +1312,10 @@ async function manejarPdfDetalleComercial(){
       if(tipoMatch){ document.getElementById('ntp').value = tipoMatch; llenados++; }
     }
     if(campos.costo){ document.getElementById('ncs').value = campos.costo; llenados++; }
-    if(campos.tanque){ document.getElementById('nta').value = campos.tanque; llenados++; }
-    if(campos.cant_tanque){ document.getElementById('nca').value = campos.cant_tanque; llenados++; }
-    if(campos.potencia){ document.getElementById('np').value = campos.potencia; llenados++; }
-    if(campos.reguladores_cant){ document.getElementById('nreg').value = campos.reguladores_cant; llenados++; }
+    if(campos.tanque !== undefined){ document.getElementById('nta').value = campos.tanque; llenados++; }
+    if(campos.cant_tanque !== undefined){ document.getElementById('nca').value = campos.cant_tanque; llenados++; }
+    if(campos.potencia !== undefined){ document.getElementById('np').value = campos.potencia; llenados++; }
+    if(campos.reguladores_cant !== undefined){ document.getElementById('nreg').value = campos.reguladores_cant; llenados++; }
     if(campos.toneladas_estimadas !== undefined){ document.getElementById('nton').value = campos.toneladas_estimadas; llenados++; }
     document.getElementById('ni').value = 'Daniel Villalobos';
 
