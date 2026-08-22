@@ -2254,7 +2254,7 @@ async function crearProyecto(){
     toast('✅ Proyecto '+raw.codigo+' creado · '+ts,'ok');
   }catch(e){
     console.error('Error creando proyecto en Supabase', e);
-    toast('⚠️ No se pudo crear el proyecto en la base de datos','err');
+    toast('⚠️ No se pudo crear el proyecto: '+(e.message||e),'err');
   }
 }
 
