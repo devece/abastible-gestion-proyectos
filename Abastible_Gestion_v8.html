@@ -1094,6 +1094,23 @@ async function extraerTextoPDF(file){
   return lineas.join('\n');
 }
 
+async function extraerTextoOCRDC(file){
+  var buf = await file.arrayBuffer();
+  var pdf = await pdfjsLib.getDocument({data:buf}).promise;
+  var textos = [];
+  for(var n=1; n<=pdf.numPages; n++){
+    var page = await pdf.getPage(n);
+    var viewport = page.getViewport({scale:2});
+    var canvas = document.createElement('canvas');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    await page.render({canvasContext:canvas.getContext('2d'), viewport:viewport}).promise;
+    var resultado = await Tesseract.recognize(canvas, 'spa');
+    textos.push(resultado.data.text || '');
+  }
+  return textos.join('\n');
+}
+
 function extraerCamposDetalleComercial(texto){
   var campos = {}, m;
 
@@ -1107,13 +1124,12 @@ function extraerCamposDetalleComercial(texto){
   if(codigo) campos.codigo = codigo;
 
   var nombreProyecto = tomarValorDC(identificacionDC, [
-    /Nombre\s*Proyecto\s*[:\-]?\s*([\s\S]*?)(?=\s+C[oó]digo\s*Proyecto\s*:|\n\s*C[oó]digo\s*Proyecto\s*:)/i,
-    /Proyecto\s*[:\-]?\s*([^\n]+)/i
+    /Nombre\s*Proyecto\s*[:\-]?\s*([\s\S]*?)(?=\s+C[oó]digo\s*Proyecto\s*:|\s+Direcci[oó]n\s*\/\s*Poblaci[oó]n\s*:|\s+Persona\s+Contacto\s*:|\s+Comuna\s*:)/i
   ]);
   if(nombreProyecto) campos.nombre_proyecto = nombreProyecto;
 
   var direccion = tomarValorDC(identificacionDC, [
-    /Direcci[oó]n\s*(?:\/|\|)?\s*Poblaci[oó]n\s*[:\-]?\s*([\s\S]*?)(?=\n\s*(?:Persona|Nombre)\s*Contacto|\n\s*Contacto:|$)/i,
+    /Direcci[oó]n\s*(?:\/|\|)?\s*Poblaci[oó]n\s*[:\-]?\s*([\s\S]*?)(?=\s+Persona\s*Contacto\s*:|\s+Nombre\s*Contacto\s*:|\s+Regi[oó]n\s*:|\s+Comuna\s*:|$)/i,
     /Direcci[oó]n\s*[:\-]?\s*([^\n]+)(?=\n\s*(?:Poblaci[oó]n|Comuna|Persona|Contacto))/i,
     /Poblaci[oó]n\s*[:\-]?\s*([^\n]+)/i
   ]);
@@ -1127,15 +1143,15 @@ function extraerCamposDetalleComercial(texto){
   }
 
   var contacto = tomarValorDC(identificacionDC, [
-    /Persona\s*Contacto\s*[:\-]?\s*([\s\S]*?)(?=\s+Fono\/Fax\s*:|\n\s*Fono\/Fax\s*:)/i,
+    /Persona\s*Contacto\s*[:\-]?\s*([\s\S]*?)(?=\s+Fono\/Fax\s*:|\s+Comuna\s*:|\s+Clasificaci[oó]n\s+Proyecto\s*:|\s+Tipo\s+de\s+proyecto\s*:|$)/i,
     /Nombre\s*Contacto\s*[:\-]?\s*([^\n]+)/i,
     /Contacto\s*[:\-]?\s*([^\n]+)/i
   ]);
   if(contacto && normalizar(contacto)!=='null') campos.contacto = limpiarValorCampoDC(contacto);
 
   var region = tomarValorDC(identificacionDC, [
-    /\bRegi[oó]n\s*[:\-]?\s*([^\n]+)/i,
-    /\bRegion\s*[:\-]?\s*([^\n]+)/i
+    /\bRegi[oó]n\s*[:\-]?\s*([^\n]+?)(?=\s+Comuna\b|\s+Persona\s*Contacto\s*:|\s+Clasificaci[oó]n\s+Proyecto\s*:|\s+Tipo\s+de\s+proyecto\s*:|$)/i,
+    /\bRegion\s*[:\-]?\s*([^\n]+?)(?=\s+Comuna\b|\s+Persona\s*Contacto\s*:|\s+Clasificaci[oó]n\s+Proyecto\s*:|\s+Tipo\s+de\s+proyecto\s*:|$)/i
   ]);
   if(region) campos.region_dc = limpiarValorCampoDC(region);
 
@@ -1165,12 +1181,20 @@ function extraerCamposDetalleComercial(texto){
 
   var bloqueArtefactos = /Cantidad\s+de\s+Instalaciones\s*-([\s\S]*?)(?=\n\s*Cañer[ií]as\b)/i.exec(txt);
   var potencia = bloqueArtefactos && bloqueArtefactos[1].match(/\bTotal\s+(?:\d+)\s+([\d.,]+)\s+([\d.,]+)/i);
-  if(potencia) campos.potencia = parseNumeroCL(potencia[2]);
+  if(potencia) campos.potencia = parseNumeroCL(potencia[1]);
 
   var consumo = extraerConsumoAnualDC(txt);
   if(consumo){
     campos.consumo_kgs_anio = consumo.kilos;
     campos.toneladas_estimadas = consumo.toneladas;
+  }
+
+  var textoPlanoDC = txt.replace(/\s+/g,' ');
+  var totalInstalacion = /\bTotal\s+\d+\s+([\d.,]+)\s+[\d.,]+\s+\d+\s+([\d.,]+)\b/i.exec(textoPlanoDC);
+  if(totalInstalacion){
+    campos.potencia = parseNumeroCL(totalInstalacion[1]);
+    campos.consumo_kgs_anio = parseNumeroCL(totalInstalacion[2]);
+    campos.toneladas_estimadas = campos.consumo_kgs_anio / 1000;
   }
 
   var costo = tomarValorDC(txt, [
@@ -1191,6 +1215,8 @@ function extraerCamposDetalleComercial(texto){
       if(codigoTanque){ codigos.push(codigoTanque[1].toUpperCase()); cantTotal = cantidadTanque ? parseInt(cantidadTanque[1],10) || 1 : 1; }
     }
     if(codigos.length){ campos.tanque = codigos.join(', '); campos.cant_tanque = cantTotal || codigos.length; }
+    var subtotalTanques = txt.match(/Subtotal\s+Tanques\s+(\d+)/i);
+    if(subtotalTanques) campos.cant_tanque = parseInt(subtotalTanques[1],10) || 0;
   }
   if(!campos.tanque){
     var estanquesTotal = txt.match(/\bEstanques\s+([\d.,]+)/i);
@@ -1202,19 +1228,20 @@ function extraerCamposDetalleComercial(texto){
 
   var bloqueEquipos = /\bEQUIPOS\b([\s\S]*?)Subtotal\s+Equipos/i.exec(txt);
   if(bloqueEquipos){
-    var reguladorRe = /REGULADOR[\s\S]{0,320}?\b(?:Un|Unidad)\b\s*(\d+)/gi;
+    var reguladorRe = /\bREG(?:ULADOR)?\b[\s\S]{0,320}?\b(?:Un|Unidad)\b\s*(\d+)/gi;
     var rm, reguladores = 0;
     while((rm=reguladorRe.exec(bloqueEquipos[1]))) reguladores += parseInt(rm[1],10) || 0;
     if(!reguladores){
       var filasReguladores = bloqueEquipos[1].split('\n');
       filasReguladores.forEach(function(fila){
-        if(/REGULADOR/i.test(fila)){
+        if(/\bREG(?:ULADOR)?\b/i.test(fila)){
           var cantidadReg = fila.match(/\b(?:Un|Unidad)\b\s*(\d+)/i);
           reguladores += cantidadReg ? parseInt(cantidadReg[1],10) || 0 : 1;
         }
       });
     }
-    if(reguladores) campos.reguladores_cant = reguladores;
+    var subtotalEquipos = txt.match(/Subtotal\s+Equipos\s+(\d+)/i);
+    campos.reguladores_cant = subtotalEquipos ? parseInt(subtotalEquipos[1],10) || 0 : reguladores;
   }
   if(campos.reguladores_cant === undefined){
     var equiposReg = txt.match(/\bEquipos\s*,\s*Reg\s+([\d.,]+)/i);
@@ -1293,10 +1320,22 @@ async function manejarPdfDetalleComercial(){
   try{
     var texto = await extraerTextoPDF(file);
     var campos = extraerCamposDetalleComercial(texto);
+    var necesitaOCR = campos.potencia === undefined ||
+      campos.toneladas_estimadas === undefined || campos.toneladas_estimadas > 100 ||
+      (campos.cant_tanque === 1 && /\bTQ\d+[A-Z0-9]*\b/i.test(texto));
+    if(necesitaOCR){
+      prog.textContent='Ordenando tablas del DC...';
+      var textoOCR = await extraerTextoOCRDC(file);
+      var camposOCR = extraerCamposDetalleComercial(textoOCR);
+      ['potencia','toneladas_estimadas','consumo_kgs_anio','tanque','cant_tanque','reguladores_cant'].forEach(function(campo){
+        if(camposOCR[campo] !== undefined) campos[campo] = camposOCR[campo];
+      });
+    }
     var llenados = 0;
 
     if(campos.codigo){ document.getElementById('nc').value = campos.codigo; llenados++; }
-    if(campos.contacto && !document.getElementById('ncl').value.trim()){ document.getElementById('ncl').value = campos.contacto; llenados++; }
+    document.getElementById('ncl').value = campos.nombre_proyecto || campos.contacto || '';
+    if(campos.nombre_proyecto || campos.contacto) llenados++;
     if(campos.region_dc){
       var regionMatch = mapearRegionDC(campos.region_dc);
       if(regionMatch){
@@ -1306,27 +1345,34 @@ async function manejarPdfDetalleComercial(){
         llenados++;
       }
     }
-    if(campos.comuna && !document.getElementById('nco').value.trim()){ document.getElementById('nco').value = campos.comuna; llenados++; }
+    document.getElementById('nco').value = campos.comuna || '';
+    if(campos.comuna) llenados++;
     if(campos.tipo_codigo){
       var tipoMatch = mapearTipoDC(campos.tipo_codigo, campos.tipo_desc);
       if(tipoMatch){ document.getElementById('ntp').value = tipoMatch; llenados++; }
     }
-    if(campos.costo){ document.getElementById('ncs').value = campos.costo; llenados++; }
-    if(campos.tanque !== undefined){ document.getElementById('nta').value = campos.tanque; llenados++; }
-    if(campos.cant_tanque !== undefined){ document.getElementById('nca').value = campos.cant_tanque; llenados++; }
-    if(campos.potencia !== undefined){ document.getElementById('np').value = campos.potencia; llenados++; }
-    if(campos.reguladores_cant !== undefined){ document.getElementById('nreg').value = campos.reguladores_cant; llenados++; }
-    if(campos.toneladas_estimadas !== undefined){ document.getElementById('nton').value = campos.toneladas_estimadas; llenados++; }
+    document.getElementById('ncs').value = campos.costo || '';
+    if(campos.costo) llenados++;
+    document.getElementById('nta').value = campos.tanque !== undefined ? campos.tanque : '';
+    document.getElementById('nca').value = campos.cant_tanque !== undefined ? campos.cant_tanque : '';
+    document.getElementById('np').value = campos.potencia !== undefined ? campos.potencia : '';
+    document.getElementById('nreg').value = campos.reguladores_cant !== undefined ? campos.reguladores_cant : '';
+    document.getElementById('nton').value = campos.toneladas_estimadas !== undefined ? campos.toneladas_estimadas : '';
+    ['tanque','cant_tanque','potencia','reguladores_cant','toneladas_estimadas'].forEach(function(campo){
+      if(campos[campo] !== undefined) llenados++;
+    });
     document.getElementById('ni').value = 'Daniel Villalobos';
 
     DC_EXTRAIDO = {};
+    if(campos.nombre_proyecto) DC_EXTRAIDO.nombre_proyecto = campos.nombre_proyecto;
+    if(campos.direccion) DC_EXTRAIDO.direccion = campos.direccion;
     if(campos.comuna) DC_EXTRAIDO.comuna = campos.comuna;
     if(campos.region_dc) DC_EXTRAIDO.region = mapearRegionDC(campos.region_dc) || campos.region_dc;
     if(campos.tipo_codigo) DC_EXTRAIDO.tipo = mapearTipoDC(campos.tipo_codigo, campos.tipo_desc) || campos.tipo_desc;
     if(campos.costo) DC_EXTRAIDO.costo = campos.costo;
     if(campos.tanque) DC_EXTRAIDO.tanque = campos.tanque;
-    if(campos.cant_tanque) DC_EXTRAIDO.cant_tanque = campos.cant_tanque;
-    if(campos.reguladores_cant) DC_EXTRAIDO.reguladores_cant = campos.reguladores_cant;
+    if(campos.cant_tanque !== undefined) DC_EXTRAIDO.cant_tanque = campos.cant_tanque;
+    if(campos.reguladores_cant !== undefined) DC_EXTRAIDO.reguladores_cant = campos.reguladores_cant;
     if(document.getElementById('nj').value) DC_EXTRAIDO.jefe = document.getElementById('nj').value;
 
     actualizarResumenNuevoProyecto();
@@ -2583,7 +2629,7 @@ function expJSON(){
 }
 function expCSV(){
   var BOM='\uFEFF';
-  var HDR=['Item','Código','Cliente','Región','Comuna','Tipo','Construcción','Status','Etapa',
+  var HDR=['Item','Código','Cliente','Región','Comuna','Tipo','Construcción','Estado','Etapa',
     'Supervisor','ITO','Contratista','Certificador','Jefe Instalaciones','Vendedor',
     'Potencia Mcal/h','Tanque','Cant. Tanques','Costo Inversión',
     'Envío Ventas→Coord','Revisión Antecedentes','Primera Visita','Envío Liberar',
