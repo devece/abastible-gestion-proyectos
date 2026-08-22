@@ -1059,7 +1059,15 @@ function extraerConsumoAnualDC(texto){
     kilosAnuales += valorKg;
     filas++;
   });
-  return filas ? {kilos:kilosAnuales, toneladas:kilosAnuales/1000} : null;
+  if(filas) return {kilos:kilosAnuales, toneladas:kilosAnuales/1000};
+
+  var bloque = /Cantidad\s+de\s+Instalaciones\s*-([\s\S]*?)(?=\n\s*Cañer[ií]as\b)/i.exec(limpiarTextoDC(texto));
+  if(!bloque) return null;
+  var tramo = /Kgs\s*\/\s*a[nñ]o\s*\/\s*instal\.?[\s\S]*?(?=Total|Cañer[ií]as|$)/i.exec(bloque[1]);
+  if(!tramo) return null;
+  var valores = tramo[0].match(/\b\d+[.,]\d+\b/g) || [];
+  var totalKilos = valores.reduce(function(total, valor){ return total + (parseNumeroCL(valor)||0); }, 0);
+  return valores.length ? {kilos:totalKilos, toneladas:totalKilos/1000} : null;
 }
 
 async function extraerTextoPDF(file){
@@ -1156,7 +1164,7 @@ function extraerCamposDetalleComercial(texto){
 
   var bloqueArtefactos = /Cantidad\s+de\s+Instalaciones\s*-([\s\S]*?)(?=\n\s*Cañer[ií]as\b)/i.exec(txt);
   var potencia = bloqueArtefactos && bloqueArtefactos[1].match(/\bTotal\s+(?:\d+)\s+([\d.,]+)\s+([\d.,]+)/i);
-  if(potencia) campos.potencia = parseNumeroCL(potencia[1]);
+  if(potencia) campos.potencia = parseNumeroCL(potencia[2]);
 
   var consumo = extraerConsumoAnualDC(txt);
   if(consumo){
@@ -1173,12 +1181,12 @@ function extraerCamposDetalleComercial(texto){
 
   var bloqueTanques = /\bTANQUES\b([\s\S]*?)Subtotal\s+Tanques/i.exec(txt);
   if(bloqueTanques){
-    var tanqueRe = /\b(TQ\d+[A-Z0-9]*)\b[\s\S]{0,220}?\bUn\b\s*(\d+)/gi;
+    var tanqueRe = /\b(TQ\d+[A-Z0-9]*)\b[\s\S]{0,320}?\b(?:Un|Unidad)\b\s*(\d+)/gi;
     var tm, codigos=[], cantTotal=0;
     while((tm=tanqueRe.exec(bloqueTanques[1]))){ codigos.push(tm[1]); cantTotal+=parseInt(tm[2],10)||0; }
     if(!codigos.length){
       var codigoTanque = bloqueTanques[1].match(/\b(TQ\d+[A-Z0-9]*)\b/i);
-      var cantidadTanque = bloqueTanques[1].match(/\bUn\b\s*(\d+)/i);
+      var cantidadTanque = bloqueTanques[1].match(/\b(?:Un|Unidad)\b\s*(\d+)/i);
       if(codigoTanque){ codigos.push(codigoTanque[1].toUpperCase()); cantTotal = cantidadTanque ? parseInt(cantidadTanque[1],10) || 1 : 1; }
     }
     if(codigos.length){ campos.tanque = codigos.join(', '); campos.cant_tanque = cantTotal || codigos.length; }
@@ -1186,14 +1194,14 @@ function extraerCamposDetalleComercial(texto){
 
   var bloqueEquipos = /\bEQUIPOS\b([\s\S]*?)Subtotal\s+Equipos/i.exec(txt);
   if(bloqueEquipos){
-    var reguladorRe = /REGULADOR[\s\S]{0,260}?\bUn\b\s*(\d+)/gi;
+    var reguladorRe = /REGULADOR[\s\S]{0,320}?\b(?:Un|Unidad)\b\s*(\d+)/gi;
     var rm, reguladores = 0;
     while((rm=reguladorRe.exec(bloqueEquipos[1]))) reguladores += parseInt(rm[1],10) || 0;
     if(!reguladores){
       var filasReguladores = bloqueEquipos[1].split('\n');
       filasReguladores.forEach(function(fila){
         if(/REGULADOR/i.test(fila)){
-          var cantidadReg = fila.match(/\bUn\b\s*(\d+)/i);
+          var cantidadReg = fila.match(/\b(?:Un|Unidad)\b\s*(\d+)/i);
           reguladores += cantidadReg ? parseInt(cantidadReg[1],10) || 0 : 1;
         }
       });
@@ -1297,13 +1305,7 @@ async function manejarPdfDetalleComercial(){
     if(campos.potencia){ document.getElementById('np').value = campos.potencia; llenados++; }
     if(campos.reguladores_cant){ document.getElementById('nreg').value = campos.reguladores_cant; llenados++; }
     if(campos.toneladas_estimadas !== undefined){ document.getElementById('nton').value = campos.toneladas_estimadas; llenados++; }
-    if(campos.nombre_proyecto || campos.direccion){
-      var detalleDC = [];
-      if(campos.nombre_proyecto) detalleDC.push('Nombre DC: '+campos.nombre_proyecto);
-      if(campos.direccion) detalleDC.push('Dirección: '+campos.direccion);
-      var observaciones = document.getElementById('no');
-      if(!observaciones.value.trim()) observaciones.value = detalleDC.join(' | ');
-    }
+    document.getElementById('ni').value = 'Daniel Villalobos';
 
     DC_EXTRAIDO = {};
     if(campos.comuna) DC_EXTRAIDO.comuna = campos.comuna;
