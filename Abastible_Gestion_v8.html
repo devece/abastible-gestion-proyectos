@@ -1070,6 +1070,27 @@ function extraerConsumoAnualDC(texto){
   return valores.length ? {kilos:totalKilos, toneladas:totalKilos/1000} : null;
 }
 
+function extraerPotenciaTotalDC(texto){
+  var lineas = limpiarTextoDC(texto).split('\n');
+  var activo = false;
+  var potenciaTotal = 0;
+  var filas = 0;
+  lineas.forEach(function(linea){
+    if(/Cantidad\s+de\s+Instalaciones\s*-/i.test(linea)){ activo = true; return; }
+    if(!activo) return;
+    if(/^Cañer[ií]as\b/i.test(linea) || /^Servicio\s+Cañer[ií]as\b/i.test(linea)){ activo = false; return; }
+    if(/^Total\b/i.test(linea)) return;
+    if(/^(?:Artefacto|Cil\s+45|Kgs\.|Hora\/D[ií]a|D[ií]as\/A[nñ]o)/i.test(linea)) return;
+    var numeros = linea.match(/\b\d+(?:[.,]\d+)?\b/g) || [];
+    if(numeros.length < 7) return;
+    var valorPot = parseNumeroCL(numeros[2]);
+    if(valorPot === null) return;
+    potenciaTotal += valorPot;
+    filas++;
+  });
+  return filas ? potenciaTotal : null;
+}
+
 async function extraerTextoPDF(file){
   var buf = await file.arrayBuffer();
   var pdf = await pdfjsLib.getDocument({data:buf}).promise;
@@ -1245,9 +1266,8 @@ function extraerCamposDetalleComercial(texto, columnas){
     }
   }
 
-  var bloqueArtefactos = /Cantidad\s+de\s+Instalaciones\s*-([\s\S]*?)(?=\n\s*Cañer[ií]as\b)/i.exec(txt);
-  var potencia = bloqueArtefactos && bloqueArtefactos[1].match(/\bTotal\s+(?:\d+)\s+([\d.,]+)\s+([\d.,]+)/i);
-  if(potencia) campos.potencia = parseNumeroCL(potencia[1]);
+  var potenciaTotal = extraerPotenciaTotalDC(txt);
+  if(potenciaTotal !== null) campos.potencia = potenciaTotal;
 
   var consumo = extraerConsumoAnualDC(txt);
   if(consumo){
@@ -1255,12 +1275,21 @@ function extraerCamposDetalleComercial(texto, columnas){
     campos.toneladas_estimadas = consumo.toneladas;
   }
 
-  var textoPlanoDC = txt.replace(/\s+/g,' ');
-  var totalInstalacion = /\bTotal\s+\d+\s+([\d.,]+)\s+[\d.,]+\s+\d+\s+([\d.,]+)\b/i.exec(textoPlanoDC);
-  if(totalInstalacion){
-    campos.potencia = parseNumeroCL(totalInstalacion[1]);
-    campos.consumo_kgs_anio = parseNumeroCL(totalInstalacion[2]);
-    campos.toneladas_estimadas = campos.consumo_kgs_anio / 1000;
+  if(campos.potencia === undefined || campos.consumo_kgs_anio === undefined){
+    var bloqueArtefactos = /Cantidad\s+de\s+Instalaciones\s*-([\s\S]*?)(?=\n\s*Cañer[ií]as\b)/i.exec(txt);
+    if(campos.potencia === undefined && bloqueArtefactos){
+      var potencia = bloqueArtefactos[1].match(/\bTotal\s+(?:\d+)\s+([\d.,]+)\s+([\d.,]+)/i);
+      if(potencia) campos.potencia = parseNumeroCL(potencia[1]);
+    }
+    var textoPlanoDC = txt.replace(/\s+/g,' ');
+    var totalInstalacion = /\bTotal\s+\d+\s+([\d.,]+)\s+[\d.,]+\s+\d+\s+([\d.,]+)\b/i.exec(textoPlanoDC);
+    if(totalInstalacion){
+      if(campos.potencia === undefined) campos.potencia = parseNumeroCL(totalInstalacion[1]);
+      if(campos.consumo_kgs_anio === undefined){
+        campos.consumo_kgs_anio = parseNumeroCL(totalInstalacion[2]);
+        campos.toneladas_estimadas = campos.consumo_kgs_anio / 1000;
+      }
+    }
   }
 
   var costo = tomarValorDC(txt, [
