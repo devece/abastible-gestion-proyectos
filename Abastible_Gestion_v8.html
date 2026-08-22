@@ -1094,6 +1094,70 @@ async function extraerTextoPDF(file){
   return lineas.join('\n');
 }
 
+async function extraerBloqueIdentificacionDC(file){
+  try{
+    var buf = await file.arrayBuffer();
+    var pdf = await pdfjsLib.getDocument({data:buf}).promise;
+    var page = await pdf.getPage(1);
+    var content = await page.getTextContent();
+    var items = content.items.map(function(it){
+      return {x: it.transform[4], y: it.transform[5], texto: (it.str||'').trim()};
+    }).filter(function(it){ return it.texto; });
+
+    var porFila = [];
+    items.forEach(function(it){
+      var fila = porFila.find(function(f){ return Math.abs(f.y-it.y)<3; });
+      if(!fila){ fila={y:it.y,partes:[]}; porFila.push(fila); }
+      fila.partes.push(it);
+    });
+    porFila.forEach(function(f){ f.partes.sort(function(a,b){ return a.x-b.x; }); });
+    var filaTexto = function(f){ return f.partes.map(function(p){return p.texto;}).join(' '); };
+
+    var yInicio = null, yFin = null, filaCol = null;
+    porFila.forEach(function(f){
+      var t = filaTexto(f);
+      if(yInicio===null && /Identificaci[oó]n\s+Obra/i.test(t)) yInicio = f.y;
+      if(yFin===null && /VALORES\s+TOTALES/i.test(t)) yFin = f.y;
+      if(filaCol===null && /^Nombre\b/i.test(t)) filaCol = f;
+    });
+    if(yInicio===null || !filaCol) return null;
+
+    var itemsTabla = items.filter(function(it){
+      return it.y < yInicio + 1 && (yFin===null || it.y > yFin - 1);
+    });
+    if(!itemsTabla.length) return null;
+
+    var xCol1=null, xCol2=null, xCol3=null;
+    filaCol.partes.forEach(function(it){
+      if(xCol1===null && /^Nombre\b/i.test(it.texto)) xCol1 = it.x;
+      if(xCol2===null && /^C[oó]digo\b/i.test(it.texto)) xCol2 = it.x;
+      if(xCol3===null && /^Direcci[oó]n/i.test(it.texto)) xCol3 = it.x;
+    });
+    if(xCol1===null || xCol2===null || xCol3===null) return null;
+
+    var limite12 = (xCol1+xCol2)/2, limite23 = (xCol2+xCol3)/2;
+    var columnas = [[],[],[]];
+    itemsTabla.forEach(function(it){
+      var col = it.x < limite12 ? 0 : (it.x < limite23 ? 1 : 2);
+      columnas[col].push(it);
+    });
+    columnas.forEach(function(col){
+      col.sort(function(a,b){
+        if(Math.abs(a.y-b.y) >= 3) return b.y-a.y;
+        return a.x-b.x;
+      });
+    });
+    return {
+      col1: columnas[0].map(function(it){ return it.texto; }).join(' '),
+      col2: columnas[1].map(function(it){ return it.texto; }).join(' '),
+      col3: columnas[2].map(function(it){ return it.texto; }).join(' ')
+    };
+  }catch(e){
+    console.error('No se pudo leer el bloque de identificación por columnas', e);
+    return null;
+  }
+}
+
 async function extraerTextoOCRDC(file){
   var buf = await file.arrayBuffer();
   var pdf = await pdfjsLib.getDocument({data:buf}).promise;
@@ -1111,11 +1175,13 @@ async function extraerTextoOCRDC(file){
   return textos.join('\n');
 }
 
-function extraerCamposDetalleComercial(texto){
+function extraerCamposDetalleComercial(texto, columnas){
   var campos = {}, m;
 
   var txt = limpiarTextoDC(texto);
   var identificacionDC = txt.split(/\n\s*VALORES\s+TOTALES\b/i)[0].replace(/\s+/g,' ').trim();
+  var idBloque1 = columnas && columnas.col1 ? limpiarTextoDC(columnas.col1).replace(/\s+/g,' ').trim() : identificacionDC;
+  var idBloque3 = columnas && columnas.col3 ? limpiarTextoDC(columnas.col3).replace(/\s+/g,' ').trim() : identificacionDC;
 
   var codigo = tomarValorDC(txt, [
     /C[oó]digo\s*(?:de)?\s*Proyecto\s*[:\-]?\s*([A-Za-z0-9\-]+)/i,
@@ -1123,12 +1189,12 @@ function extraerCamposDetalleComercial(texto){
   ]);
   if(codigo) campos.codigo = codigo;
 
-  var nombreProyecto = tomarValorDC(identificacionDC, [
-    /Nombre\s*Proyecto\s*[:\-]?\s*([\s\S]*?)(?=\s+C[oó]digo\s*Proyecto\s*:|\s+Direcci[oó]n\s*\/\s*Poblaci[oó]n\s*:|\s+Persona\s+Contacto\s*:|\s+Comuna\s*:)/i
+  var nombreProyecto = tomarValorDC(idBloque1, [
+    /Nombre\s*Proyecto\s*[:\-]?\s*([\s\S]*?)(?=\s+C[oó]digo\s*Proyecto\s*:|\s+Direcci[oó]n\s*\/\s*Poblaci[oó]n\s*:|\s+Persona\s+Contacto\s*:|\s+Comuna\s*:|$)/i
   ]);
   if(nombreProyecto) campos.nombre_proyecto = nombreProyecto;
 
-  var direccion = tomarValorDC(identificacionDC, [
+  var direccion = tomarValorDC(idBloque3, [
     /Direcci[oó]n\s*(?:\/|\|)?\s*Poblaci[oó]n\s*[:\-]?\s*([\s\S]*?)(?=\s+Persona\s*Contacto\s*:|\s+Nombre\s*Contacto\s*:|\s+Regi[oó]n\s*:|\s+Comuna\s*:|$)/i,
     /Direcci[oó]n\s*[:\-]?\s*([^\n]+)(?=\n\s*(?:Poblaci[oó]n|Comuna|Persona|Contacto))/i,
     /Poblaci[oó]n\s*[:\-]?\s*([^\n]+)/i
@@ -1142,20 +1208,20 @@ function extraerCamposDetalleComercial(texto){
     if(direccion) campos.direccion = direccion;
   }
 
-  var contacto = tomarValorDC(identificacionDC, [
+  var contacto = tomarValorDC(idBloque1, [
     /Persona\s*Contacto\s*[:\-]?\s*([\s\S]*?)(?=\s+Fono\/Fax\s*:|\s+Comuna\s*:|\s+Clasificaci[oó]n\s+Proyecto\s*:|\s+Tipo\s+de\s+proyecto\s*:|$)/i,
     /Nombre\s*Contacto\s*[:\-]?\s*([^\n]+)/i,
     /Contacto\s*[:\-]?\s*([^\n]+)/i
   ]);
   if(contacto && normalizar(contacto)!=='null') campos.contacto = limpiarValorCampoDC(contacto);
 
-  var region = tomarValorDC(identificacionDC, [
+  var region = tomarValorDC(idBloque3, [
     /\bRegi[oó]n\s*[:\-]?\s*([^\n]+?)(?=\s+Comuna\b|\s+Persona\s*Contacto\s*:|\s+Clasificaci[oó]n\s+Proyecto\s*:|\s+Tipo\s+de\s+proyecto\s*:|$)/i,
     /\bRegion\s*[:\-]?\s*([^\n]+?)(?=\s+Comuna\b|\s+Persona\s*Contacto\s*:|\s+Clasificaci[oó]n\s+Proyecto\s*:|\s+Tipo\s+de\s+proyecto\s*:|$)/i
   ]);
   if(region) campos.region_dc = limpiarValorCampoDC(region);
 
-  var comuna = tomarValorDC(identificacionDC, [
+  var comuna = tomarValorDC(idBloque1, [
     /\bComuna\s*[:\-]?\s*([^\n]+?)(?=\s+Clasificaci[oó]n\s+Proyecto\s*:|\s+Tipo\s+de\s+proyecto\s*:|\n|$)/i
   ]);
   if(comuna){
@@ -1167,12 +1233,12 @@ function extraerCamposDetalleComercial(texto){
     if(comuna) campos.comuna = comuna;
   }
 
-  var tipoProyecto = tomarValorDC(identificacionDC, [
+  var tipoProyecto = tomarValorDC(idBloque3, [
     /Tipo\s*(?:de)?\s*Proyecto\s*[:\-]?\s*([^\n\(]+?)\s*(?:\(([A-Za-z]\d{2})\)|\(([^\)]+)\))?/i,
     /Tipo\s*[:\-]?\s*([^\n\(]+?)\s*(?:\(([A-Za-z]\d{2})\)|\(([^\)]+)\))?/i
   ]);
   if(tipoProyecto){
-    var matchTipo = identificacionDC.match(/Tipo\s*(?:de)?\s*Proyecto\s*[:\-]?\s*([^\(]+?)\s*\(([A-Za-z]\d{2})\)/i);
+    var matchTipo = idBloque3.match(/Tipo\s*(?:de)?\s*Proyecto\s*[:\-]?\s*([^\(]+?)\s*\(([A-Za-z]\d{2})\)/i);
     if(matchTipo){
       campos.tipo_desc = limpiarValorCampoDC(matchTipo[1]);
       campos.tipo_codigo = matchTipo[2].toUpperCase();
@@ -1318,8 +1384,9 @@ async function manejarPdfDetalleComercial(){
   prog.textContent='Leyendo Detalle Comercial...';
   try{
     var texto = await extraerTextoPDF(file);
-    var campos = extraerCamposDetalleComercial(texto);
-    var debugLog = '=== TEXTO EXTRAÍDO (pdf.js) ===\n'+texto+'\n\n=== CAMPOS (pre-OCR) ===\n'+JSON.stringify(campos,null,2);
+    var columnas = await extraerBloqueIdentificacionDC(file);
+    var campos = extraerCamposDetalleComercial(texto, columnas);
+    var debugLog = '=== TEXTO EXTRAÍDO (pdf.js) ===\n'+texto+'\n\n=== COLUMNAS IDENTIFICACIÓN ===\n'+JSON.stringify(columnas,null,2)+'\n\n=== CAMPOS (pre-OCR) ===\n'+JSON.stringify(campos,null,2);
     var necesitaOCR = campos.potencia === undefined ||
       campos.toneladas_estimadas === undefined || campos.toneladas_estimadas > 100 ||
       (campos.cant_tanque === 1 && /\bTQ\d+[A-Z0-9]*\b/i.test(texto));
