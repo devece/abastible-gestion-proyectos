@@ -1329,6 +1329,9 @@ async function manejarPdfDetalleComercial(){
       var textoOCR = await extraerTextoOCRDC(file);
       var camposOCR = extraerCamposDetalleComercial(textoOCR);
       debugLog += '\n\n=== TEXTO EXTRAÍDO (OCR) ===\n'+textoOCR+'\n\n=== CAMPOS (OCR) ===\n'+JSON.stringify(camposOCR,null,2);
+      Object.keys(camposOCR).forEach(function(campo){
+        if(campos[campo] === undefined && camposOCR[campo] !== undefined) campos[campo] = camposOCR[campo];
+      });
       ['potencia','toneladas_estimadas','consumo_kgs_anio','tanque','cant_tanque','reguladores_cant'].forEach(function(campo){
         if(camposOCR[campo] !== undefined) campos[campo] = camposOCR[campo];
       });
