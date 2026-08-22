@@ -1240,8 +1240,7 @@ function extraerCamposDetalleComercial(texto){
         }
       });
     }
-    var subtotalEquipos = txt.match(/Subtotal\s+Equipos\s+(\d+)/i);
-    campos.reguladores_cant = subtotalEquipos ? parseInt(subtotalEquipos[1],10) || 0 : reguladores;
+    campos.reguladores_cant = reguladores;
   }
   if(campos.reguladores_cant === undefined){
     var equiposReg = txt.match(/\bEquipos\s*,\s*Reg\s+([\d.,]+)/i);
