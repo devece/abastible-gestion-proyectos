@@ -1627,7 +1627,7 @@ async function cargarDesdeSupabase(){
     if(cambios.length)await Promise.all(cambios);
   }catch(e){
     console.error('Error cargando proyectos desde Supabase', e);
-    toast('⚠️ No se pudo conectar a la base de datos','err');
+    toast('⚠️ No se pudo cargar proyectos: '+(e.message||e),'err');
     BD=[];
   }
 }
@@ -1662,7 +1662,7 @@ async function guardar(idx){
     if(res.error) throw res.error;
   }catch(e){
     console.error('Error guardando en Supabase', e);
-    toast('⚠️ No se pudo guardar — revisa tu conexión','err');
+    toast('⚠️ No se pudo guardar: '+(e.message||e),'err');
   }
 }
 
@@ -2193,7 +2193,7 @@ async function okDelProy(){
     toast('🗑 Proyecto eliminado','ok');
   }catch(e){
     console.error('Error eliminando proyecto', e);
-    toast('⚠️ No se pudo eliminar el proyecto','err');
+    toast('⚠️ No se pudo eliminar el proyecto: '+(e.message||e),'err');
     btn.disabled=false;
   }
   btn.textContent='🗑  Confirmar Eliminación';
