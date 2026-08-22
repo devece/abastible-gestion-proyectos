@@ -1404,13 +1404,6 @@ async function manejarPdfDetalleComercial(){
     }
     debugLog += '\n\n=== CAMPOS (final) ===\n'+JSON.stringify(campos,null,2);
     console.log('[DC debug]\n'+debugLog);
-    try{
-      var debugBlob = new Blob([debugLog],{type:'text/plain;charset=utf-8;'});
-      var debugA = document.createElement('a');
-      debugA.href = URL.createObjectURL(debugBlob);
-      debugA.download = 'DC_debug_'+ahora().slice(0,10)+'.txt';
-      debugA.click();
-    }catch(eDebug){ console.error('No se pudo descargar el debug DC', eDebug); }
     var llenados = 0;
 
     if(campos.codigo){ document.getElementById('nc').value = campos.codigo; llenados++; }
