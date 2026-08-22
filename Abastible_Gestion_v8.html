@@ -2228,14 +2228,16 @@ async function crearProyecto(){
   var valid=validarProyectoNuevo(raw);
   if(!valid.ok){toast('⚠️ '+valid.errores[0],'warn');return;}
   var ts=ahora();
-  var maxItem=BD.reduce(function(m,p){return Math.max(m,p.item||0);},0);
-  var nuevo=Object.assign({}, DC_EXTRAIDO||{}, PD_EXTRAIDO||{}, normalizarNuevoProyecto(raw), {
-    item:maxItem+1,
-    status:'2. Entregado a coordinador',
-    etapa:'Validación',
-    f_v_coord:ts.replace(' ','T')
-  });
   try{
+    var maxRes=await sb.from('proyectos').select('item').order('item',{ascending:false}).limit(1);
+    if(maxRes.error) throw maxRes.error;
+    var maxItem=(maxRes.data&&maxRes.data[0]&&maxRes.data[0].item)||0;
+    var nuevo=Object.assign({}, DC_EXTRAIDO||{}, PD_EXTRAIDO||{}, normalizarNuevoProyecto(raw), {
+      item:maxItem+1,
+      status:'2. Entregado a coordinador',
+      etapa:'Validación',
+      f_v_coord:ts.replace(' ','T')
+    });
     var res=await sb.from('proyectos').insert(nuevo).select().single();
     if(res.error) throw res.error;
     var creado=res.data; creado._id=String(creado.id);
