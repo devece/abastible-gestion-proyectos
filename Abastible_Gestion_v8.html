@@ -2016,6 +2016,7 @@ function abrirDet(id){
   h+='<div class="etapas">';
   h+='<div class="etapa e0"><div class="ehdr">🗂 Etapa 0 &nbsp;·&nbsp; Ingreso</div>';
   h+=hF(idx,'f_v_validar','Envío para validar (fuera de Renova)',p,'📮','',cer);
+  h+=hF(idx,'f_v_respondido','Validado - Cuadre - Respondido',p,'✅','',cer);
   h+='</div>';
   h+='<div class="etapa e1"><div class="ehdr">📋 Etapa 1 &nbsp;·&nbsp; Validación de Proyectos</div>';
   h+=hF(idx,'f_v_coord','Envío Ventas → Coordinador',p,'📤','Inicio del plazo de revisión de 4 días',cer);
@@ -2793,7 +2794,7 @@ function expCSV(){
   var HDR=['Item','Código','Cliente','Región','Comuna','Tipo','Construcción','Estado','Etapa',
     'Supervisor','ITO','Contratista','Certificador','Jefe Instalaciones','Vendedor',
     'Potencia Mcal/h','Tanque','Cant. Tanques','Costo Inversión',
-    'Envío para validar (fuera de Renova)','Envío Ventas→Coord','Revisión Antecedentes','Primera Visita','Envío Liberar',
+    'Envío para validar (fuera de Renova)','Validado - Cuadre - Respondido','Envío Ventas→Coord','Revisión Antecedentes','Primera Visita','Envío Liberar',
     'Proyecto Liberado','Envío O.C.','Inicio Trabajos','Envío TC8','Montaje Tanque',
     'Carga N°1','Carga N°2','Carga N°3','Carga N°4','Carga N°5',
     'Carga N°6','Carga N°7','Carga N°8','Carga N°9','Carga N°10',
@@ -2803,7 +2804,7 @@ function expCSV(){
   var rows=BD.map(function(p){
     return [p.item,p.codigo,p.cliente,p.region,p.comuna,p.tipo,p.construccion,p.status,p.etapa,
       p.supervisor,p.ito,p.contratista,p.cert,p.jefe,p.vendedor,p.potencia,p.tanque,p.cant_tanque,p.costo,
-      p.f_v_validar,p.f_v_coord,p.f_rev_ant,p.f_visita,p.f_liberar,p.f_liberado,p.f_ut,p.f_oc,p.f_trabajos,p.f_tc8,p.f_montaje,
+      p.f_v_validar,p.f_v_respondido,p.f_v_coord,p.f_rev_ant,p.f_visita,p.f_liberar,p.f_liberado,p.f_ut,p.f_oc,p.f_trabajos,p.f_tc8,p.f_montaje,
       p.f_c1,p.f_c2,p.f_c3,p.f_c4,p.f_c5,p.f_c6,p.f_c7,p.f_c8,p.f_c9,p.f_c10,
       p.tc2,p.sello,p.tc6,p.ir,p.tc7,p.pago1,p.pago2,p.pago3,p.pago4,
       p.f_termino_ejecucion,p.f_gestor,p.dev_ito,p.f_forzado,diasProy(p),p.obs].map(ce).join(',');
