@@ -591,13 +591,12 @@ tbody td:first-child{padding-left:20px}
             </select><div class="field-note">Se usa para agrupar por tipo de ejecución.</div></div>
           <div class="fg"><label>Construcción</label>
             <select id="ncon"><option>Inmediata</option><option>Tardía</option></select><div class="field-note">Define el ritmo de ejecución esperada.</div></div>
-          <div class="fg"><label>Supervisor</label>
-            <select id="ns"><option value="">—</option><option>Oscar Bravo</option><option>Fernando Martinez</option><option>Daniel Villalobos</option></select><div class="field-note">Se recomienda dejarlo asignado desde el inicio.</div></div>
+          <div class="fg"><label>Supervisor</label><input id="ns" placeholder="Nombre" readonly><div class="field-note">Siempre se registra Daniel Villalobos.</div></div>
           <div class="fg"><label>ITO / Coordinador</label><input id="ni" placeholder="Nombre" readonly><div class="field-note">Siempre se registra Daniel Villalobos.</div></div>
-          <div class="fg"><label>Contratista</label><input id="nct" placeholder="Empresa o persona"><div class="field-note">Nombre del contratista o proveedor asociado.</div></div>
-          <div class="fg"><label>Jefe Instalaciones</label><input id="nj" placeholder="Nombre"><div class="field-note">Persona encargada del cierre de obra.</div></div>
-          <div class="fg"><label>Vendedor</label><input id="nv" placeholder="Nombre"><div class="field-note">Quien gestionó la venta o el ingreso del proyecto.</div></div>
-          <div class="fg"><label>Certificador</label><input id="nce" placeholder="Ej: GASTEK, GASSI..."><div class="field-note">Se sugiere al cambiar región o contratarista.</div></div>
+          <div class="fg"><label>Contratista</label><input id="nct" list="dl-contratista" placeholder="Empresa o persona"><datalist id="dl-contratista"></datalist><div class="field-note">Nombre del contratista o proveedor asociado.</div></div>
+          <div class="fg"><label>Jefe Instalaciones</label><input id="nj" list="dl-jefe" placeholder="Nombre"><datalist id="dl-jefe"></datalist><div class="field-note">Persona encargada del cierre de obra.</div></div>
+          <div class="fg"><label>Vendedor</label><input id="nv" list="dl-vendedor" placeholder="Nombre"><datalist id="dl-vendedor"></datalist><div class="field-note">Quien gestionó la venta o el ingreso del proyecto.</div></div>
+          <div class="fg"><label>Certificador</label><input id="nce" list="dl-cert" placeholder="Ej: GASTEK, GASSI..."><datalist id="dl-cert"></datalist><div class="field-note">Se sugiere al cambiar región o contratarista.</div></div>
           <div class="fg"><label>Potencia (Mcal/h)</label><input id="np" type="number" placeholder="200"><div class="field-note">Valor operativo del proyecto.</div></div>
           <div class="fg"><label>Tanque</label><input id="nta" placeholder="Ej: TQ1000S"><div class="field-note">Código o modelo del tanque.</div></div>
           <div class="fg"><label>Cant. Tanques</label><input id="nca" type="number" placeholder="1" min="1"><div class="field-note">Cantidad total estimada.</div></div>
@@ -1321,20 +1320,25 @@ function extraerCamposDetalleComercial(texto, columnas){
     }
   }
 
-  var bloqueEquipos = /\bEQUIPOS\b([\s\S]*?)Subtotal\s+Equipos/i.exec(txt);
-  if(bloqueEquipos){
+  var bloqueEquiposRe = /\bEQUIPOS\b([\s\S]*?)Subtotal\s+Equipos/gi;
+  var bloqueEquiposMatch, bloquesEquipos = [];
+  while((bloqueEquiposMatch=bloqueEquiposRe.exec(txt))) bloquesEquipos.push(bloqueEquiposMatch[1]);
+  if(bloquesEquipos.length){
     var reguladorRe = /\bREG(?:ULADOR)?\b[\s\S]{0,320}?\b(?:Un|Unidad)\b\s*(\d+)/gi;
-    var rm, reguladores = 0;
-    while((rm=reguladorRe.exec(bloqueEquipos[1]))) reguladores += parseInt(rm[1],10) || 0;
-    if(!reguladores){
-      var filasReguladores = bloqueEquipos[1].split('\n');
-      filasReguladores.forEach(function(fila){
-        if(/\bREG(?:ULADOR)?\b/i.test(fila)){
-          var cantidadReg = fila.match(/\b(?:Un|Unidad)\b\s*(\d+)/i);
-          reguladores += cantidadReg ? parseInt(cantidadReg[1],10) || 0 : 1;
-        }
-      });
-    }
+    var reguladores = 0;
+    bloquesEquipos.forEach(function(bloque){
+      var rm, encontradosEnBloque = 0;
+      reguladorRe.lastIndex = 0;
+      while((rm=reguladorRe.exec(bloque))){ reguladores += parseInt(rm[1],10) || 0; encontradosEnBloque++; }
+      if(!encontradosEnBloque){
+        bloque.split('\n').forEach(function(fila){
+          if(/\bREG(?:ULADOR)?\b/i.test(fila)){
+            var cantidadReg = fila.match(/\b(?:Un|Unidad)\b\s*(\d+)/i);
+            reguladores += cantidadReg ? parseInt(cantidadReg[1],10) || 0 : 1;
+          }
+        });
+      }
+    });
     campos.reguladores_cant = reguladores;
   }
   if(campos.reguladores_cant === undefined){
@@ -1551,6 +1555,7 @@ document.addEventListener('DOMContentLoaded', async function() {
   await cargarDesdeSupabase();
   await cargarCertificadores();
   poblarContratistas();
+  poblarListasNuevoProyecto();
   poblarExplorerSelects();
 
   filtrar();
@@ -1602,6 +1607,7 @@ function activarRealtime(){
         BD=BD.filter(function(p){return p.id!==payload.old.id;});
       }
       poblarContratistas();
+      poblarListasNuevoProyecto();
       filtrar();
       if(document.getElementById('p-dash').classList.contains('on')) renderDash();
       if(document.getElementById('p-resumen').classList.contains('on')) renderResumen();
@@ -1870,6 +1876,25 @@ function poblarContratistas(){
   var nombres = Array.from(new Set(BD.map(function(p){ return p.contratista; }).filter(function(c){ return c && c!=='—' && c.toUpperCase()!=='N/A'; })));
   nombres.sort(function(a,b){ return a.localeCompare(b,'es'); });
   sel.innerHTML = '<option value="">Contratista — todos</option>' + nombres.map(function(n){ return '<option'+(n===valorActual?' selected':'')+'>'+esc(n)+'</option>'; }).join('');
+}
+function poblarListasNuevoProyecto(){
+  function nombresUnicos(campo){
+    var vistos = {}, out = [];
+    BD.map(function(p){ return p[campo]; }).filter(function(v){ return v && v!=='—' && v.toUpperCase()!=='N/A'; }).forEach(function(v){
+      var k = v.trim().toUpperCase();
+      if(!vistos[k]){ vistos[k]=true; out.push(v.trim()); }
+    });
+    out.sort(function(a,b){ return a.localeCompare(b,'es'); });
+    return out;
+  }
+  function llenar(idDatalist, valores){
+    var dl = document.getElementById(idDatalist);
+    if(dl) dl.innerHTML = valores.map(function(v){ return '<option value="'+esc(v)+'">'; }).join('');
+  }
+  llenar('dl-contratista', nombresUnicos('contratista'));
+  llenar('dl-jefe', nombresUnicos('jefe'));
+  llenar('dl-vendedor', nombresUnicos('vendedor'));
+  llenar('dl-cert', nombresUnicos('cert'));
 }
 function filtrar(){
   var q=(document.getElementById('fi-q').value||'').toLowerCase();
@@ -2265,7 +2290,7 @@ async function crearProyecto(){
     comuna:document.getElementById('nco').value,
     tipo:document.getElementById('ntp').value,
     construccion:document.getElementById('ncon').value,
-    supervisor:document.getElementById('ns').value,
+    supervisor:'Daniel Villalobos',
     ito:'Daniel Villalobos',
     contratista:document.getElementById('nct').value,
     jefe:document.getElementById('nj').value,
