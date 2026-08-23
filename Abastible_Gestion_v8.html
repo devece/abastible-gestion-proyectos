@@ -376,6 +376,11 @@ tbody td:first-child{padding-left:20px}
     <select class="fi" id="fi-cont" onchange="filtrar()">
       <option value="">Contratista — todos</option>
     </select>
+    <select class="fi" id="fi-e0" onchange="filtrar()">
+      <option value="">Etapa 0 — todos</option>
+      <option value="validar">Por validar</option>
+      <option value="cuadre">Cuadre hecho</option>
+    </select>
     <button class="btn-clear" onclick="limpiar()">✕ Limpiar</button>
     <span class="fi-count" id="fi-count">—</span>
   </div>
@@ -1906,6 +1911,7 @@ function filtrar(){
   var sup=document.getElementById('fi-sup').value||'';
   var tip=document.getElementById('fi-tip').value||'';
   var cont=document.getElementById('fi-cont').value||'';
+  var e0=document.getElementById('fi-e0').value||'';
   FLT=BD.filter(function(p){
     if(q){var t=[p.codigo,p.cliente,p.region,p.contratista,p.ito,p.supervisor,p.vendedor,p.comuna,p.tipo,p.jefe,String(p.item)].join(' ').toLowerCase();if(t.indexOf(q)<0)return false;}
     if(st&&p.status!==st)return false;
@@ -1913,6 +1919,8 @@ function filtrar(){
     if(sup&&p.supervisor!==sup)return false;
     if(tip&&p.tipo!==tip)return false;
     if(cont&&p.contratista!==cont)return false;
+    if(e0==='validar'&&!(tieneFecha(p.f_v_validar)&&!tieneFecha(p.f_v_respondido)))return false;
+    if(e0==='cuadre'&&!tieneFecha(p.f_v_respondido))return false;
     return true;
   });
   FLT.forEach(function(p){p._d=diasProy(p)||0;});
@@ -1926,7 +1934,7 @@ function filtrar(){
   PAG=1; renderTabla(); renderPag();
 }
 function setChip(el){document.querySelectorAll('.chip').forEach(function(c){c.classList.remove('on');});el.classList.add('on');document.getElementById('fi-st').value=el.getAttribute('data-s');filtrar();}
-function limpiar(){['fi-q','fi-st','fi-reg','fi-sup','fi-tip','fi-cont'].forEach(function(id){document.getElementById(id).value='';});document.querySelectorAll('.chip').forEach(function(c){c.classList.remove('on');});document.querySelector('.chip[data-s=""]').classList.add('on');filtrar();}
+function limpiar(){['fi-q','fi-st','fi-reg','fi-sup','fi-tip','fi-cont','fi-e0'].forEach(function(id){document.getElementById(id).value='';});document.querySelectorAll('.chip').forEach(function(c){c.classList.remove('on');});document.querySelector('.chip[data-s=""]').classList.add('on');filtrar();}
 function ord(col){SA=(SC===col)?!SA:(col==='item');SC=col;filtrar();}
 
 // ─── RENDER TABLA ─────────────────────────────────────────────────────────
