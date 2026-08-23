@@ -367,7 +367,8 @@ tbody td:first-child{padding-left:20px}
     <select class="fi" id="fi-tip" onchange="filtrar()">
       <option value="">Tipo — todos</option>
       <option>P01 Habitacional</option><option>P11 Comercial</option>
-      <option>P20 Sobrecosto</option><option>P20 Fidelización</option>
+      <option>P15 Conexion de Medidor a Central Existente</option>
+      <option>P20 Sobrecosto</option><option>P20 Reparación y/o Administración</option><option>P20 Fidelización</option>
       <option>P20 Gran Cliente</option><option>P20 Mantención</option>
       <option>P20 Regularización Normativa</option><option>P20 Aumento de consumo</option>
     </select>
@@ -2443,7 +2444,7 @@ function kpi(t,n,s,cls,delta){return '<div class="kpi '+cls+'"><div class="kpi-t
 var EX_DIMS=[
   {key:'status',label:'Estado',opts:function(){return Object.keys(SMAP);},fmt:function(v){return (SMAP[v]||['',v])[1];},color:function(v){return SMAP_COLOR[v]||'#54585A';}},
   {key:'region',label:'Región',opts:function(){return ['IV Coquimbo','V Valparaíso','RM Metropolitana','VI Ohiggins','VII Maule','XVI Ñuble','VIII Biobío','IX Araucanía','XIV Los Ríos','X Los Lagos'];}},
-  {key:'tipo',label:'Tipo',opts:function(){return ['P01 Habitacional','P11 Comercial','P20 Sobrecosto','P20 Fidelización','P20 Gran Cliente','P20 Mantención','P20 Regularización Normativa','P20 Aumento de consumo'];}},
+  {key:'tipo',label:'Tipo',opts:function(){return ['P01 Habitacional','P11 Comercial','P15 Conexion de Medidor a Central Existente','P20 Sobrecosto','P20 Reparación y/o Administración','P20 Fidelización','P20 Gran Cliente','P20 Mantención','P20 Regularización Normativa','P20 Aumento de consumo'];}},
   {key:'supervisor',label:'Supervisor',opts:function(){return ['Oscar Bravo','Fernando Martinez','Daniel Villalobos'];}},
   {key:'contratista',label:'Contratista',opts:function(){return Array.from(new Set(BD.map(function(p){return p.contratista;}).filter(function(c){return c&&c!=='—'&&c.toUpperCase()!=='N/A';}))).sort(function(a,b){return a.localeCompare(b,'es');});}}
 ];
