@@ -32,6 +32,7 @@ create table public.proyectos (
 
   -- Etapa 2
   f_liberado timestamptz,
+  f_ut timestamptz,
   f_oc timestamptz,
   f_trabajos timestamptz,
   f_tc8 timestamptz,
@@ -190,3 +191,4 @@ alter publication supabase_realtime add table public.proyectos;
 
 -- ── Stage: Término de Ejecución (dispara el recordatorio de End Pack) ──
 alter table public.proyectos add column if not exists f_termino_ejecucion timestamptz;
+alter table public.proyectos add column if not exists f_ut timestamptz;

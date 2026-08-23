@@ -162,6 +162,7 @@ tbody td:first-child{padding-left:20px}
 .etapas{display:flex;flex-direction:column;gap:12px}
 .etapa{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:0 1px 3px rgba(0,20,137,.04)}
 .ehdr{padding:9px 16px;display:flex;align-items:center;gap:9px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--line)}
+.e0 .ehdr{background:#F8FAFC;color:#334155;border-color:#E2E8F0}
 .e1 .ehdr{background:#F5F3FF;color:#4C1D95;border-color:#DDD6FE}
 .e2 .ehdr{background:#EFF6FF;color:#1E3A8A;border-color:#BFDBFE}
 .e3 .ehdr{background:#F0FDFA;color:#134E4A;border-color:#99F6E4}
@@ -217,6 +218,17 @@ tbody td:first-child{padding-left:20px}
 .fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,20,137,.09)}
 .fg select{padding-right:28px;background:var(--panel) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' fill='none' stroke='%236B7A9E' stroke-width='2' viewBox='0 0 24 24'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 9px center;cursor:pointer}
 .fg textarea{resize:vertical;min-height:70px}
+.capture-summary{margin-top:14px;padding:10px 12px;border:1.5px dashed var(--line2);border-radius:8px;background:#F8FAFF;color:var(--ink2);font-size:12.5px;line-height:1.55}
+.capture-summary strong{color:var(--navy)}
+.capture-summary .ok{color:var(--ok);font-weight:700}
+.capture-summary .warn{color:var(--warn);font-weight:700}
+.section-shell{border:1px solid var(--line);border-radius:12px;background:#F8FAFF;padding:14px 12px 10px;box-shadow:inset 0 1px 0 rgba(255,255,255,.7)}
+.section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.section-head h3{font-size:12px;font-weight:800;color:var(--navy);letter-spacing:.08em;text-transform:uppercase}
+.section-head small{font-size:11px;color:var(--muted);font-weight:600}
+.tag-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;background:#E0F2FE;color:#0F172A;font-size:11px;font-weight:700;border:1px solid #BEE3F8}
+.tag-pill::before{content:'●';font-size:9px;color:#0284C7}
+.field-note{font-size:11px;color:var(--muted);font-weight:600;line-height:1.4;margin-top:2px}
 
 /* DASHBOARD */
 .dash-wrap{padding:24px 36px;max-width:1800px;margin:0 auto}
@@ -356,7 +368,8 @@ tbody td:first-child{padding-left:20px}
     <select class="fi" id="fi-tip" onchange="filtrar()">
       <option value="">Tipo — todos</option>
       <option>P01 Habitacional</option><option>P11 Comercial</option>
-      <option>P20 Sobrecosto</option><option>P20 Fidelización</option>
+      <option>P15 Conexion de Medidor a Central Existente</option>
+      <option>P20 Sobrecosto</option><option>P20 Reparación y/o Administración</option><option>P20 Fidelización</option>
       <option>P20 Gran Cliente</option><option>P20 Mantención</option>
       <option>P20 Regularización Normativa</option><option>P20 Aumento de consumo</option>
     </select>
@@ -549,42 +562,55 @@ tbody td:first-child{padding-left:20px}
         <div id="nPdfProgress" style="display:none;margin-top:8px;font-size:12.5px;color:var(--brand);font-weight:600"></div>
         <div id="nPdfResumen" style="display:none;margin-top:8px;font-size:12.5px;color:var(--ok);font-weight:600"></div>
       </div>
-      <div class="fgrid">
-        <div class="fg"><label>Código *</label><input id="nc" placeholder="Ej: 18700000"></div>
-        <div class="fg"><label>Cliente *</label><input id="ncl" placeholder="Nombre completo"></div>
-        <div class="fg"><label>Región *</label>
-          <select id="nr"><option value="">Seleccionar...</option>
-            <option>IV Coquimbo</option><option>V Valparaíso</option>
-            <option>RM Metropolitana</option><option>VI Ohiggins</option>
-            <option>VII Maule</option><option>XVI Ñuble</option>
-            <option>VIII Biobío</option><option>IX Araucanía</option>
-            <option>XIV Los Ríos</option><option>X Los Lagos</option>
-          </select></div>
-        <div class="fg"><label>Comuna</label><input id="nco" placeholder="Ej: Temuco"></div>
-        <div class="fg"><label>Tipo Proyecto</label>
-          <select id="ntp"><option>P01 Habitacional</option><option>P11 Comercial</option>
-            <option>P20 Sobrecosto</option><option>P20 Fidelización</option>
-            <option>P20 Gran Cliente</option><option>P20 Mantención</option>
-            <option>P20 Regularización Normativa</option><option>P20 Aumento de consumo</option>
-          </select></div>
-        <div class="fg"><label>Construcción</label>
-          <select id="ncon"><option>Inmediata</option><option>Tardía</option></select></div>
-        <div class="fg"><label>Supervisor</label>
-          <select id="ns"><option value="">—</option><option>Oscar Bravo</option><option>Fernando Martinez</option><option>Daniel Villalobos</option></select></div>
-        <div class="fg"><label>ITO / Coordinador</label><input id="ni" placeholder="Nombre"></div>
-        <div class="fg"><label>Contratista</label><input id="nct" placeholder="Empresa o persona"></div>
-        <div class="fg"><label>Jefe Instalaciones</label><input id="nj" placeholder="Nombre"></div>
-        <div class="fg"><label>Vendedor</label><input id="nv" placeholder="Nombre"></div>
-        <div class="fg"><label>Certificador</label><input id="nce" placeholder="Ej: GASTEK, GASSI..."></div>
-        <div class="fg"><label>Potencia (Mcal/h)</label><input id="np" type="number" placeholder="200"></div>
-        <div class="fg"><label>Tanque</label><input id="nta" placeholder="Ej: TQ1000S"></div>
-        <div class="fg"><label>Cant. Tanques</label><input id="nca" type="number" placeholder="1" min="1"></div>
-        <div class="fg"><label>Costo Inversión ($)</label><input id="ncs" type="number" placeholder="5000000"></div>
-        <div class="fg"><label>Cant. Reguladores</label><input id="nreg" type="number" placeholder="1" min="0"></div>
-        <div class="fg"><label>Cant. Medidores</label><input id="nmed" type="number" placeholder="0" min="0"></div>
-        <div class="fg"><label>Toneladas Estimadas</label><input id="nton" type="number" step="0.01" placeholder="2.5"></div>
-        <div class="fg full"><label>Observaciones</label><textarea id="no" placeholder="Notas, contexto, condiciones especiales..."></textarea></div>
+      <div style="background:var(--info-bg);border:1.5px dashed var(--info);border-radius:var(--r);padding:14px 16px;margin-bottom:16px">
+        <label style="display:block;margin-bottom:8px">🧾 Cargar Detalle Comercial (PDF) — llena Código/Cliente/Región/Comuna/Tipo de Proyecto/Costo/Tanque automáticamente</label>
+        <input type="file" id="dcPdfInput" accept="application/pdf">
+        <div id="dcPdfProgress" style="display:none;margin-top:8px;font-size:12.5px;color:var(--info);font-weight:600"></div>
+        <div id="dcPdfResumen" style="display:none;margin-top:8px;font-size:12.5px;color:var(--ok);font-weight:600"></div>
       </div>
+      <div class="section-shell">
+        <div class="section-head">
+          <h3>Datos básicos</h3>
+          <span class="tag-pill">Proyecto nuevo</span>
+        </div>
+        <div class="fgrid">
+          <div class="fg"><label>Código *</label><input id="nc" placeholder="Ej: 18700000"><div class="field-note">Usado como identificador principal del proyecto.</div></div>
+          <div class="fg"><label>Cliente *</label><input id="ncl" placeholder="Nombre completo"><div class="field-note">Nombre del cliente o razón social.</div></div>
+          <div class="fg"><label>Región *</label>
+            <select id="nr"><option value="">Seleccionar...</option>
+              <option>IV Coquimbo</option><option>V Valparaíso</option>
+              <option>RM Metropolitana</option><option>VI Ohiggins</option>
+              <option>VII Maule</option><option>XVI Ñuble</option>
+              <option>VIII Biobío</option><option>IX Araucanía</option>
+              <option>XIV Los Ríos</option><option>X Los Lagos</option>
+            </select><div class="field-note">Cambia el certificador sugerido según la región.</div></div>
+          <div class="fg"><label>Comuna</label><input id="nco" placeholder="Ej: Temuco"><div class="field-note">Opcional, pero ayuda mucho al control operativo.</div></div>
+          <div class="fg"><label>Tipo Proyecto</label>
+            <select id="ntp"><option>P01 Habitacional</option><option>P11 Comercial</option>
+              <option>P15 Conexion de Medidor a Central Existente</option>
+              <option>P20 Sobrecosto</option><option>P20 Reparación y/o Administración</option><option>P20 Fidelización</option>
+              <option>P20 Gran Cliente</option><option>P20 Mantención</option>
+              <option>P20 Regularización Normativa</option><option>P20 Aumento de consumo</option>
+            </select><div class="field-note">Se usa para agrupar por tipo de ejecución.</div></div>
+          <div class="fg"><label>Construcción</label>
+            <select id="ncon"><option>Inmediata</option><option>Tardía</option></select><div class="field-note">Define el ritmo de ejecución esperada.</div></div>
+          <div class="fg"><label>Supervisor</label><input id="ns" placeholder="Nombre" readonly><div class="field-note">Siempre se registra Daniel Villalobos.</div></div>
+          <div class="fg"><label>ITO / Coordinador</label><input id="ni" placeholder="Nombre" readonly><div class="field-note">Siempre se registra Daniel Villalobos.</div></div>
+          <div class="fg"><label>Contratista</label><input id="nct" list="dl-contratista" placeholder="Empresa o persona"><datalist id="dl-contratista"></datalist><div class="field-note">Nombre del contratista o proveedor asociado.</div></div>
+          <div class="fg"><label>Jefe Instalaciones</label><input id="nj" list="dl-jefe" placeholder="Nombre"><datalist id="dl-jefe"></datalist><div class="field-note">Persona encargada del cierre de obra.</div></div>
+          <div class="fg"><label>Vendedor</label><input id="nv" list="dl-vendedor" placeholder="Nombre"><datalist id="dl-vendedor"></datalist><div class="field-note">Quien gestionó la venta o el ingreso del proyecto.</div></div>
+          <div class="fg"><label>Certificador</label><input id="nce" list="dl-cert" placeholder="Ej: GASTEK, GASSI..."><datalist id="dl-cert"></datalist><div class="field-note">Se sugiere al cambiar región o contratarista.</div></div>
+          <div class="fg"><label>Potencia (Mcal/h)</label><input id="np" type="number" placeholder="200"><div class="field-note">Valor operativo del proyecto.</div></div>
+          <div class="fg"><label>Tanque</label><input id="nta" placeholder="Ej: TQ1000S"><div class="field-note">Código o modelo del tanque.</div></div>
+          <div class="fg"><label>Cant. Tanques</label><input id="nca" type="number" placeholder="1" min="1"><div class="field-note">Cantidad total estimada.</div></div>
+          <div class="fg"><label>Costo Inversión ($)</label><input id="ncs" type="number" placeholder="5000000"><div class="field-note">Costo total en pesos.</div></div>
+          <div class="fg"><label>Cant. Reguladores</label><input id="nreg" type="number" placeholder="1" min="0"><div class="field-note">Cantidad estimada de reguladores.</div></div>
+          <div class="fg"><label>Cant. Medidores</label><input id="nmed" type="number" placeholder="0" min="0"><div class="field-note">Cantidad estimada de medidores.</div></div>
+          <div class="fg"><label>Toneladas Estimadas</label><input id="nton" type="number" step="0.00001" placeholder="0.00047"><div class="field-note">Se calcula desde Kgs/año/instal. del Detalle Comercial.</div></div>
+          <div class="fg full"><label>Observaciones</label><textarea id="no" placeholder="Notas, contexto, condiciones especiales..."></textarea><div class="field-note">Aquí va cualquier detalle relevante para coordinación, cliente o obra.</div></div>
+        </div>
+      </div>
+      <div id="nuevo-resumen" class="capture-summary"><strong>Checklist:</strong> completa Código, Cliente y Región para guardar el proyecto.</div>
     </div>
     <div class="mfoot">
       <button class="btn btn-ghost" onclick="closeOv('ov-new')">Cancelar</button>
@@ -701,6 +727,7 @@ var CERT_POR_REGION={}, certManual=false;
 // ─── LECTURA AUTOMÁTICA DE PLANILLA DE DATOS (PDF/OCR) ─────────────────────
 pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
 var PD_EXTRAIDO=null;
+var DC_EXTRAIDO=null;
 
 function quitarAcentos(s){ return (s||'').normalize('NFD').replace(/[̀-ͯ]/g,''); }
 function normalizar(s){ return quitarAcentos((s||'').toLowerCase()).replace(/[^a-z0-9]/g,''); }
@@ -904,6 +931,18 @@ const REGION_A_V8 = {
   "Los Ríos":"XIV Los Ríos",
   "Los Lagos":"X Los Lagos"
 };
+const JEFE_POR_REGION = {
+  'IV Coquimbo':'LUIS BERRIOS',
+  'V Valparaíso':'LUIS BERRIOS',
+  'VI Ohiggins':'LUIS BERRIOS',
+  'VII Maule':'LUIS BERRIOS',
+  'XIV Los Ríos':'MANUEL ESTAY',
+  'X Los Lagos':'MANUEL ESTAY',
+  'RM Metropolitana':'MANUEL ESTAY',
+  'XVI Ñuble':'MANUEL ESTAY',
+  'VIII Biobío':'MANUEL ESTAY',
+  'IX Araucanía':'MANUEL ESTAY'
+};
 
 function mapearFilasACamposObjeto(filas){
   var tipo = detectarTipoInstalacion(filas);
@@ -958,6 +997,531 @@ function mapearFilasACamposObjeto(filas){
   return {campos:campos, encontrados:encontrados, total:total};
 }
 
+// ─── LECTURA AUTOMÁTICA DE DETALLE COMERCIAL (PDF con texto real, sin OCR) ─
+function parseNumeroCL(s){
+  if(!s) return null;
+  var limpio = String(s).replace(/[^\d.,]/g,'');
+  if(!limpio) return null;
+  if(limpio.indexOf(',')>=0 && limpio.lastIndexOf(',')>limpio.lastIndexOf('.')){
+    limpio = limpio.replace(/\./g,'').replace(',','.');
+  } else {
+    limpio = limpio.replace(/\./g,'');
+  }
+  var n = parseFloat(limpio);
+  return isNaN(n) ? null : n;
+}
+
+function limpiarTextoDC(texto){
+  return String(texto || '')
+    .replace(/\r/g,'\n')
+    .replace(/\u00a0/g,' ')
+    .replace(/[ \t]+/g,' ')
+    .replace(/[ \t]*\n[ \t]*/g,'\n')
+    .replace(/\n{3,}/g,'\n\n')
+    .trim();
+}
+
+function tomarValorDC(texto, patrones){
+  if(!texto) return '';
+  var txt = limpiarTextoDC(texto);
+  for(var i=0;i<patrones.length;i++){
+    var m = patrones[i].exec(txt);
+    if(!m) continue;
+    var val = (m[1] || '').replace(/\s+/g,' ').trim();
+    if(val && !/^null$/i.test(val)) return val;
+  }
+  return '';
+}
+
+function limpiarValorCampoDC(valor){
+  if(!valor) return '';
+  return String(valor)
+    .replace(/\s+/g,' ')
+    .replace(/^[\-:\s]+|[\-:\s]+$/g,'')
+    .trim();
+}
+
+function extraerConsumoAnualDC(texto){
+  var lineas = limpiarTextoDC(texto).split('\n');
+  var activo = false;
+  var kilosAnuales = 0;
+  var filas = 0;
+  lineas.forEach(function(linea){
+    if(/Cantidad\s+de\s+Instalaciones\s*-/i.test(linea)){ activo = true; return; }
+    if(!activo) return;
+    if(/^Cañer[ií]as\b/i.test(linea) || /^Servicio\s+Cañer[ií]as\b/i.test(linea)){ activo = false; return; }
+    if(/^Total\b/i.test(linea)) return;
+    if(/^(?:Artefacto|Cil\s+45|Kgs\.|Hora\/D[ií]a|D[ií]as\/A[nñ]o)/i.test(linea)) return;
+    if(linea.replace(/[\d.,\s\$]+/g,'').length < 3) return;
+    var numeros = linea.match(/\b\d+(?:[.,]\d+)?\b/g) || [];
+    if(numeros.length < 7) return;
+    var valorKg = parseNumeroCL(numeros[numeros.length-1]);
+    if(valorKg === null) return;
+    kilosAnuales += valorKg;
+    filas++;
+  });
+  if(filas) return {kilos:kilosAnuales, toneladas:kilosAnuales/1000};
+
+  var bloque = /Cantidad\s+de\s+Instalaciones\s*-([\s\S]*?)(?=\n\s*Cañer[ií]as\b)/i.exec(limpiarTextoDC(texto));
+  if(!bloque) return null;
+  var tramo = /Kgs\s*\/\s*a[nñ]o\s*\/\s*instal\.?[\s\S]*?(?=Total|Cañer[ií]as|$)/i.exec(bloque[1]);
+  if(!tramo) return null;
+  var valores = tramo[0].match(/\b\d+[.,]\d+\b/g) || [];
+  var totalKilos = valores.reduce(function(total, valor){ return total + (parseNumeroCL(valor)||0); }, 0);
+  return valores.length ? {kilos:totalKilos, toneladas:totalKilos/1000} : null;
+}
+
+function extraerPotenciaTotalDC(texto){
+  var lineas = limpiarTextoDC(texto).split('\n');
+  var activo = false;
+  var potenciaTotal = 0;
+  var filas = 0;
+  lineas.forEach(function(linea){
+    if(/Cantidad\s+de\s+Instalaciones\s*-/i.test(linea)){ activo = true; return; }
+    if(!activo) return;
+    if(/^Cañer[ií]as\b/i.test(linea) || /^Servicio\s+Cañer[ií]as\b/i.test(linea)){ activo = false; return; }
+    if(/^Total\b/i.test(linea)) return;
+    if(/^(?:Artefacto|Cil\s+45|Kgs\.|Hora\/D[ií]a|D[ií]as\/A[nñ]o)/i.test(linea)) return;
+    if(linea.replace(/[\d.,\s\$]+/g,'').length < 3) return;
+    var numeros = linea.match(/\b\d+(?:[.,]\d+)?\b/g) || [];
+    if(numeros.length < 7) return;
+    var valorPot = parseNumeroCL(numeros[2]);
+    if(valorPot === null) return;
+    potenciaTotal += valorPot;
+    filas++;
+  });
+  return filas ? potenciaTotal : null;
+}
+
+async function extraerTextoPDF(file){
+  var buf = await file.arrayBuffer();
+  var pdf = await pdfjsLib.getDocument({data:buf}).promise;
+  var lineas = [];
+  for(var n=1; n<=pdf.numPages; n++){
+    var page = await pdf.getPage(n);
+    var content = await page.getTextContent();
+    var porFila = [];
+    content.items.forEach(function(it){
+      var y = Math.round(it.transform[5]);
+      var fila = porFila.find(function(f){ return Math.abs(f.y-y)<3; });
+      if(!fila){ fila={y:y,partes:[]}; porFila.push(fila); }
+      fila.partes.push({x:it.transform[4], texto:it.str});
+    });
+    porFila.sort(function(a,b){ return b.y-a.y; });
+    porFila.forEach(function(f){
+      f.partes.sort(function(a,b){ return a.x-b.x; });
+      var texto = f.partes.map(function(p){ return p.texto; }).join(' ').replace(/\s+/g,' ').trim();
+      if(texto) lineas.push(texto);
+    });
+  }
+  return lineas.join('\n');
+}
+
+async function extraerBloqueIdentificacionDC(file){
+  try{
+    var buf = await file.arrayBuffer();
+    var pdf = await pdfjsLib.getDocument({data:buf}).promise;
+    var page = await pdf.getPage(1);
+    var content = await page.getTextContent();
+    var items = content.items.map(function(it){
+      return {x: it.transform[4], y: it.transform[5], texto: (it.str||'').trim()};
+    }).filter(function(it){ return it.texto; });
+
+    var porFila = [];
+    items.forEach(function(it){
+      var fila = porFila.find(function(f){ return Math.abs(f.y-it.y)<3; });
+      if(!fila){ fila={y:it.y,partes:[]}; porFila.push(fila); }
+      fila.partes.push(it);
+    });
+    porFila.forEach(function(f){ f.partes.sort(function(a,b){ return a.x-b.x; }); });
+    var filaTexto = function(f){ return f.partes.map(function(p){return p.texto;}).join(' '); };
+
+    var yInicio = null, yFin = null, filaCol = null;
+    porFila.forEach(function(f){
+      var t = filaTexto(f);
+      if(yInicio===null && /Identificaci[oó]n\s+Obra/i.test(t)) yInicio = f.y;
+      if(yFin===null && /VALORES\s+TOTALES/i.test(t)) yFin = f.y;
+      if(filaCol===null && f.partes.some(function(p){ return /^Nombre\b/i.test(p.texto); })) filaCol = f;
+    });
+    if(yInicio===null || !filaCol) return null;
+
+    var itemsTabla = items.filter(function(it){
+      return it.y < yInicio + 1 && (yFin===null || it.y > yFin - 1);
+    });
+    if(!itemsTabla.length) return null;
+
+    var xCol1=null, xCol2=null, xCol3=null;
+    filaCol.partes.forEach(function(it){
+      if(xCol1===null && /^Nombre\b/i.test(it.texto)) xCol1 = it.x;
+      if(xCol2===null && /^C[oó]digo\b/i.test(it.texto)) xCol2 = it.x;
+      if(xCol3===null && /^Direcci[oó]n/i.test(it.texto)) xCol3 = it.x;
+    });
+    if(xCol1===null || xCol2===null || xCol3===null) return null;
+
+    var limite12 = (xCol1+xCol2)/2, limite23 = (xCol2+xCol3)/2;
+    var columnas = [[],[],[]];
+    itemsTabla.forEach(function(it){
+      var col = it.x < limite12 ? 0 : (it.x < limite23 ? 1 : 2);
+      columnas[col].push(it);
+    });
+    columnas.forEach(function(col){
+      col.sort(function(a,b){
+        if(Math.abs(a.y-b.y) >= 3) return b.y-a.y;
+        return a.x-b.x;
+      });
+    });
+    return {
+      col1: columnas[0].map(function(it){ return it.texto; }).join(' '),
+      col2: columnas[1].map(function(it){ return it.texto; }).join(' '),
+      col3: columnas[2].map(function(it){ return it.texto; }).join(' ')
+    };
+  }catch(e){
+    console.error('No se pudo leer el bloque de identificación por columnas', e);
+    return null;
+  }
+}
+
+async function extraerTextoOCRDC(file){
+  var buf = await file.arrayBuffer();
+  var pdf = await pdfjsLib.getDocument({data:buf}).promise;
+  var textos = [];
+  for(var n=1; n<=pdf.numPages; n++){
+    var page = await pdf.getPage(n);
+    var viewport = page.getViewport({scale:2});
+    var canvas = document.createElement('canvas');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    await page.render({canvasContext:canvas.getContext('2d'), viewport:viewport}).promise;
+    var resultado = await Tesseract.recognize(canvas, 'spa');
+    textos.push(resultado.data.text || '');
+  }
+  return textos.join('\n');
+}
+
+function extraerCamposDetalleComercial(texto, columnas){
+  var campos = {}, m;
+
+  var txt = limpiarTextoDC(texto);
+  var identificacionDC = txt.split(/\n\s*VALORES\s+TOTALES\b/i)[0].replace(/\s+/g,' ').trim();
+  var idBloque1 = columnas && columnas.col1 ? limpiarTextoDC(columnas.col1).replace(/\s+/g,' ').trim() : identificacionDC;
+  var idBloque3 = columnas && columnas.col3 ? limpiarTextoDC(columnas.col3).replace(/\s+/g,' ').trim() : identificacionDC;
+
+  var codigo = tomarValorDC(txt, [
+    /C[oó]digo\s*(?:de)?\s*Proyecto\s*[:\-]?\s*([A-Za-z0-9\-]+)/i,
+    /C[oó]digo\s*[:\-]?\s*([A-Za-z0-9\-]+)/i
+  ]);
+  if(codigo) campos.codigo = codigo;
+
+  var nombreProyecto = tomarValorDC(idBloque1, [
+    /Nombre\s*Proyecto\s*[:\-]?\s*([\s\S]*?)(?=\s+C[oó]digo\s*Proyecto\s*:|\s+Direcci[oó]n\s*\/\s*Poblaci[oó]n\s*:|\s+Persona\s+Contacto\s*:|\s+Comuna\s*:|$)/i
+  ]);
+  if(nombreProyecto) campos.nombre_proyecto = nombreProyecto;
+
+  var direccion = tomarValorDC(idBloque3, [
+    /Direcci[oó]n\s*(?:\/|\|)?\s*Poblaci[oó]n\s*[:\-]?\s*([\s\S]*?)(?=\s+Persona\s*Contacto\s*:|\s+Nombre\s*Contacto\s*:|\s+Regi[oó]n\s*:|\s+Comuna\s*:|$)/i,
+    /Direcci[oó]n\s*[:\-]?\s*([^\n]+)(?=\n\s*(?:Poblaci[oó]n|Comuna|Persona|Contacto))/i,
+    /Poblaci[oó]n\s*[:\-]?\s*([^\n]+)/i
+  ]);
+  if(direccion){
+    direccion = direccion.replace(/Regi[oó]n\s+[IVXL]+\s*-?\s*[^,]+,?\s*/i,'');
+    direccion = direccion.replace(/^[^,]*Comuna\s*[^,]+,?\s*/i,'');
+    var desdeCalle = direccion.match(/\bCalle\s+(.+)$/i);
+    if(desdeCalle) direccion = desdeCalle[1];
+    direccion = limpiarValorCampoDC(direccion);
+    if(direccion) campos.direccion = direccion;
+  }
+
+  var contacto = tomarValorDC(idBloque1, [
+    /Persona\s*Contacto\s*[:\-]?\s*([\s\S]*?)(?=\s+Fono\/Fax\s*:|\s+Comuna\s*:|\s+Clasificaci[oó]n\s+Proyecto\s*:|\s+Tipo\s+de\s+proyecto\s*:|$)/i,
+    /Nombre\s*Contacto\s*[:\-]?\s*([^\n]+)/i,
+    /Contacto\s*[:\-]?\s*([^\n]+)/i
+  ]);
+  if(contacto && normalizar(contacto)!=='null') campos.contacto = limpiarValorCampoDC(contacto);
+
+  var region = tomarValorDC(idBloque3, [
+    /\bRegi[oó]n\s*[:\-]?\s*([^\n]+?)(?=\s+Comuna\b|\s+Persona\s*Contacto\s*:|\s+Clasificaci[oó]n\s+Proyecto\s*:|\s+Tipo\s+de\s+proyecto\s*:|$)/i,
+    /\bRegion\s*[:\-]?\s*([^\n]+?)(?=\s+Comuna\b|\s+Persona\s*Contacto\s*:|\s+Clasificaci[oó]n\s+Proyecto\s*:|\s+Tipo\s+de\s+proyecto\s*:|$)/i
+  ]);
+  if(region) campos.region_dc = limpiarValorCampoDC(region);
+
+  var comuna = tomarValorDC(idBloque1, [
+    /\bComuna\s*[:\-]?\s*([^\n]+?)(?=\s+Clasificaci[oó]n\s+Proyecto\s*:|\s+Tipo\s+de\s+proyecto\s*:|\n|$)/i
+  ]);
+  if(comuna){
+    comuna = limpiarValorCampoDC(comuna)
+      .split(/\s*,\s*(?=Calle\b|N[°º]?\b|Direcci[oó]n\b)/i)[0]
+      .split(/\s*,\s*/)[0]
+      .replace(/\s+(?:Calle|N[°º]?|Direcci[oó]n)\b.*$/i,'')
+      .trim();
+    if(comuna) campos.comuna = comuna;
+  }
+
+  var tipoProyecto = tomarValorDC(idBloque3, [
+    /Tipo\s*(?:de)?\s*Proyecto\s*[:\-]?\s*([^\n\(]+?)\s*(?:\(([A-Za-z]\d{2})\)|\(([^\)]+)\))?/i,
+    /Tipo\s*[:\-]?\s*([^\n\(]+?)\s*(?:\(([A-Za-z]\d{2})\)|\(([^\)]+)\))?/i
+  ]);
+  if(tipoProyecto){
+    var matchTipo = idBloque3.match(/Tipo\s*(?:de)?\s*Proyecto\s*[:\-]?\s*([^\(]+?)\s*\(([A-Za-z]\d{2})\)/i);
+    if(matchTipo){
+      campos.tipo_desc = limpiarValorCampoDC(matchTipo[1]);
+      campos.tipo_codigo = matchTipo[2].toUpperCase();
+    }
+  }
+
+  var potenciaTotal = extraerPotenciaTotalDC(txt);
+  if(potenciaTotal !== null) campos.potencia = potenciaTotal;
+
+  var consumo = extraerConsumoAnualDC(txt);
+  if(consumo){
+    campos.consumo_kgs_anio = consumo.kilos;
+    campos.toneladas_estimadas = consumo.toneladas;
+  }
+
+  if(campos.potencia === undefined || campos.consumo_kgs_anio === undefined){
+    var bloqueArtefactos = /Cantidad\s+de\s+Instalaciones\s*-([\s\S]*?)(?=\n\s*Cañer[ií]as\b)/i.exec(txt);
+    if(campos.potencia === undefined && bloqueArtefactos){
+      var potencia = bloqueArtefactos[1].match(/\bTotal\s+(?:\d+)\s+([\d.,]+)\s+([\d.,]+)/i);
+      if(potencia) campos.potencia = parseNumeroCL(potencia[1]);
+    }
+    var textoPlanoDC = txt.replace(/\s+/g,' ');
+    var totalInstalacion = /\bTotal\s+\d+\s+([\d.,]+)\s+[\d.,]+\s+\d+\s+([\d.,]+)\b/i.exec(textoPlanoDC);
+    if(totalInstalacion){
+      if(campos.potencia === undefined) campos.potencia = parseNumeroCL(totalInstalacion[1]);
+      if(campos.consumo_kgs_anio === undefined){
+        campos.consumo_kgs_anio = parseNumeroCL(totalInstalacion[2]);
+        campos.toneladas_estimadas = campos.consumo_kgs_anio / 1000;
+      }
+    }
+  }
+
+  var costo = tomarValorDC(txt, [
+    /Total\s*Costo\s*Proyecto\s*[:\-]?\s*\$?\s*([\d\.\s,]+)/i,
+    /Costo\s*Proyecto\s*[:\-]?\s*\$?\s*([\d\.\s,]+)/i,
+    /Total\s*[:\-]?\s*\$?\s*([\d\.\s,]+)/i
+  ]);
+  if(costo) campos.costo = parseNumeroCL(costo);
+
+  var bloqueTanques = /\bTANQUES\b([\s\S]*?)Subtotal\s+Tanques/i.exec(txt);
+  if(bloqueTanques){
+    var tanqueRe = /\b(TQ\d+[A-Z0-9]*)\b[\s\S]{0,320}?\b(?:Un|Unidad)\b\s*(\d+)/gi;
+    var tm, codigos=[], cantTotal=0;
+    while((tm=tanqueRe.exec(bloqueTanques[1]))){ codigos.push(tm[1]); cantTotal+=parseInt(tm[2],10)||0; }
+    if(!codigos.length){
+      var codigoTanque = bloqueTanques[1].match(/\b(TQ\d+[A-Z0-9]*)\b/i);
+      var cantidadTanque = bloqueTanques[1].match(/\b(?:Un|Unidad)\b\s*(\d+)/i);
+      if(codigoTanque){ codigos.push(codigoTanque[1].toUpperCase()); cantTotal = cantidadTanque ? parseInt(cantidadTanque[1],10) || 1 : 1; }
+    }
+    if(codigos.length){ campos.tanque = codigos.join(', '); campos.cant_tanque = cantTotal || codigos.length; }
+    var subtotalTanques = txt.match(/Subtotal\s+Tanques\s+(\d+)/i);
+    if(subtotalTanques) campos.cant_tanque = parseInt(subtotalTanques[1],10) || 0;
+  }
+  if(!campos.tanque){
+    var estanquesTotal = txt.match(/\bEstanques\s+([\d.,]+)/i);
+    if(estanquesTotal && parseNumeroCL(estanquesTotal[1])===0){
+      campos.tanque = '';
+      campos.cant_tanque = 0;
+    }
+  }
+
+  var bloqueEquiposRe = /\bEQUIPOS\b([\s\S]*?)Subtotal\s+Equipos/gi;
+  var bloqueEquiposMatch, bloquesEquipos = [];
+  while((bloqueEquiposMatch=bloqueEquiposRe.exec(txt))) bloquesEquipos.push(bloqueEquiposMatch[1]);
+  if(bloquesEquipos.length){
+    var reguladorRe = /\bREG(?:ULADOR)?\b[\s\S]{0,320}?\b(?:Un|Unidad)\b\s*(\d+)/gi;
+    var reguladores = 0;
+    bloquesEquipos.forEach(function(bloque){
+      var rm, encontradosEnBloque = 0;
+      reguladorRe.lastIndex = 0;
+      while((rm=reguladorRe.exec(bloque))){ reguladores += parseInt(rm[1],10) || 0; encontradosEnBloque++; }
+      if(!encontradosEnBloque){
+        bloque.split('\n').forEach(function(fila){
+          if(/\bREG(?:ULADOR)?\b/i.test(fila)){
+            var cantidadReg = fila.match(/\b(?:Un|Unidad)\b\s*(\d+)/i);
+            reguladores += cantidadReg ? parseInt(cantidadReg[1],10) || 0 : 1;
+          }
+        });
+      }
+    });
+    campos.reguladores_cant = reguladores;
+  }
+  if(campos.reguladores_cant === undefined){
+    var equiposReg = txt.match(/\bEquipos\s*,\s*Reg\s+([\d.,]+)/i);
+    if(equiposReg) campos.reguladores_cant = parseNumeroCL(equiposReg[1]) || 0;
+  }
+
+  if(!campos.codigo){
+    var codigoFallback = txt.match(/\b(?:Proyecto|Código)\s*[:\-]?\s*([A-Z0-9\-]{6,})\b/i);
+    if(codigoFallback) campos.codigo = codigoFallback[1].trim();
+  }
+
+  if(!campos.tipo_codigo && !campos.tipo_desc){
+    var tipoFallback = txt.match(/\b(?:P\d{1,2}|[A-Z]\d{2})\b/i);
+    if(tipoFallback){
+      campos.tipo_codigo = tipoFallback[0].toUpperCase();
+      var descFallback = txt.match(/(?:HABITACIONAL|COMERCIAL|CONSTRUCTORA|REGULARIZACION|MANTENCION|FIDELIZACION|GRAN CLIENTE)/i);
+      if(descFallback) campos.tipo_desc = descFallback[0];
+    }
+  }
+
+  return campos;
+}
+
+function mapearRegionDC(valor){
+  if(!valor) return '';
+  var texto = String(valor).trim();
+  var m = /^\s*(RM|[IVXL]+)\b/i.exec(texto) || /\b(RM|[IVXL]+)\b/i.exec(texto);
+  if(!m) return '';
+  var numeral = m[1].toUpperCase();
+  var sel = document.getElementById('nr');
+  var opt = Array.from(sel.options).find(function(o){
+    if(!o.value) return false;
+    var om = /^(RM|[IVXL]+)\s/.exec(o.value);
+    return om && om[1]===numeral;
+  });
+  if(opt) return opt.value;
+  var byName = Object.keys(REGION_A_V8).find(function(k){ return normalizar(k).indexOf(normalizar(texto))>=0 || normalizar(texto).indexOf(normalizar(k))>=0; });
+  return byName ? REGION_A_V8[byName] : '';
+}
+
+function mapearJefePorRegion(region){
+  if(!region) return '';
+  return JEFE_POR_REGION[region] || '';
+}
+
+function sugerirJefeInstalaciones(){
+  var reg = document.getElementById('nr').value;
+  var jefe = mapearJefePorRegion(reg);
+  if(jefe){ document.getElementById('nj').value = jefe; }
+}
+
+function mapearTipoDC(codigo, desc){
+  if(!codigo) return '';
+  var sel = document.getElementById('ntp');
+  var candidatos = Array.from(sel.options).filter(function(o){ return normalizar(o.value).indexOf(normalizar(codigo))===0; });
+  if(!candidatos.length) return '';
+  if(candidatos.length===1) return candidatos[0].value;
+  var dn = normalizar(desc||'');
+  if(dn.indexOf('reparacion')>=0 || dn.indexOf('administracion')>=0){
+    var reparacion = candidatos.find(function(o){ return normalizar(o.value).indexOf('reparacion')>=0 || normalizar(o.value).indexOf('administracion')>=0; });
+    if(reparacion) return reparacion.value;
+  }
+  var mejor = dn && candidatos.find(function(o){ return normalizar(o.value).indexOf(dn)>=0; });
+  return (mejor||candidatos[0]).value;
+}
+
+function mostrarDebugDC(texto){
+  try{
+    var viejo = document.getElementById('dc-debug-ov');
+    if(viejo) viejo.remove();
+    var ov = document.createElement('div');
+    ov.id = 'dc-debug-ov';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(5,15,60,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+    var caja = document.createElement('div');
+    caja.style.cssText = 'background:#fff;border-radius:10px;max-width:900px;width:100%;max-height:90vh;display:flex;flex-direction:column;padding:16px';
+    var titulo = document.createElement('div');
+    titulo.textContent = 'Debug DC — selecciona todo (Ctrl+A) y copia (Ctrl+C) para enviarlo';
+    titulo.style.cssText = 'font-weight:800;margin-bottom:8px;font-family:sans-serif;font-size:13px';
+    var area = document.createElement('textarea');
+    area.value = texto;
+    area.style.cssText = 'flex:1;min-height:400px;font-family:monospace;font-size:11px;padding:10px;border:1px solid #ccc;border-radius:6px';
+    var btn = document.createElement('button');
+    btn.textContent = 'Cerrar';
+    btn.style.cssText = 'margin-top:10px;align-self:flex-end;padding:8px 16px;border:none;border-radius:6px;background:#001489;color:#fff;font-weight:700;cursor:pointer';
+    btn.onclick = function(){ ov.remove(); };
+    caja.appendChild(titulo); caja.appendChild(area); caja.appendChild(btn);
+    ov.appendChild(caja);
+    document.body.appendChild(ov);
+    area.focus(); area.select();
+  }catch(e){ console.error('No se pudo mostrar el debug DC', e); }
+}
+
+async function manejarPdfDetalleComercial(){
+  var input = document.getElementById('dcPdfInput');
+  var file = input.files[0];
+  if(!file) return;
+  var prog = document.getElementById('dcPdfProgress');
+  var resumen = document.getElementById('dcPdfResumen');
+  resumen.style.display='none';
+  prog.style.display='block';
+  prog.textContent='Leyendo Detalle Comercial...';
+  try{
+    var texto = await extraerTextoPDF(file);
+    var columnas = await extraerBloqueIdentificacionDC(file);
+    var campos = extraerCamposDetalleComercial(texto, columnas);
+    var debugLog = '=== TEXTO EXTRAÍDO (pdf.js) ===\n'+texto+'\n\n=== COLUMNAS IDENTIFICACIÓN ===\n'+JSON.stringify(columnas,null,2)+'\n\n=== CAMPOS (pre-OCR) ===\n'+JSON.stringify(campos,null,2);
+    var necesitaOCR = campos.potencia === undefined ||
+      campos.toneladas_estimadas === undefined || campos.toneladas_estimadas > 100 ||
+      (campos.cant_tanque === 1 && /\bTQ\d+[A-Z0-9]*\b/i.test(texto));
+    if(necesitaOCR){
+      prog.textContent='Ordenando tablas del DC...';
+      var textoOCR = await extraerTextoOCRDC(file);
+      var camposOCR = extraerCamposDetalleComercial(textoOCR);
+      debugLog += '\n\n=== TEXTO EXTRAÍDO (OCR) ===\n'+textoOCR+'\n\n=== CAMPOS (OCR) ===\n'+JSON.stringify(camposOCR,null,2);
+      Object.keys(camposOCR).forEach(function(campo){
+        if(campos[campo] === undefined && camposOCR[campo] !== undefined) campos[campo] = camposOCR[campo];
+      });
+      ['potencia','toneladas_estimadas','consumo_kgs_anio','tanque','cant_tanque','reguladores_cant'].forEach(function(campo){
+        if(camposOCR[campo] !== undefined && (camposOCR[campo] || campos[campo] === undefined)) campos[campo] = camposOCR[campo];
+      });
+    }
+    debugLog += '\n\n=== CAMPOS (final) ===\n'+JSON.stringify(campos,null,2);
+    console.log('[DC debug]\n'+debugLog);
+    mostrarDebugDC(debugLog);
+    var llenados = 0;
+
+    if(campos.codigo){ document.getElementById('nc').value = campos.codigo; llenados++; }
+    document.getElementById('ncl').value = campos.nombre_proyecto || campos.contacto || '';
+    if(campos.nombre_proyecto || campos.contacto) llenados++;
+    if(campos.region_dc){
+      var regionMatch = mapearRegionDC(campos.region_dc);
+      if(regionMatch){
+        document.getElementById('nr').value = regionMatch;
+        sugerirCertificador();
+        sugerirJefeInstalaciones();
+        llenados++;
+      }
+    }
+    document.getElementById('nco').value = campos.comuna || '';
+    if(campos.comuna) llenados++;
+    if(campos.tipo_codigo){
+      var tipoMatch = mapearTipoDC(campos.tipo_codigo, campos.tipo_desc);
+      if(tipoMatch){ document.getElementById('ntp').value = tipoMatch; llenados++; }
+    }
+    document.getElementById('ncs').value = campos.costo || '';
+    if(campos.costo) llenados++;
+    document.getElementById('nta').value = campos.tanque !== undefined ? campos.tanque : '';
+    document.getElementById('nca').value = campos.cant_tanque !== undefined ? campos.cant_tanque : '';
+    document.getElementById('np').value = campos.potencia !== undefined ? campos.potencia : '';
+    document.getElementById('nreg').value = campos.reguladores_cant !== undefined ? campos.reguladores_cant : '';
+    document.getElementById('nton').value = campos.toneladas_estimadas !== undefined ? campos.toneladas_estimadas : '';
+    ['tanque','cant_tanque','potencia','reguladores_cant','toneladas_estimadas'].forEach(function(campo){
+      if(campos[campo] !== undefined) llenados++;
+    });
+    document.getElementById('ni').value = 'Daniel Villalobos';
+
+    DC_EXTRAIDO = {};
+    if(campos.nombre_proyecto) DC_EXTRAIDO.nombre_proyecto = campos.nombre_proyecto;
+    if(campos.direccion) DC_EXTRAIDO.direccion = campos.direccion;
+    if(campos.comuna) DC_EXTRAIDO.comuna = campos.comuna;
+    if(campos.region_dc) DC_EXTRAIDO.region = mapearRegionDC(campos.region_dc) || campos.region_dc;
+    if(campos.tipo_codigo) DC_EXTRAIDO.tipo = mapearTipoDC(campos.tipo_codigo, campos.tipo_desc) || campos.tipo_desc;
+    if(campos.costo) DC_EXTRAIDO.costo = campos.costo;
+    if(campos.tanque) DC_EXTRAIDO.tanque = campos.tanque;
+    if(campos.cant_tanque !== undefined) DC_EXTRAIDO.cant_tanque = campos.cant_tanque;
+    if(campos.reguladores_cant !== undefined) DC_EXTRAIDO.reguladores_cant = campos.reguladores_cant;
+    if(document.getElementById('nj').value) DC_EXTRAIDO.jefe = document.getElementById('nj').value;
+
+    actualizarResumenNuevoProyecto();
+    prog.style.display='none';
+    resumen.style.display='block';
+    resumen.textContent = '✅ '+llenados+' campos extraídos del Detalle Comercial. Revisa los datos antes de crear el proyecto.';
+  }catch(e){
+    console.error('Error leyendo Detalle Comercial', e);
+    prog.style.display='none';
+    toast('⚠️ No se pudo leer el Detalle Comercial: '+(e.message||e),'err');
+  }
+}
+
 async function manejarPdfNuevoProyecto(){
   var input = document.getElementById('nPdfInput');
   var file = input.files[0];
@@ -994,6 +1558,7 @@ document.addEventListener('DOMContentLoaded', async function() {
   await cargarDesdeSupabase();
   await cargarCertificadores();
   poblarContratistas();
+  poblarListasNuevoProyecto();
   poblarExplorerSelects();
 
   filtrar();
@@ -1011,10 +1576,15 @@ document.addEventListener('DOMContentLoaded', async function() {
     document.getElementById('btn-delp').disabled=!ok;
   });
   document.getElementById('btn-dito').addEventListener('click', okDevITO);
-  document.getElementById('nr').addEventListener('change', sugerirCertificador);
+  document.getElementById('nr').addEventListener('change', function(){ sugerirCertificador(); sugerirJefeInstalaciones(); actualizarResumenNuevoProyecto(); });
   document.getElementById('nct').addEventListener('input', sugerirCertificador);
   document.getElementById('nce').addEventListener('input', function(){certManual=true;});
+  ['nc','ncl','nr','ntp','ns'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el){ el.addEventListener('input', actualizarResumenNuevoProyecto); el.addEventListener('change', actualizarResumenNuevoProyecto); }
+  });
   document.getElementById('nPdfInput').addEventListener('change', manejarPdfNuevoProyecto);
+  document.getElementById('dcPdfInput').addEventListener('change', manejarPdfDetalleComercial);
   document.querySelectorAll('.ov').forEach(function(el){
     el.addEventListener('click', function(e){if(e.target===el)el.classList.remove('open');});
   });
@@ -1029,15 +1599,18 @@ function activarRealtime(){
     .on('postgres_changes', {event:'*', schema:'public', table:'proyectos'}, function(payload){
       if(payload.eventType==='INSERT'){
         var nuevo=payload.new; nuevo._id=String(nuevo.id);
+        autoStatus(nuevo);
         if(!BD.some(function(p){return p.id===nuevo.id;})) BD.push(nuevo);
       } else if(payload.eventType==='UPDATE'){
         var idx=BD.findIndex(function(p){return p.id===payload.new.id;});
         var actualizado=payload.new; actualizado._id=String(actualizado.id);
+        autoStatus(actualizado);
         if(idx>=0) BD[idx]=actualizado; else BD.push(actualizado);
       } else if(payload.eventType==='DELETE'){
         BD=BD.filter(function(p){return p.id!==payload.old.id;});
       }
       poblarContratistas();
+      poblarListasNuevoProyecto();
       filtrar();
       if(document.getElementById('p-dash').classList.contains('on')) renderDash();
       if(document.getElementById('p-resumen').classList.contains('on')) renderResumen();
@@ -1051,9 +1624,16 @@ async function cargarDesdeSupabase(){
     var res=await sb.from('proyectos').select('*').order('item');
     if(res.error) throw res.error;
     BD=res.data.map(function(p){p._id=String(p.id);return p;});
+    var cambios=[];
+    BD.forEach(function(p,i){
+      var anterior=p.status;
+      autoStatus(p);
+      if(p.status!==anterior)cambios.push(guardar(i));
+    });
+    if(cambios.length)await Promise.all(cambios);
   }catch(e){
     console.error('Error cargando proyectos desde Supabase', e);
-    toast('⚠️ No se pudo conectar a la base de datos','err');
+    toast('⚠️ No se pudo cargar proyectos: '+(e.message||e),'err');
     BD=[];
   }
 }
@@ -1088,7 +1668,7 @@ async function guardar(idx){
     if(res.error) throw res.error;
   }catch(e){
     console.error('Error guardando en Supabase', e);
-    toast('⚠️ No se pudo guardar — revisa tu conexión','err');
+    toast('⚠️ No se pudo guardar: '+(e.message||e),'err');
   }
 }
 
@@ -1198,16 +1778,98 @@ var SMAP_COLOR={'1. Evaluación Previa':'#5B21B6','2. Entregado a coordinador':'
   '5.4 Solicitud de carga al 20%':'#6B21A8','6. Enviado a Gestor Doc':'#9A3412','7. Cierre Proyecto':'#14532D','8. Cierre Forzado':'#991B1B'};
 function mkBadge(s){var m=SMAP[s]||['b2',s||'—'];return '<span class="badge '+m[0]+'">'+m[1]+'</span>';}
 function mkDias(d){if(d===null||d===undefined)return '—';var cls=d<=30?'dg-ok':d<=90?'dg-w':'dg-bad';return '<span class="dg '+cls+'">'+d+'d</span>';}
+function tieneFecha(v){
+  if(!v||v==='null'||v==='None'||v==='N/A'||v==='OK')return false;
+  var d=new Date(String(v).replace(' ','T'));
+  return !isNaN(d.getTime());
+}
 function autoStatus(p){
-  if(p.f_forzado){p.status='8. Cierre Forzado';return;}
-  if(p.f_gestor){p.status='6. Enviado a Gestor Doc';return;}
-  if(p.f_c1){p.status='5.4 Solicitud de carga al 20%';return;}
-  if(p.f_trabajos){p.status='5.2 Inicio de Trabajos';return;}
-  if(p.f_oc){p.status='5.1 Envío O.C';return;}
-  if(p.f_liberado){p.status='5. Proyecto en ejecucion';return;}
-  if(p.f_rev_ant){p.status='4. Liberacion';return;}
-  if(p.f_v_coord){p.status='2. Entregado a coordinador';return;}
+  if(tieneFecha(p.f_forzado)||p.status==='8. Cierre Forzado'){p.status='8. Cierre Forzado';return;}
+  if(p.status==='7. Cierre Proyecto')return;
+  if(tieneFecha(p.f_gestor)){p.status='6. Enviado a Gestor Doc';return;}
+  if(Array.from({length:10},function(_,i){return p['f_c'+(i+1)];}).some(tieneFecha)){
+    p.status='5.4 Solicitud de carga al 20%';return;
+  }
+  if(tieneFecha(p.f_trabajos)){p.status='5.2 Inicio de Trabajos';return;}
+  if(tieneFecha(p.f_oc)){p.status='5.1 Envío O.C';return;}
+  if(tieneFecha(p.f_liberado)){p.status='5. Proyecto en ejecucion';return;}
+  if(tieneFecha(p.f_rev_ant)){p.status='4. Liberacion';return;}
+  if(tieneFecha(p.f_v_coord)){p.status='2. Entregado a coordinador';return;}
   p.status='1. Evaluación Previa';
+}
+function estadoHumano(s){
+  var mapa={
+    '1. Evaluación Previa':'Evaluación previa',
+    '2. Entregado a coordinador':'Entregado a coordinador',
+    '4. Liberacion':'Liberación',
+    '5. Proyecto en ejecucion':'Proyecto en ejecución',
+    '5.1 Envío O.C':'Envío O.C.',
+    '5.2 Inicio de Trabajos':'Inicio de trabajos',
+    '5.4 Solicitud de carga al 20%':'Solicitud de carga al 20%',
+    '6. Enviado a Gestor Doc':'Enviado a gestor documental',
+    '7. Cierre Proyecto':'Cierre del proyecto',
+    '8. Cierre Forzado':'Cierre forzado'
+  };
+  return mapa[s]|| (s||'Sin estado');
+}
+function validarOrdenFechas(p){
+  var orden=[
+    ['f_v_coord','f_rev_ant'],
+    ['f_rev_ant','f_liberar'],
+    ['f_liberar','f_liberado'],
+    ['f_liberado','f_oc'],
+    ['f_oc','f_trabajos'],
+    ['f_trabajos','f_tc8'],
+    ['f_tc8','f_montaje'],
+    ['f_montaje','f_gestor']
+  ];
+  var warnings=[];
+  orden.forEach(function(pair){
+    var a=pair[0], b=pair[1];
+    if(!tieneFecha(p[a])||!tieneFecha(p[b]))return;
+    var da=new Date(String(p[a]).replace(' ','T'));
+    var db=new Date(String(p[b]).replace(' ','T'));
+    if(db.getTime()<da.getTime()){
+      warnings.push('La fecha de '+a+' está después de '+b+'. Revisa la cronología.');
+    }
+  });
+  return warnings;
+}
+function normalizarNuevoProyecto(raw){
+  var r=Object.assign({}, raw||{});
+  r.cliente=(r.cliente||'').trim();
+  r.codigo=(r.codigo||'').trim();
+  r.region=r.region||'RM Metropolitana';
+  r.tipo=r.tipo||'P01 Habitacional';
+  r.construccion=r.construccion||'Inmediata';
+  r.supervisor=r.supervisor||'Daniel Villalobos';
+  r.ito=(r.ito||'').trim();
+  r.contratista=(r.contratista||'').trim();
+  r.cert=(r.cert||'').trim();
+  r.potencia=r.potencia!==undefined&&r.potencia!==null&&r.potencia!==''?Number(r.potencia):null;
+  r.cant_tanque=r.cant_tanque!==undefined&&r.cant_tanque!==null&&r.cant_tanque!==''?Number(r.cant_tanque):null;
+  r.costo=r.costo!==undefined&&r.costo!==null&&r.costo!==''?Number(r.costo):null;
+  r.reguladores_cant=r.reguladores_cant!==undefined&&r.reguladores_cant!==null&&r.reguladores_cant!==''?Number(r.reguladores_cant):null;
+  r.medidores_cant=r.medidores_cant!==undefined&&r.medidores_cant!==null&&r.medidores_cant!==''?Number(r.medidores_cant):null;
+  r.toneladas_estimadas=r.toneladas_estimadas!==undefined&&r.toneladas_estimadas!==null&&r.toneladas_estimadas!==''?Number(r.toneladas_estimadas):null;
+  return r;
+}
+function validarProyectoNuevo(raw){
+  var p=normalizarNuevoProyecto(raw);
+  var errores=[];
+  if(!p.codigo)errores.push('El código es obligatorio.');
+  else if(BD.some(function(proy){return String(proy.codigo||'').trim().toLowerCase()===String(p.codigo).trim().toLowerCase();})){
+    errores.push('Ya existe un proyecto con ese código.');
+  }
+  if(!p.cliente)errores.push('El cliente es obligatorio.');
+  if(!p.region)errores.push('La región es obligatoria.');
+  if(!p.tipo)errores.push('El tipo de proyecto es obligatorio.');
+  if(!p.construccion)errores.push('La construcción es obligatoria.');
+  if(p.costo!==null&&p.costo<0)errores.push('El costo no puede ser negativo.');
+  if(p.cant_tanque!==null&&p.cant_tanque<1)errores.push('La cantidad de tanques debe ser 1 o más.');
+  if(p.reguladores_cant!==null&&p.reguladores_cant<0)errores.push('Los reguladores no pueden ser negativos.');
+  if(p.medidores_cant!==null&&p.medidores_cant<0)errores.push('Los medidores no pueden ser negativos.');
+  return {ok:errores.length===0, errores:errores, limpio:p};
 }
 
 // ─── FILTRAR ──────────────────────────────────────────────────────────────
@@ -1217,6 +1879,25 @@ function poblarContratistas(){
   var nombres = Array.from(new Set(BD.map(function(p){ return p.contratista; }).filter(function(c){ return c && c!=='—' && c.toUpperCase()!=='N/A'; })));
   nombres.sort(function(a,b){ return a.localeCompare(b,'es'); });
   sel.innerHTML = '<option value="">Contratista — todos</option>' + nombres.map(function(n){ return '<option'+(n===valorActual?' selected':'')+'>'+esc(n)+'</option>'; }).join('');
+}
+function poblarListasNuevoProyecto(){
+  function nombresUnicos(campo){
+    var vistos = {}, out = [];
+    BD.map(function(p){ return p[campo]; }).filter(function(v){ return v && v!=='—' && v.toUpperCase()!=='N/A'; }).forEach(function(v){
+      var k = v.trim().toUpperCase();
+      if(!vistos[k]){ vistos[k]=true; out.push(v.trim()); }
+    });
+    out.sort(function(a,b){ return a.localeCompare(b,'es'); });
+    return out;
+  }
+  function llenar(idDatalist, valores){
+    var dl = document.getElementById(idDatalist);
+    if(dl) dl.innerHTML = valores.map(function(v){ return '<option value="'+esc(v)+'">'; }).join('');
+  }
+  llenar('dl-contratista', nombresUnicos('contratista'));
+  llenar('dl-jefe', nombresUnicos('jefe'));
+  llenar('dl-vendedor', nombresUnicos('vendedor'));
+  llenar('dl-cert', nombresUnicos('cert'));
 }
 function filtrar(){
   var q=(document.getElementById('fi-q').value||'').toLowerCase();
@@ -1254,9 +1935,9 @@ function renderTabla(){
   var ini=(PAG-1)*PPP, slice=FLT.slice(ini,ini+PPP), html='';
   slice.forEach(function(p){
     var ven=vencido(p);
-    var keys=[p.f_v_coord,p.f_rev_ant,p.f_liberado,p.f_oc,p.f_trabajos,p.f_tc8,p.f_montaje,p.f_c1,p.tc2,p.f_gestor];
+    var keys=[p.f_v_coord,p.f_rev_ant,p.f_liberado,p.f_ut,p.f_oc,p.f_trabajos,p.f_tc8,p.f_montaje,p.f_c1,p.tc2,p.f_gestor];
     var dots=keys.map(function(v){var cls=(!v||v==='null')?'':(v==='OK'?'ok':'f');return '<span class="dot '+cls+'"></span>';}).join('');
-    var tc=(p.tipo||'').replace(/^P\d+\s*/,'').replace(/^00\s*/,'')||'—';
+    var tc=esc(p.tipo||'')||'—';
     html+='<tr class="'+(ven?'ven':'')+'" onclick="abrirDet(\''+esc(p._id)+'\')">';
     html+='<td class="td-n">'+p.item+'</td>';
     html+='<td class="td-cod">'+esc(p.codigo||'—')+'</td>';
@@ -1302,14 +1983,20 @@ function abrirDet(id){
   // Timer
   h+='<div class="timer"><div><div class="tlbl">Tiempo total del proyecto</div><div class="tnum">'+(dias||'—')+'</div><div class="tunit">días corridos desde liberación</div></div>';
   h+='<div><div class="tlbl">Días en liberación</div><div class="tnum" style="font-size:26px">'+(diasLib!==null?diasLib:'—')+'</div><div class="tunit">coordinador → liberado</div></div>';
-  h+='<div style="text-align:right"><div class="tlbl">Estado actual</div><div style="margin-top:8px">'+mkBadge(p.status)+'</div><div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:3px">'+esc(p.etapa||'')+'</div></div></div>';
+  h+='<div style="text-align:right"><div class="tlbl">Estado actual</div><div style="margin-top:8px">'+mkBadge(p.status)+'</div><div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:3px">'+esc(estadoHumano(p.status))+'</div></div></div>';
 
   // Alertas
+  var alerts=validarOrdenFechas(p);
+  h+='<div class="alerta al-b">📌 &nbsp;Estado real: <strong>'+esc(estadoHumano(p.status))+'</strong> · '+esc(p.etapa||'Sin etapa definida')+'</div>';
   if(dg!==null)h+='<div class="alerta '+(dg>15?'al-r':'al-b')+'">📁 &nbsp;En <strong>Gestor Documental</strong> hace <strong>'+dg+' días</strong>'+(dg>15?' — revisar urgente':'')+'</div>';
-  if(p.f_v_coord&&!p.f_rev_ant){var dv=diasDesde(p.f_v_coord);if(dv>4)h+='<div class="alerta al-r">⚠️ &nbsp;Revisión de antecedentes vencida — <strong>'+dv+' días</strong> sin validar (máx. 4 días)</div>';}
-  if(p.f_oc&&!p.f_trabajos){var doc=diasDesde(p.f_oc);if(doc>7)h+='<div class="alerta al-a">📦 &nbsp;<strong>Welcome Pack pendiente</strong> — O.C. enviada hace <strong>'+doc+' días</strong></div>';}
+  if(p.f_v_coord&&!p.f_rev_ant){var dv=diasDesde(p.f_v_coord);if(dv>4)h+='<div class="alerta al-r">⚠️ &nbsp;Revisión de antecedentes vencida — <strong>'+dv+' días</strong> sin validar (máx. 4 días)</div>';} 
+  if(p.f_oc&&!p.f_trabajos){var doc=diasDesde(p.f_oc);if(doc>7)h+='<div class="alerta al-a">📦 &nbsp;<strong>Welcome Pack pendiente</strong> — O.C. enviada hace <strong>'+doc+' días</strong></div>';} 
   if(p.dev_ito&&!p.f_liberado)h+='<div class="alerta al-a">↩️ &nbsp;<strong>Devuelto a ITO</strong> — pendiente de corrección desde el '+esc(fFH(p.dev_ito))+' (ver motivo en Observaciones)</div>';
-  if(cer)h+='<div class="alerta al-g">✅ &nbsp;Proyecto cerrado — solo lectura</div>';
+  if(alerts.length){
+    alerts.forEach(function(msg){
+      h+='<div class="alerta al-w">🕒 &nbsp;'+esc(msg)+'</div>';
+    });
+  }
 
   // Info (editable — datos ingresados al inicio del proyecto)
   h+='<div class="igrid">';
@@ -1327,6 +2014,9 @@ function abrirDet(id){
 
   // Etapas
   h+='<div class="etapas">';
+  h+='<div class="etapa e0"><div class="ehdr">🗂 Etapa 0 &nbsp;·&nbsp; Ingreso</div>';
+  h+=hF(idx,'f_v_validar','Envío para validar (fuera de Renova)',p,'📮','',cer);
+  h+='</div>';
   h+='<div class="etapa e1"><div class="ehdr">📋 Etapa 1 &nbsp;·&nbsp; Validación de Proyectos</div>';
   h+=hF(idx,'f_v_coord','Envío Ventas → Coordinador',p,'📤','Inicio del plazo de revisión de 4 días',cer);
   h+=hF(idx,'f_rev_ant','Revisión de Antecedentes (ITO / Coordinador)',p,'🔍','',cer);
@@ -1337,6 +2027,7 @@ function abrirDet(id){
 
   h+='<div class="etapa e2"><div class="ehdr">🏗 Etapa 2 &nbsp;·&nbsp; Construcción y Ejecución</div>';
   h+=hF(idx,'f_liberado','Proyecto Liberado',p,'🔓','Jefe de Proyectos Masivos',cer);
+  h+=hF(idx,'f_ut','Crear UT',p,'🧾','',cer);
   h+=hF(idx,'f_oc','Envío O.C. a Contratistas y Proveedores',p,'📄','Welcome Pack pendiente hasta confirmar inicio',cer);
   h+=hF(idx,'f_trabajos','Inicio de Trabajos',p,'🔨','',cer);
   if(!cer)h+=hBotonAccion('📧','Enviar Welcome Pack al cliente','','<button class="hbtn hb-reg" onclick="abrirWPEP('+idx+',\'WP\')">📧 Generar Welcome Pack</button>');
@@ -1398,7 +2089,7 @@ function inf(l,v){var nd=!v||v==='null'||v==='None'||v==='N/A';return '<div clas
 
 // ─── CAMPO INFO EDITABLE (datos ingresados al inicio del proyecto) ────────
 var SEL_REGION=['IV Coquimbo','V Valparaíso','RM Metropolitana','VI Ohiggins','VII Maule','XVI Ñuble','VIII Biobío','IX Araucanía','XIV Los Ríos','X Los Lagos'];
-var SEL_TIPO=['P01 Habitacional','P11 Comercial','P20 Sobrecosto','P20 Fidelización','P20 Gran Cliente','P20 Mantención','P20 Regularización Normativa','P20 Aumento de consumo'];
+var SEL_TIPO=['P01 Habitacional','P11 Comercial','P15 Conexion de Medidor a Central Existente','P20 Sobrecosto','P20 Reparación y/o Administración','P20 Fidelización','P20 Gran Cliente','P20 Mantención','P20 Regularización Normativa','P20 Aumento de consumo'];
 var SEL_CONSTRUCCION=['Inmediata','Tardía'];
 var SEL_SUPERVISOR=['Oscar Bravo','Fernando Martinez','Daniel Villalobos'];
 function infE(idx,key,l,v,cer,tipo,opts){
@@ -1530,7 +2221,7 @@ async function okDelProy(){
     toast('🗑 Proyecto eliminado','ok');
   }catch(e){
     console.error('Error eliminando proyecto', e);
-    toast('⚠️ No se pudo eliminar el proyecto','err');
+    toast('⚠️ No se pudo eliminar el proyecto: '+(e.message||e),'err');
     btn.disabled=false;
   }
   btn.textContent='🗑  Confirmar Eliminación';
@@ -1558,48 +2249,100 @@ function okDevITO(){
 }
 
 // ─── NUEVO PROYECTO ───────────────────────────────────────────────────────
+function actualizarResumenNuevoProyecto(){
+  var res=document.getElementById('nuevo-resumen');
+  if(!res) return;
+  var campos=[
+    ['Código', document.getElementById('nc').value.trim()],
+    ['Cliente', document.getElementById('ncl').value.trim()],
+    ['Región', document.getElementById('nr').value.trim()],
+    ['Tipo', document.getElementById('ntp').value.trim()],
+    ['Supervisor', document.getElementById('ns').value.trim()]
+  ];
+  var faltan=campos.filter(function(c){ return !c[1]; }).map(function(c){ return c[0]; });
+  if(!faltan.length){
+    res.innerHTML='<span class="ok">✓ Listo para guardar: los datos mínimos del proyecto están completos.</span>';
+    return;
+  }
+  res.innerHTML='<strong>Checklist:</strong> faltan: <span class="warn">'+faltan.join(', ')+'</span>. Completa estos campos antes de guardar.';
+}
 function abrirNuevo(){
-  certManual=false; PD_EXTRAIDO=null;
+  certManual=false; PD_EXTRAIDO=null; DC_EXTRAIDO=null;
+  var defaults={
+    nr:'RM Metropolitana',
+    ntp:'P01 Habitacional',
+    ncon:'Inmediata',
+    ns:'Daniel Villalobos',
+    ni:'Daniel Villalobos'
+  };
+  Object.keys(defaults).forEach(function(id){
+    var el=document.getElementById(id);
+    if(el && !el.value) el.value=defaults[id];
+  });
+  actualizarResumenNuevoProyecto();
   document.getElementById('nPdfInput').value='';
   document.getElementById('nPdfProgress').style.display='none';
   document.getElementById('nPdfResumen').style.display='none';
+  document.getElementById('dcPdfInput').value='';
+  document.getElementById('dcPdfProgress').style.display='none';
+  document.getElementById('dcPdfResumen').style.display='none';
   document.getElementById('ov-new').classList.add('open');
 }
 async function crearProyecto(){
-  var cod=(document.getElementById('nc').value||'').trim();
-  var cli=(document.getElementById('ncl').value||'').trim();
-  var reg=document.getElementById('nr').value||'';
-  if(!cod||!cli||!reg){toast('⚠️ Código, cliente y región son obligatorios','warn');return;}
+  var raw={
+    codigo:(document.getElementById('nc').value||'').trim(),
+    cliente:(document.getElementById('ncl').value||'').trim(),
+    region:document.getElementById('nr').value||'',
+    comuna:document.getElementById('nco').value,
+    tipo:document.getElementById('ntp').value,
+    construccion:document.getElementById('ncon').value,
+    supervisor:'Daniel Villalobos',
+    ito:'Daniel Villalobos',
+    contratista:document.getElementById('nct').value,
+    jefe:document.getElementById('nj').value,
+    vendedor:document.getElementById('nv').value,
+    cert:document.getElementById('nce').value,
+    potencia:document.getElementById('np').value||null,
+    tanque:document.getElementById('nta').value,
+    cant_tanque:document.getElementById('nca').value||null,
+    costo:document.getElementById('ncs').value||null,
+    obs:document.getElementById('no').value,
+    reguladores_cant:document.getElementById('nreg').value||null,
+    medidores_cant:document.getElementById('nmed').value||null,
+    toneladas_estimadas:document.getElementById('nton').value||null
+  };
+  var valid=validarProyectoNuevo(raw);
+  if(!valid.ok){toast('⚠️ '+valid.errores[0],'warn');return;}
   var ts=ahora();
-  var maxItem=BD.reduce(function(m,p){return Math.max(m,p.item||0);},0);
-  var nuevo=Object.assign({}, PD_EXTRAIDO||{}, {
-    item:maxItem+1,codigo:cod,cliente:cli,region:reg,
-    comuna:document.getElementById('nco').value,tipo:document.getElementById('ntp').value,
-    construccion:document.getElementById('ncon').value,supervisor:document.getElementById('ns').value,
-    ito:document.getElementById('ni').value,contratista:document.getElementById('nct').value,
-    jefe:document.getElementById('nj').value,vendedor:document.getElementById('nv').value,
-    cert:document.getElementById('nce').value,potencia:document.getElementById('np').value||null,
-    tanque:document.getElementById('nta').value,cant_tanque:document.getElementById('nca').value||null,
-    costo:document.getElementById('ncs').value||null,obs:document.getElementById('no').value,
-    reguladores_cant:document.getElementById('nreg').value||null,medidores_cant:document.getElementById('nmed').value||null,
-    toneladas_estimadas:document.getElementById('nton').value||null,
-    status:'2. Entregado a coordinador',etapa:'Validación',f_v_coord:ts.replace(' ','T')
-  });
   try{
+    var maxRes=await sb.from('proyectos').select('item').order('item',{ascending:false}).limit(1);
+    if(maxRes.error) throw maxRes.error;
+    var maxItem=(maxRes.data&&maxRes.data[0]&&maxRes.data[0].item)||0;
+    var nuevo=Object.assign({}, DC_EXTRAIDO||{}, PD_EXTRAIDO||{}, normalizarNuevoProyecto(raw), {
+      item:maxItem+1,
+      status:'2. Entregado a coordinador',
+      etapa:'Validación',
+      f_v_coord:ts.replace(' ','T')
+    });
     var res=await sb.from('proyectos').insert(nuevo).select().single();
     if(res.error) throw res.error;
     var creado=res.data; creado._id=String(creado.id);
     BD.push(creado);
     ['nc','ncl','nco','ni','nct','nj','nv','nce','np','nta','nca','ncs','nreg','nmed','nton','no'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
-    document.getElementById('nr').value='';
+    document.getElementById('nr').value='RM Metropolitana';
+    document.getElementById('ntp').value='P01 Habitacional';
+    document.getElementById('ncon').value='Inmediata';
+    document.getElementById('ns').value='Daniel Villalobos';
     document.getElementById('nPdfInput').value='';
     document.getElementById('nPdfResumen').style.display='none';
-    PD_EXTRAIDO=null;
+    document.getElementById('dcPdfInput').value='';
+    document.getElementById('dcPdfResumen').style.display='none';
+    PD_EXTRAIDO=null; DC_EXTRAIDO=null;
     closeOv('ov-new'); filtrar();
-    toast('✅ Proyecto '+cod+' creado · '+ts,'ok');
+    toast('✅ Proyecto '+raw.codigo+' creado · '+ts,'ok');
   }catch(e){
     console.error('Error creando proyecto en Supabase', e);
-    toast('⚠️ No se pudo crear el proyecto en la base de datos','err');
+    toast('⚠️ No se pudo crear el proyecto: '+(e.message||e),'err');
   }
 }
 
@@ -1705,7 +2448,7 @@ function kpi(t,n,s,cls,delta){return '<div class="kpi '+cls+'"><div class="kpi-t
 var EX_DIMS=[
   {key:'status',label:'Estado',opts:function(){return Object.keys(SMAP);},fmt:function(v){return (SMAP[v]||['',v])[1];},color:function(v){return SMAP_COLOR[v]||'#54585A';}},
   {key:'region',label:'Región',opts:function(){return ['IV Coquimbo','V Valparaíso','RM Metropolitana','VI Ohiggins','VII Maule','XVI Ñuble','VIII Biobío','IX Araucanía','XIV Los Ríos','X Los Lagos'];}},
-  {key:'tipo',label:'Tipo',opts:function(){return ['P01 Habitacional','P11 Comercial','P20 Sobrecosto','P20 Fidelización','P20 Gran Cliente','P20 Mantención','P20 Regularización Normativa','P20 Aumento de consumo'];}},
+  {key:'tipo',label:'Tipo',opts:function(){return ['P01 Habitacional','P11 Comercial','P15 Conexion de Medidor a Central Existente','P20 Sobrecosto','P20 Reparación y/o Administración','P20 Fidelización','P20 Gran Cliente','P20 Mantención','P20 Regularización Normativa','P20 Aumento de consumo'];}},
   {key:'supervisor',label:'Supervisor',opts:function(){return ['Oscar Bravo','Fernando Martinez','Daniel Villalobos'];}},
   {key:'contratista',label:'Contratista',opts:function(){return Array.from(new Set(BD.map(function(p){return p.contratista;}).filter(function(c){return c&&c!=='—'&&c.toUpperCase()!=='N/A';}))).sort(function(a,b){return a.localeCompare(b,'es');});}}
 ];
@@ -2047,10 +2790,10 @@ function expJSON(){
 }
 function expCSV(){
   var BOM='\uFEFF';
-  var HDR=['Item','Código','Cliente','Región','Comuna','Tipo','Construcción','Status','Etapa',
+  var HDR=['Item','Código','Cliente','Región','Comuna','Tipo','Construcción','Estado','Etapa',
     'Supervisor','ITO','Contratista','Certificador','Jefe Instalaciones','Vendedor',
     'Potencia Mcal/h','Tanque','Cant. Tanques','Costo Inversión',
-    'Envío Ventas→Coord','Revisión Antecedentes','Primera Visita','Envío Liberar',
+    'Envío para validar (fuera de Renova)','Envío Ventas→Coord','Revisión Antecedentes','Primera Visita','Envío Liberar',
     'Proyecto Liberado','Envío O.C.','Inicio Trabajos','Envío TC8','Montaje Tanque',
     'Carga N°1','Carga N°2','Carga N°3','Carga N°4','Carga N°5',
     'Carga N°6','Carga N°7','Carga N°8','Carga N°9','Carga N°10',
@@ -2060,7 +2803,7 @@ function expCSV(){
   var rows=BD.map(function(p){
     return [p.item,p.codigo,p.cliente,p.region,p.comuna,p.tipo,p.construccion,p.status,p.etapa,
       p.supervisor,p.ito,p.contratista,p.cert,p.jefe,p.vendedor,p.potencia,p.tanque,p.cant_tanque,p.costo,
-      p.f_v_coord,p.f_rev_ant,p.f_visita,p.f_liberar,p.f_liberado,p.f_oc,p.f_trabajos,p.f_tc8,p.f_montaje,
+      p.f_v_validar,p.f_v_coord,p.f_rev_ant,p.f_visita,p.f_liberar,p.f_liberado,p.f_ut,p.f_oc,p.f_trabajos,p.f_tc8,p.f_montaje,
       p.f_c1,p.f_c2,p.f_c3,p.f_c4,p.f_c5,p.f_c6,p.f_c7,p.f_c8,p.f_c9,p.f_c10,
       p.tc2,p.sello,p.tc6,p.ir,p.tc7,p.pago1,p.pago2,p.pago3,p.pago4,
       p.f_termino_ejecucion,p.f_gestor,p.dev_ito,p.f_forzado,diasProy(p),p.obs].map(ce).join(',');
