@@ -1712,7 +1712,7 @@ function diasDesde(s){
   var d=new Date(String(s).replace(' ','T')); if(isNaN(d.getTime()))return null;
   return Math.floor((Date.now()-d.getTime())/86400000);
 }
-function diasProy(p){return diasDesde(p.f_liberado||p.f_v_coord)||0;}
+function diasProy(p){return diasDesde(p.f_liberado||p.f_v_coord||p.f_v_validar)||0;}
 function diasEntreFechas(a,b){
   var da=new Date(String(a).replace(' ','T')), db=new Date(String(b).replace(' ','T'));
   if(isNaN(da.getTime())||isNaN(db.getTime()))return null;
@@ -1939,7 +1939,7 @@ function renderTabla(){
   var ini=(PAG-1)*PPP, slice=FLT.slice(ini,ini+PPP), html='';
   slice.forEach(function(p){
     var ven=vencido(p);
-    var keys=[p.f_v_coord,p.f_rev_ant,p.f_liberado,p.f_ut,p.f_oc,p.f_trabajos,p.f_tc8,p.f_montaje,p.f_c1,p.tc2,p.f_gestor];
+    var keys=[p.f_v_validar,p.f_v_respondido,p.f_v_coord,p.f_rev_ant,p.f_liberado,p.f_ut,p.f_oc,p.f_trabajos,p.f_tc8,p.f_montaje,p.f_c1,p.tc2,p.f_gestor];
     var dots=keys.map(function(v){var cls=(!v||v==='null')?'':(v==='OK'?'ok':'f');return '<span class="dot '+cls+'"></span>';}).join('');
     var tc=esc(p.tipo||'')||'—';
     html+='<tr class="'+(ven?'ven':'')+'" onclick="abrirDet(\''+esc(p._id)+'\')">';
@@ -2359,7 +2359,7 @@ function renderDash(){
   var forzados=BD.filter(function(p){return p.status==='8. Cierre Forzado';}).length;
   var venc=BD.filter(function(p){return vencido(p);}).length;
 
-  var esteMes=BD.filter(function(p){var d=diasDesde(p.f_v_coord);return d!==null&&d<=30;}).length;
+  var esteMes=BD.filter(function(p){var d=diasDesde(p.f_v_validar||p.f_v_coord);return d!==null&&d<=30;}).length;
   var toneladas=BD.reduce(function(a,p){return a+(Number(p.toneladas_estimadas)||0);},0);
 
   document.getElementById('dash-kpis').innerHTML=
@@ -2422,15 +2422,16 @@ function renderDash(){
     '<text x="110" y="128" text-anchor="middle" font-size="14" fill="var(--muted)">proyectos</text></svg>'+
     '<div class="donut-legend">'+legendH+'</div></div>';
 
-  // Tendencia: proyectos ingresados por mes (últimos 12 meses, según f_v_coord)
+  // Tendencia: proyectos ingresados por mes (últimos 12 meses, según Etapa 0 o f_v_coord)
   var hoy=new Date(), meses=[];
   for(var i=11;i>=0;i--){
     var d=new Date(hoy.getFullYear(),hoy.getMonth()-i,1);
     meses.push({key:d.getFullYear()+'-'+d.getMonth(),lbl:MESES_ES[d.getMonth()].slice(0,3),n:0});
   }
   BD.forEach(function(p){
-    if(!p.f_v_coord)return;
-    var d=new Date(String(p.f_v_coord).replace(' ','T')); if(isNaN(d.getTime()))return;
+    var fIngreso=p.f_v_validar||p.f_v_coord;
+    if(!fIngreso)return;
+    var d=new Date(String(fIngreso).replace(' ','T')); if(isNaN(d.getTime()))return;
     var key=d.getFullYear()+'-'+d.getMonth();
     var m=meses.find(function(mm){return mm.key===key;});
     if(m)m.n++;
