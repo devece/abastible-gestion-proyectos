@@ -162,6 +162,7 @@ tbody td:first-child{padding-left:20px}
 .etapas{display:flex;flex-direction:column;gap:12px}
 .etapa{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:0 1px 3px rgba(0,20,137,.04)}
 .ehdr{padding:9px 16px;display:flex;align-items:center;gap:9px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--line)}
+.e0 .ehdr{background:#F8FAFC;color:#334155;border-color:#E2E8F0}
 .e1 .ehdr{background:#F5F3FF;color:#4C1D95;border-color:#DDD6FE}
 .e2 .ehdr{background:#EFF6FF;color:#1E3A8A;border-color:#BFDBFE}
 .e3 .ehdr{background:#F0FDFA;color:#134E4A;border-color:#99F6E4}
@@ -2013,6 +2014,9 @@ function abrirDet(id){
 
   // Etapas
   h+='<div class="etapas">';
+  h+='<div class="etapa e0"><div class="ehdr">🗂 Etapa 0 &nbsp;·&nbsp; Ingreso</div>';
+  h+=hF(idx,'f_v_validar','Envío para validar (fuera de Renova)',p,'📮','',cer);
+  h+='</div>';
   h+='<div class="etapa e1"><div class="ehdr">📋 Etapa 1 &nbsp;·&nbsp; Validación de Proyectos</div>';
   h+=hF(idx,'f_v_coord','Envío Ventas → Coordinador',p,'📤','Inicio del plazo de revisión de 4 días',cer);
   h+=hF(idx,'f_rev_ant','Revisión de Antecedentes (ITO / Coordinador)',p,'🔍','',cer);
@@ -2789,7 +2793,7 @@ function expCSV(){
   var HDR=['Item','Código','Cliente','Región','Comuna','Tipo','Construcción','Estado','Etapa',
     'Supervisor','ITO','Contratista','Certificador','Jefe Instalaciones','Vendedor',
     'Potencia Mcal/h','Tanque','Cant. Tanques','Costo Inversión',
-    'Envío Ventas→Coord','Revisión Antecedentes','Primera Visita','Envío Liberar',
+    'Envío para validar (fuera de Renova)','Envío Ventas→Coord','Revisión Antecedentes','Primera Visita','Envío Liberar',
     'Proyecto Liberado','Envío O.C.','Inicio Trabajos','Envío TC8','Montaje Tanque',
     'Carga N°1','Carga N°2','Carga N°3','Carga N°4','Carga N°5',
     'Carga N°6','Carga N°7','Carga N°8','Carga N°9','Carga N°10',
@@ -2799,7 +2803,7 @@ function expCSV(){
   var rows=BD.map(function(p){
     return [p.item,p.codigo,p.cliente,p.region,p.comuna,p.tipo,p.construccion,p.status,p.etapa,
       p.supervisor,p.ito,p.contratista,p.cert,p.jefe,p.vendedor,p.potencia,p.tanque,p.cant_tanque,p.costo,
-      p.f_v_coord,p.f_rev_ant,p.f_visita,p.f_liberar,p.f_liberado,p.f_ut,p.f_oc,p.f_trabajos,p.f_tc8,p.f_montaje,
+      p.f_v_validar,p.f_v_coord,p.f_rev_ant,p.f_visita,p.f_liberar,p.f_liberado,p.f_ut,p.f_oc,p.f_trabajos,p.f_tc8,p.f_montaje,
       p.f_c1,p.f_c2,p.f_c3,p.f_c4,p.f_c5,p.f_c6,p.f_c7,p.f_c8,p.f_c9,p.f_c10,
       p.tc2,p.sello,p.tc6,p.ir,p.tc7,p.pago1,p.pago2,p.pago3,p.pago4,
       p.f_termino_ejecucion,p.f_gestor,p.dev_ito,p.f_forzado,diasProy(p),p.obs].map(ce).join(',');
