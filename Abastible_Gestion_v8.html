@@ -585,6 +585,7 @@ tbody td:first-child{padding-left:20px}
           <div class="fg"><label>Comuna</label><input id="nco" placeholder="Ej: Temuco"><div class="field-note">Opcional, pero ayuda mucho al control operativo.</div></div>
           <div class="fg"><label>Tipo Proyecto</label>
             <select id="ntp"><option>P01 Habitacional</option><option>P11 Comercial</option>
+              <option>P15 Conexion de Medidor a Central Existente</option>
               <option>P20 Sobrecosto</option><option>P20 Reparación y/o Administración</option><option>P20 Fidelización</option>
               <option>P20 Gran Cliente</option><option>P20 Mantención</option>
               <option>P20 Regularización Normativa</option><option>P20 Aumento de consumo</option>
@@ -2083,7 +2084,7 @@ function inf(l,v){var nd=!v||v==='null'||v==='None'||v==='N/A';return '<div clas
 
 // ─── CAMPO INFO EDITABLE (datos ingresados al inicio del proyecto) ────────
 var SEL_REGION=['IV Coquimbo','V Valparaíso','RM Metropolitana','VI Ohiggins','VII Maule','XVI Ñuble','VIII Biobío','IX Araucanía','XIV Los Ríos','X Los Lagos'];
-var SEL_TIPO=['P01 Habitacional','P11 Comercial','P20 Sobrecosto','P20 Fidelización','P20 Gran Cliente','P20 Mantención','P20 Regularización Normativa','P20 Aumento de consumo'];
+var SEL_TIPO=['P01 Habitacional','P11 Comercial','P15 Conexion de Medidor a Central Existente','P20 Sobrecosto','P20 Reparación y/o Administración','P20 Fidelización','P20 Gran Cliente','P20 Mantención','P20 Regularización Normativa','P20 Aumento de consumo'];
 var SEL_CONSTRUCCION=['Inmediata','Tardía'];
 var SEL_SUPERVISOR=['Oscar Bravo','Fernando Martinez','Daniel Villalobos'];
 function infE(idx,key,l,v,cer,tipo,opts){
