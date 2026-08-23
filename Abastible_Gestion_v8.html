@@ -1936,7 +1936,7 @@ function renderTabla(){
     var ven=vencido(p);
     var keys=[p.f_v_coord,p.f_rev_ant,p.f_liberado,p.f_ut,p.f_oc,p.f_trabajos,p.f_tc8,p.f_montaje,p.f_c1,p.tc2,p.f_gestor];
     var dots=keys.map(function(v){var cls=(!v||v==='null')?'':(v==='OK'?'ok':'f');return '<span class="dot '+cls+'"></span>';}).join('');
-    var tc=(p.tipo||'').replace(/^P\d+\s*/,'').replace(/^00\s*/,'')||'—';
+    var tc=esc(p.tipo||'')||'—';
     html+='<tr class="'+(ven?'ven':'')+'" onclick="abrirDet(\''+esc(p._id)+'\')">';
     html+='<td class="td-n">'+p.item+'</td>';
     html+='<td class="td-cod">'+esc(p.codigo||'—')+'</td>';
