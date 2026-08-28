@@ -97,6 +97,16 @@
   .field.manual input:placeholder-shown, .field.manual textarea:placeholder-shown { border-style: dashed; }
   textarea { resize: vertical; min-height: 44px; }
 
+  .material-row { display: flex; gap: 6px; margin-bottom: 8px; align-items: flex-start; }
+  .material-row input { background: var(--ambar-claro); border-color: var(--ambar-borde); }
+  .material-row input.mat-codigo { width: 84px; flex: none; }
+  .material-row input.mat-descripcion { flex: 1; min-width: 0; }
+  .material-row input.mat-cantidad { width: 52px; flex: none; }
+  .material-row .mat-del {
+    flex: none; padding: 8px 10px; font-size: 13px; line-height: 1;
+  }
+  .material-empty { font-size: 12px; color: var(--texto-suave); padding: 6px 2px; }
+
   .static-box {
     font-size: 12px; line-height: 1.6; color: var(--texto-suave);
     background: var(--gris-bg); border: 1px solid var(--gris-borde); border-radius: 6px; padding: 10px 12px;
@@ -190,9 +200,9 @@
           <div class="hint" id="telefonoContratistaHint">+56 agregado automáticamente</div>
         </div>
         <div class="field auto">
-          <label for="cantReguladores">Cantidad (QTY)</label>
+          <label for="cantReguladores">Cantidad reguladores (ficha)</label>
           <input type="text" id="cantReguladores" value="1" oninput="render()">
-          <div class="hint">campo <code>reguladores_cant</code> de tabla proyectos</div>
+          <div class="hint">campo <code>reguladores_cant</code> de tabla proyectos — referencia para verificar que coincida con la suma de materiales de abajo, no se incluye directo en el correo</div>
         </div>
       </div>
     </div>
@@ -209,29 +219,20 @@
         <div class="field" style="margin-top:2px;">
           <label for="dcFile">📄 Cargar Detalle Comercial (PDF)</label>
           <input type="file" id="dcFile" accept="application/pdf" onchange="cargarDetalleComercial(this.files[0])">
-          <div class="hint" id="dcHint">extrae Código/Descripción/QTY de la categoría <code>EQUIPOS</code> — lo que se entrega por reserva</div>
+          <div class="hint" id="dcHint">completa la lista de materiales con la categoría <code>EQUIPOS</code> — lo que se entrega por reserva</div>
         </div>
 
-        <div class="field manual">
-          <label for="codigoMaterial">Código</label>
-          <input type="text" id="codigoMaterial" placeholder="Ej: 24615" oninput="render()">
-          <div class="hint">viene del Detalle Comercial — no capturado en el sistema todavía</div>
-        </div>
-        <div class="field manual">
-          <label for="descripcionMaterial">Descripción reserva</label>
-          <input type="text" id="descripcionMaterial" placeholder="Ej: REGULADOR REGO LV 404-B34-V9" oninput="render()">
-          <div class="hint">viene del Detalle Comercial — no capturado en el sistema todavía</div>
-        </div>
-        <div class="field manual">
-          <label for="materialesAdicionales">Materiales adicionales (opcional)</label>
-          <textarea id="materialesAdicionales" placeholder="Ej: SEGURO VALVULA ARCO TAJO 2001 CODIGO SAP: 17091, (1 UN)" oninput="render()"></textarea>
-          <div class="hint">se agrega como línea aparte, destacada, solo si se completa</div>
+        <div class="field manual" style="margin-top:14px;">
+          <label>Materiales a retirar (código / descripción / cantidad)</label>
+          <div id="materialesLista"></div>
+          <button class="btn-secondary" type="button" style="margin-top:4px;" onclick="agregarMaterial()">+ Agregar material</button>
+          <div class="hint">cada material va como su propia fila en el correo — vienen del Detalle Comercial, no capturados en el sistema todavía</div>
         </div>
       </div>
     </div>
 
     <div class="static-box" style="margin:0 0 1.25rem;">
-      ⚠️ Los reguladores se extraen del <b>Detalle Comercial</b> al crear el proyecto. Si <b>Cantidad (QTY)</b> aparece en 0 o faltan Código/Descripción, carga el Detalle Comercial (PDF) del proyecto arriba para completarlos automáticamente, o pide que te lo vuelvan a enviar.
+      ⚠️ Los materiales se extraen del <b>Detalle Comercial</b> al crear el proyecto. Si la lista queda vacía o incompleta, carga el Detalle Comercial (PDF) del proyecto arriba para completarla automáticamente, o pide que te lo vuelvan a enviar.
     </div>
 
     <div class="panel">
@@ -336,6 +337,44 @@ function onContratistaChange(){
 
 function g(id){ return document.getElementById(id).value.trim(); }
 
+/* ── Lista de materiales a retirar (código / descripción / cantidad) ── */
+
+let materiales = [{ codigo: '24615', descripcion: 'REGULADOR REGO LV 404-B34-V9', cantidad: '1' }];
+
+function escAttr(s){
+  return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+}
+
+function renderMaterialesUI(){
+  const cont = document.getElementById('materialesLista');
+  cont.innerHTML = materiales.length
+    ? materiales.map((m,i) => `
+        <div class="material-row">
+          <input type="text" class="mat-codigo" placeholder="Código" value="${escAttr(m.codigo)}" oninput="actualizarMaterial(${i},'codigo',this.value)">
+          <input type="text" class="mat-descripcion" placeholder="Descripción" value="${escAttr(m.descripcion)}" oninput="actualizarMaterial(${i},'descripcion',this.value)">
+          <input type="text" class="mat-cantidad" placeholder="Cant." value="${escAttr(m.cantidad)}" oninput="actualizarMaterial(${i},'cantidad',this.value)">
+          <button type="button" class="btn-secondary mat-del" onclick="eliminarMaterial(${i})" title="Quitar material">✕</button>
+        </div>`).join('')
+    : `<div class="material-empty">Sin materiales — agrega uno manualmente o carga el Detalle Comercial.</div>`;
+  render();
+}
+
+function actualizarMaterial(i, campo, valor){
+  if(!materiales[i]) return;
+  materiales[i][campo] = valor;
+  render();
+}
+
+function agregarMaterial(){
+  materiales.push({ codigo: '', descripcion: '', cantidad: '1' });
+  renderMaterialesUI();
+}
+
+function eliminarMaterial(i){
+  materiales.splice(i, 1);
+  renderMaterialesUI();
+}
+
 const NARANJA_ABASTIBLE = '#FE5100';
 const NARANJA_SUAVE = '#FFD9BC';
 const NARANJA_SUAVE_BORDE = '#FFC59A';
@@ -352,15 +391,33 @@ function row(label, val, opts={}){
   </tr>`;
 }
 
+function celdaHeaderMaterial(texto, align){
+  return `<td style="background:${NARANJA_ABASTIBLE};padding:9px 12px;font-family:${UB};font-size:11px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#ffffff;text-align:${align||'left'};">${texto}</td>`;
+}
+function filaMaterial(m, zebra){
+  const bg = zebra ? '#FFF9F4' : '#FFFFFF';
+  return `<tr>
+    <td style="background:${bg};border:1px solid #ece7e2;padding:9px 12px;font-family:${UB};font-size:13px;color:#1C1E26;">${m.codigo || '—'}</td>
+    <td style="background:${bg};border:1px solid #ece7e2;padding:9px 12px;font-family:${UB};font-size:13px;color:#1C1E26;">${m.descripcion || '—'}</td>
+    <td style="background:${bg};border:1px solid #ece7e2;padding:9px 12px;font-family:${UB};font-size:13px;color:#1C1E26;text-align:center;">${m.cantidad || '—'}</td>
+  </tr>`;
+}
+
+function tablaMateriales(materiales){
+  if(!materiales.length){
+    return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border:1px solid ${NARANJA_SUAVE_BORDE};margin-bottom:22px;">
+      <tr><td style="padding:12px;font-family:${UB};font-size:13px;color:#9A3E00;">Sin materiales agregados — completa la lista antes de enviar.</td></tr>
+    </table>`;
+  }
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border:1px solid ${NARANJA_SUAVE_BORDE};margin-bottom:22px;">
+    <tr>${celdaHeaderMaterial('Código')}${celdaHeaderMaterial('Descripción')}${celdaHeaderMaterial('Cantidad','center')}</tr>
+    ${materiales.map((m,i) => filaMaterial(m, i % 2 === 1)).join('')}
+  </table>`;
+}
+
 function templateCorreo(d){
   const parrafo = (texto, padBottom) => `<tr><td style="padding:0 0 ${padBottom} 0;font-family:${UB};font-size:14px;line-height:150%;mso-line-height-rule:exactly;">${texto}</td></tr>`;
   const parrafoBold = (texto, padBottom) => `<tr><td style="padding:0 0 ${padBottom} 0;font-family:${UB};font-size:14px;font-weight:700;line-height:150%;mso-line-height-rule:exactly;">${texto}</td></tr>`;
-
-  const adicionales = d.materialesAdicionales
-    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin-bottom:22px;">
-        <tr><td style="background:#FFF6C9;border:1px solid #F2E39B;padding:10px 12px;font-family:${UB};font-size:14px;line-height:150%;mso-line-height-rule:exactly;">Además, despachar <b>${d.materialesAdicionales}</b></td></tr>
-      </table>`
-    : '';
 
   return `
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
@@ -377,12 +434,9 @@ function templateCorreo(d){
     ${row('Renova', d.numeroProyecto, {highlight:true})}
     ${row('Reserva', d.numReserva, {highlight:true})}
     ${row('Nombre cliente', d.cliente, {zebra:true})}
-    ${row('QTY', d.cantReguladores)}
-    ${row('Código', d.codigoMaterial, {zebra:true})}
-    ${row('Descripción reserva', d.descripcionMaterial)}
   </table>
 
-  ${adicionales}
+  ${tablaMateriales(d.materiales)}
 
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
     ${parrafo('Saludos', '0')}
@@ -397,9 +451,7 @@ function render(){
     contratista: g('contratista'),
     cantReguladores: g('cantReguladores'),
     numReserva: g('numReserva'),
-    codigoMaterial: g('codigoMaterial'),
-    descripcionMaterial: g('descripcionMaterial'),
-    materialesAdicionales: g('materialesAdicionales'),
+    materiales: materiales,
     correoContratista: g('correoContratista'),
     contactoContratista: g('contactoContratista'),
     telefonoContratista: g('telefonoContratista'),
@@ -412,8 +464,8 @@ function render(){
 
   const faltantes = [];
   if(!d.numReserva) faltantes.push('N° Reserva');
-  if(!d.codigoMaterial) faltantes.push('Código');
-  if(!d.descripcionMaterial) faltantes.push('Descripción reserva');
+  if(!materiales.length) faltantes.push('Materiales a retirar');
+  if(materiales.some(m => !m.codigo || !m.descripcion)) faltantes.push('Código/Descripción de algún material');
   if(!d.correoContratista) faltantes.push('Correo del contratista (sin coincidencia en el listado)');
 
   const flag = document.getElementById('missingFlag');
@@ -474,9 +526,10 @@ function abrirEnOutlook(){
 }
 
 function limpiarManuales(){
-  ['numReserva','codigoMaterial','descripcionMaterial','materialesAdicionales'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('numReserva').value = '';
   document.getElementById('dcFile').value = '';
-  render();
+  materiales = [];
+  renderMaterialesUI();
 }
 
 /* ── Carga de Detalle Comercial (PDF) — extrae la categoría EQUIPOS ── */
@@ -544,19 +597,11 @@ async function cargarDetalleComercial(file){
       return;
     }
 
-    const principal = items[0];
-    document.getElementById('cantReguladores').value = principal.cantidad;
-    document.getElementById('codigoMaterial').value = principal.codigo;
-    document.getElementById('descripcionMaterial').value = principal.descripcion;
-
-    const adicionales = items.slice(1)
-      .map(it => `${it.descripcion} CODIGO SAP: ${it.codigo}, (${it.cantidad} UN)`)
-      .join('; ');
-    document.getElementById('materialesAdicionales').value = adicionales;
+    materiales = items.map(it => ({ codigo: it.codigo, descripcion: it.descripcion, cantidad: String(it.cantidad) }));
+    renderMaterialesUI();
 
     hint.textContent = `✅ ${items.length} ítem(s) de EQUIPOS extraído(s) del Detalle Comercial — revisa antes de enviar.`;
     hint.style.color = 'var(--verde)';
-    render();
   } catch(e){
     hint.textContent = 'No se pudo leer el PDF — completa los campos manualmente.';
     hint.style.color = 'var(--ambar)';
@@ -578,11 +623,12 @@ poblarDatalist();
   if(huboPrefill){
     const banner = document.createElement('div');
     banner.style.cssText = 'background:#fff3ee;border-bottom:1px solid #ffd5c0;padding:8px 20px;font-size:11px;color:#d44200;font-weight:600;';
-    banner.textContent = '✅ Datos cargados desde la Planilla Maestra — revisa y completa N° Reserva, Código y Descripción antes de copiar el HTML.';
+    banner.textContent = '✅ Datos cargados desde la Planilla Maestra — revisa y completa N° Reserva y la lista de materiales antes de copiar el HTML.';
     document.body.insertBefore(banner, document.body.firstChild);
   }
 })();
 
+renderMaterialesUI();
 onContratistaChange();
 </script>
 
