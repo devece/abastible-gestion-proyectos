@@ -437,7 +437,7 @@ function abrirEnOutlook(){
   const blob = new Blob([outerHtml], { type: 'text/html' });
 
   navigator.clipboard.write([new ClipboardItem({ 'text/html': blob })]).catch(() => {}).then(() => {
-    const paraFijo = 'luis.munozh@abastible.cl,transportes_lpc@hotmail.com';
+    const paraFijo = 'luis.munozh@abastible.cl;transportes_lpc@hotmail.com';
     const cc = g('correoContratista');
     const asunto = document.getElementById('metaAsunto').textContent.trim();
 
