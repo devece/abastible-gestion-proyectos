@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solicitud Retiro TQ</title>
+<link href="https://fonts.googleapis.com/css2?family=Ubuntu+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --azul:       #001489;
+    --azul-medio: #001eb8;
+    --azul-claro: #e8ecfa;
+    --gris:       #54585A;
+    --naranja:    #FE5100;
+    --naranja-claro: #fff3ee;
+    --gris-bg:    #f8f8f8;
+    --gris-borde: #d4d5d6;
+    --texto:      #1C1E26;
+    --texto-suave:#54585A;
+    --blanco:     #FFFFFF;
+    --verde:      #1a7a3c;
+    --verde-claro:#e9f7ee;
+    --verde-borde:#bfe3cc;
+    --ambar:      #b5560a;
+    --ambar-claro:#fff3e6;
+    --ambar-borde:#f3c893;
+    --radius:     8px;
+    --sombra:     0 2px 12px rgba(0,20,137,0.10);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Ubuntu Sans', 'Ubuntu', Arial, sans-serif;
+    background: var(--gris-bg);
+    color: var(--texto);
+    min-height: 100vh;
+  }
+  header {
+    background: var(--azul);
+    color: white;
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    box-shadow: 0 2px 14px rgba(0,20,137,0.30);
+  }
+  .logo { display: flex; align-items: center; gap: 14px; }
+  .logo-mark {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: var(--naranja);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .logo-divider { width: 1px; height: 28px; background: rgba(255,255,255,0.25); }
+  .logo-title { font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: white; opacity: 0.9; }
+  .logo-badge {
+    background: var(--naranja); color: white; font-size: 10px; padding: 2px 7px;
+    border-radius: 20px; font-weight: 600; letter-spacing: 0.05em; margin-left: 6px;
+  }
+  .header-right { font-size: 11px; opacity: 0.55; font-family: 'DM Mono', monospace; letter-spacing: 0.03em; }
+
+  .container {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 1.25rem 1.5rem 3rem;
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 1.25rem;
+    align-items: start;
+  }
+  .form-col { position: sticky; top: 1.25rem; }
+  .panel { background: var(--blanco); border-radius: var(--radius); border: 1px solid var(--gris-borde); box-shadow: var(--sombra); overflow: hidden; }
+  .panel-header {
+    padding: 0.85rem 1.25rem; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+    display: flex; align-items: center; gap: 8px; color: white;
+  }
+  .panel-header.auto { background: var(--verde); }
+  .panel-header.manual { background: var(--ambar); }
+  .panel-header.preview { background: var(--azul); }
+  .panel-body { padding: 1.1rem 1.25rem; }
+  .panel + .panel { margin-top: 1.25rem; }
+
+  .field { margin-bottom: 0.9rem; }
+  .field:last-child { margin-bottom: 0; }
+  .field label {
+    display: block; font-size: 10.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+    color: var(--texto-suave); margin-bottom: 4px;
+  }
+  .field .hint { font-size: 10.5px; color: var(--texto-suave); opacity: 0.75; margin-top: 3px; }
+  .field input, .field textarea {
+    width: 100%; padding: 8px 10px; font-size: 13px; font-family: inherit;
+    border: 1px solid var(--gris-borde); border-radius: 6px; color: var(--texto); background: var(--blanco);
+  }
+  .field input:focus, .field textarea:focus { outline: none; border-color: var(--azul-medio); box-shadow: 0 0 0 3px var(--azul-claro); }
+  .field.auto input, .field.auto textarea { background: var(--verde-claro); border-color: var(--verde-borde); }
+  .field.manual input, .field.manual textarea { background: var(--ambar-claro); border-color: var(--ambar-borde); }
+  .field.manual input:placeholder-shown, .field.manual textarea:placeholder-shown { border-style: dashed; }
+  textarea { resize: vertical; min-height: 44px; }
+
+  .static-box {
+    font-size: 12px; line-height: 1.6; color: var(--texto-suave);
+    background: var(--gris-bg); border: 1px solid var(--gris-borde); border-radius: 6px; padding: 10px 12px;
+  }
+  .static-box b { color: var(--texto); }
+
+  .btnbar { display: flex; gap: 8px; margin-top: 1.25rem; }
+  button {
+    font-family: inherit; font-size: 12.5px; font-weight: 600; border-radius: 6px; border: none;
+    padding: 10px 14px; cursor: pointer; letter-spacing: 0.01em;
+  }
+  .btn-primary { background: var(--naranja); color: white; flex: 1; }
+  .btn-primary:hover { background: #e04800; }
+  .btn-primary.success { background: var(--verde); }
+  .btn-secondary { background: var(--blanco); color: var(--texto-suave); border: 1px solid var(--gris-borde); }
+  .btn-secondary:hover { background: var(--gris-bg); }
+
+  .missing-flag {
+    display: none;
+    margin-top: 10px; padding: 9px 11px; border-radius: 6px;
+    background: #fdeceb; border: 1px solid #f3c0bd; color: #a3282a; font-size: 12px; line-height: 1.5;
+  }
+  .missing-flag.show { display: block; }
+
+  /* preview */
+  .preview-meta { padding: 0.9rem 1.25rem; border-bottom: 1px solid var(--gris-borde); font-size: 12.5px; color: var(--texto-suave); }
+  .preview-meta div { padding: 2px 0; }
+  .preview-meta b { color: var(--texto); font-weight: 600; }
+  .preview-stage { padding: 1.5rem; background: #ececec; }
+  .email-shell { background: white; max-width: 650px; margin: 0 auto; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+  #emailContent { padding: 24px 26px; }
+  .empty-state { padding: 3rem 1.5rem; text-align: center; color: var(--texto-suave); font-size: 13px; }
+  .empty-state .icon { font-size: 32px; margin-bottom: 10px; opacity: .4; }
+
+  code { font-family: 'DM Mono', monospace; font-size: 11px; background: var(--azul-claro); padding: 1px 5px; border-radius: 4px; }
+
+  @media (max-width: 900px) {
+    .container { grid-template-columns: 1fr; }
+    .form-col { position: static; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">🛢️</div>
+    <div class="logo-divider"></div>
+    <div class="logo-title">Solicitud Retiro TQ <span class="logo-badge">Región VII</span></div>
+  </div>
+  <div class="header-right">panel-wp-ep · abastible-gestion-proyectos</div>
+</header>
+
+<div class="container">
+
+  <div class="form-col">
+
+    <div class="panel">
+      <div class="panel-header auto">🟢 Desde la ficha del proyecto</div>
+      <div class="panel-body">
+        <div class="field auto">
+          <label for="cliente">Cliente</label>
+          <input type="text" id="cliente" value="MC Construcciones Limitada" oninput="render()">
+          <div class="hint">campo <code>cliente</code> de tabla proyectos</div>
+        </div>
+        <div class="field auto">
+          <label for="numeroProyecto">N° Proyecto (código) / N° Renova</label>
+          <input type="text" id="numeroProyecto" value="19527540" oninput="render()">
+          <div class="hint">campo <code>codigo</code> — mismo valor va en Renova</div>
+        </div>
+        <div class="field auto">
+          <label for="contratista">Contratista</label>
+          <input type="text" id="contratista" value="Sicor Ltda." list="listaContratistas" oninput="onContratistaChange()">
+          <datalist id="listaContratistas"></datalist>
+          <div class="hint">campo <code>contratista</code> — correo se busca en Listado de Contratistas</div>
+        </div>
+        <div class="field auto">
+          <label for="correoContratista">Correo del contratista (CC)</label>
+          <input type="text" id="correoContratista" value="ulises.n1@hotmail.com" oninput="render()">
+          <div class="hint" id="correoContratistaHint">encontrado en Listado_contratistas_actualizados.xlsx</div>
+        </div>
+        <div class="field auto">
+          <label for="contactoContratista">Nombre de contacto (contratista)</label>
+          <input type="text" id="contactoContratista" value="Ulises Narvaez Villalobos" oninput="render()">
+          <div class="hint" id="contactoContratistaHint">representante — Listado de Contratistas</div>
+        </div>
+        <div class="field auto">
+          <label for="telefonoContratista">Teléfono de contacto (contratista)</label>
+          <input type="text" id="telefonoContratista" value="+56998830141" oninput="render()">
+          <div class="hint" id="telefonoContratistaHint">+56 agregado automáticamente</div>
+        </div>
+        <div class="field auto">
+          <label for="cantTanques">Cantidad de tanques</label>
+          <input type="text" id="cantTanques" value="1" oninput="render()">
+          <div class="hint">campo <code>cant_tanque</code> de tabla proyectos</div>
+        </div>
+        <div class="field auto">
+          <label for="tanqueCodigo">Código de tanque</label>
+          <input type="text" id="tanqueCodigo" value="TQ450A" oninput="render()">
+          <div class="hint">campo <code>tanque</code> de tabla proyectos</div>
+        </div>
+        <div class="field auto">
+          <label for="region">Región / Comuna</label>
+          <input type="text" id="region" value="Región VII - Talca / Comuna LINARES" oninput="render()">
+          <div class="hint">campos <code>region</code> / <code>comuna</code> de tabla proyectos</div>
+        </div>
+        <div class="field auto">
+          <label for="direccion">Dirección</label>
+          <input type="text" id="direccion" value="Calle Callejón Las Espuelas, N° 039" oninput="render()">
+          <div class="hint">campo <code>direccion</code> — confirmar número exacto</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header manual">🟠 Completar manualmente</div>
+      <div class="panel-body">
+        <div class="field manual">
+          <label for="numReserva">N° Reserva</label>
+          <input type="text" id="numReserva" placeholder="Ej: 3584217" oninput="render()">
+          <div class="hint">no existe en el sistema — lo ingresa el Supervisor al generar el HTML</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header" style="background:var(--gris);">📌 Fijo — Región VII</div>
+      <div class="panel-body">
+        <div class="static-box">
+          <b>Para:</b> Luis Muñoz H. &lt;luis.munozh@abastible.cl&gt;, Luis Puentes &lt;transportes_lpc@hotmail.com&gt;<br>
+          <b>CC:</b> contratista del proyecto (campo de arriba)<br>
+          <b>Coordina retiro:</b> Luis Puentes<br>
+          <b>De:</b> quien envíe el correo (no se define aquí)
+        </div>
+      </div>
+    </div>
+
+    <div class="btnbar">
+      <button class="btn-primary" id="copyBtn" onclick="copiarHTML()">📋 Copiar HTML para Outlook</button>
+      <button class="btn-secondary" onclick="limpiarManuales()">Limpiar manuales</button>
+    </div>
+    <div class="missing-flag" id="missingFlag"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header preview">👁️ Vista previa del correo</div>
+    <div class="preview-meta">
+      <div><b>Para:</b> Luis Muñoz H. &lt;luis.munozh@abastible.cl&gt;, Luis Puentes &lt;transportes_lpc@hotmail.com&gt;</div>
+      <div><b>CC:</b> <span id="metaCC">—</span></div>
+      <div><b>Asunto:</b> <span id="metaAsunto">—</span></div>
+    </div>
+    <div class="preview-stage">
+      <div class="email-shell">
+        <div id="emailContent"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const UB = "'Ubuntu Sans', 'Ubuntu', Arial, sans-serif";
+
+// Fuente: Listado_contratistas_actualizados.xlsx (hoja "Contratistas")
+const CONTRATISTAS = [{"nombre": "Sociedad Solugas Limitada", "representante": "Jaime Morales", "correo": "secretaria@solugas-chile.cl", "telefono": "971017227", "zona": "Norte Grande"}, {"nombre": "Inst. de red de gas en media y baja presión Victor Esteban Aguirre Vasquez EIRL", "representante": "Victor aguirre", "correo": "administracion@nortegas.cl", "telefono": "940177413", "zona": "Norte Grande"}, {"nombre": "Servicios Generales Cuevas y Cuevas LTDA", "representante": "Roberto Cuevas", "correo": "rcuevas@sermicor.cl", "telefono": "974594889", "zona": "Norte Grande"}, {"nombre": "Gas Futuro SpA.", "representante": "Julia Gaete/ Jessica Aburto", "correo": "jessica.aburto@gasfuturo.cl", "telefono": "958596537", "zona": "Norte Grande"}, {"nombre": "Leonardo Álvarez Moya Ing. e instalaciones EIRL", "representante": "Leonardo Alvarez", "correo": "leonardo.alvarez.m@gmail.com", "telefono": "990452425", "zona": "Norte Grande"}, {"nombre": "ECH SPA", "representante": "Marcelo Pizarro/Mario Contreras", "correo": "cnaranjo@energiaschilenas.cl", "telefono": "923826417", "zona": "Norte Grande"}, {"nombre": "Sernogas SpA.", "representante": "Alexis Álvarez", "correo": "aalvarez.sernogas@gmail.com", "telefono": "972526623", "zona": "Norte Grande"}, {"nombre": "SOC. IND Y COM INTALGAS IQUIQUE LTDA", "representante": "Alejandra Aguirre / víctor aguirre gonzalez", "correo": "finanzas@intalgas.cl", "telefono": "990208287", "zona": "Norte Grande"}, {"nombre": "Carlos R.Yañez Aguilera Mantenc. Eirl", "representante": "Carlos Yañez Aguilera", "correo": "cyagascopiapo@gmail.com", "telefono": "979629231", "zona": "Norte Grande"}, {"nombre": "Jpl Comercial Ltda.", "representante": "Jorge Pérez / Diego Pérez", "correo": "diego.perez@jpl.cl", "telefono": "984180327", "zona": "Centro Norte"}, {"nombre": "Morales Y Reyes Spa", "representante": "Francisco Morales", "correo": "francisco.morales.gas@gmail.com", "telefono": "977467241", "zona": "Centro Norte"}, {"nombre": "Instalaciones HF SpA", "representante": "Héctor Fuentes", "correo": "instalaciones.hf@gmail.com", "telefono": "979060667", "zona": "Centro Norte"}, {"nombre": "Rivaal Ingeniería Industrial Ltda.", "representante": "Richard Duran", "correo": "r.duran@rivaal.cl", "telefono": "985004891", "zona": "Centro Norte"}, {"nombre": "Sigas Ingeniería Spa", "representante": "Juan Tolosa", "correo": "jtolosac@gmail.com", "telefono": "996615413", "zona": "Centro Norte"}, {"nombre": "Francisco Javier Yañez Aguilera Construcciones", "representante": "Francisco Yañez", "correo": "katherine.morales.z@gmail.com", "telefono": "952299664", "zona": "Centro Norte"}, {"nombre": "Ingenieria proyectos gas limitada", "representante": "Basilio Fernández", "correo": "inprogas@inprogas.cl", "telefono": "993326187", "zona": "Centro Norte"}, {"nombre": "Sonagas SPA", "representante": "Michel Galleguillos", "correo": "michelgalleguillos@sonagasspa.cl", "telefono": "944285791", "zona": "Centro Norte"}, {"nombre": "Ingecomb Ltda.", "representante": "Alcino Cabrera", "correo": "gerenciaingecomb@gmail.com", "telefono": "982996890", "zona": "Centro Norte"}, {"nombre": "Luis Patricio ingenieria de proyectos EIRL", "representante": "Luis Aguilera", "correo": "luisaguilerahenriquez@gmail.com", "telefono": "995329553", "zona": "Centro Norte"}, {"nombre": "Rs Instalaciones E Inspecciones Ltda.", "representante": "Juan Carlos Reinoso", "correo": "prevencion.rsltda@gmail.com", "telefono": "984484615", "zona": "Centro Norte"}, {"nombre": "Comercial Gallegos LTDA (Flex LTDA)", "representante": "Mauricio Gallegos / Paola Piñones", "correo": "info@flexs.cl", "telefono": "994316722", "zona": "Centro Norte"}, {"nombre": "Obras menores (Diego A. Soto Retamal Instal. EIRL", "representante": "Diego Soto / Fabian Villaroel", "correo": "instalaciones.construgas@gmail.com", "telefono": "977587588", "zona": "Centro Norte"}, {"nombre": "Instagas SPA", "representante": "Pablo Garrido", "correo": "p_garrido_romero@hotmail.com", "telefono": "982020085", "zona": "Centro Norte"}, {"nombre": "K y P Servicios Integrales Spa", "representante": "Patricio Iturriaga", "correo": "MONTAJEKYP@GMAIL.COM", "telefono": "993253440", "zona": "Centro Norte"}, {"nombre": "Asesorías comerciales y venta de equipos SPA / Ingenieria RT", "representante": "Ruben Torres (diego torres)", "correo": "dtorres@ingrt.com", "telefono": "942691352", "zona": "Centro Norte"}, {"nombre": "Proyectos e Instalaciones IBSSA SPA", "representante": "Sandro Gajardo /Yasna Rodriguez", "correo": "ibssa.ingenieria@gmail.com", "telefono": "944111932", "zona": "Centro Norte"}, {"nombre": "Ingenieria y Mantenimiento Industrial LTDA. (IMI)", "representante": "Jean Pierre Segovia", "correo": "jpsegovia@imi.cl", "telefono": "950071609", "zona": "Centro Norte"}, {"nombre": "Artigas Spa", "representante": "Miguel Rivera", "correo": "ARTIGASSPA@GMAIL.COM", "telefono": "940322514", "zona": "Centro Norte"}, {"nombre": "Ingeserc SpA", "representante": "Luis Hernandez", "correo": "lingeserc@gmail.com", "telefono": "995367256", "zona": "Centro Norte"}, {"nombre": "SYP combustion SPA", "representante": "Patricio Araya", "correo": "paraya@sypcom.cl", "telefono": "953906463", "zona": "Centro Norte"}, {"nombre": "Soc.Generales Ponce Ilabaca Y Vera / verlogas SPA", "representante": "Jose Vera /Fdo. Ponce", "correo": "verlogas.servicios@gmail.com", "telefono": "993314094", "zona": "Centro Norte"}, {"nombre": "Rivera, vidal y Cia. Ltda", "representante": "Rodolfo Vidal", "correo": "oficina@cacoesgas.cl", "telefono": "989060635", "zona": "Centro Norte"}, {"nombre": "Sicor Ltda.", "representante": "Ulises Narvaez Villalobos", "correo": "ulises.n1@hotmail.com", "telefono": "998830141", "zona": "Centro Sur"}, {"nombre": "Empresa Contratista Y Serv Maule Ltda", "representante": "Patricio Labra", "correo": "proyectos.ecoser@gmail.com", "telefono": "954066685", "zona": "Centro Sur"}, {"nombre": "Inversiones AMAF SPA", "representante": "Antonio Viveros", "correo": "aviveros@inversionesamaf.com", "telefono": "994012237", "zona": "Centro Sur"}, {"nombre": "CERTIFICADORA M&F SPA", "representante": "Daniela Elizabeth Palma Sanhueza", "correo": "certificadora.instalaciones@gmail.com", "telefono": "953906463", "zona": "Centro Sur"}, {"nombre": "Sexta Gas SpA", "representante": "Pedro Pablo Contreras", "correo": "sextagaspa@gmail.com", "telefono": "964902686", "zona": "Centro Sur"}, {"nombre": "Instal. De Redes De Gas Gustavo A. Estobar", "representante": "Gustavo Estobar Cid", "correo": "estogaseirl@gmail.com", "telefono": "984203084", "zona": "Centro Sur"}, {"nombre": "Sociedad Comercial Ggb Ltda", "representante": "Gonzalo Gaete/maria jose azua", "correo": "mjose.azua@ggbltda.cl", "telefono": "990140517", "zona": "Centro Sur"}, {"nombre": "Rankal Ltda", "representante": "Jorge Pinto y Ricardo Droguett (Issis Herrera)", "correo": "contacto2@rankal.cl", "telefono": "993633929", "zona": "Centro Sur"}, {"nombre": "Proy. De Ing. Roberto B. Barriga Osorio Eirl", "representante": "Roberto Barriga Osorio", "correo": "roberto-barriga@hotmail.com", "telefono": "998271277", "zona": "Centro Sur"}, {"nombre": "Instal. Yasna S. Aguilera Venegas Eirl", "representante": "Yasna Aguilera", "correo": "jeaguilerav@gmail.com", "telefono": "999174676", "zona": "Sur"}, {"nombre": "Instalaciones y Proyectos Full Gas Spa", "representante": "Manuel Concha Reveco", "correo": "fullgas.spa@gmail.com", "telefono": "961711117", "zona": "Sur"}, {"nombre": "Constructora Luc SpA", "representante": "Luis Urra Carrasco", "correo": "Luis.urra.c@gmail.com", "telefono": "990519253", "zona": "Sur"}, {"nombre": "Gassolux", "representante": "Carlos Alfredo Rocha Valenzuela", "correo": "proyectos@gassolux.com", "telefono": "978874985", "zona": "Sur"}, {"nombre": "Ob. Menores En Constr. German S. Galdames", "representante": "German Stuardo", "correo": "climaygas@gmail.com", "telefono": "990823683", "zona": "Sur"}, {"nombre": "Claudio E. Cabrera A. Ingenieria EirL", "representante": "Claudio Cabrera", "correo": "rtapia.kawell@gmail.com", "telefono": "957465452", "zona": "Sur"}, {"nombre": "Sergio Gallegos Prestadora De Serv Eirl", "representante": "Sergio Gallegos /Carolina Beroiza", "correo": "serbraisa@hotmail.com", "telefono": "963238419", "zona": "Sur"}, {"nombre": "Soterm SPA", "representante": "Miguel San Martín", "correo": "operaciones@soterm.cl", "telefono": "920645647", "zona": "Sur"}, {"nombre": "Claudio E. Muñoz Monsalve", "representante": "Claudio Muñoz / jhoanna sanzana", "correo": "Empresa.munoz@gmail.com", "telefono": "990781421", "zona": "Sur"}, {"nombre": "Heatex SpA.", "representante": "Felipe Cáceres Solano", "correo": "felipe.caceres@heatex.cl", "telefono": "944472189", "zona": "Sur"}, {"nombre": "Sip Energy Spa", "representante": "Manuel Avendaño", "correo": "Manuel.avendano@sipenergy.cl", "telefono": "957628496", "zona": "Sur"}, {"nombre": "Serv. Indust. Sandra Nova EIRL", "representante": "Pablo Fuentes Espinoza", "correo": "Pfuentesespinoza56@inmaco.cl", "telefono": "998854314", "zona": "Sur"}, {"nombre": "SOCIEDAD SAN SEBASTIAN LTDA", "representante": "Lilian Vera", "correo": "lili.vera@gmail.com", "telefono": "998180437", "zona": "Sur"}, {"nombre": "Cristian Miguel Rioseco Bon", "representante": "Cristian Rioseco Bon", "correo": "riosecocristian151@gmail.com", "telefono": "992187887", "zona": "Sur"}, {"nombre": "Igsa clima SPA", "representante": "Ignacio Salazar", "correo": "ignacio.salazar@igsa.cl", "telefono": "985277368", "zona": "Sur"}, {"nombre": "Jorge Israel Aguilera Isla Instalaciones EIRL", "representante": "Jorge Aguilera", "correo": "fluiredj@hotmail.com", "telefono": "967270982", "zona": "Sur"}, {"nombre": "Energysur SPA", "representante": "Roxana Duran / Edison Baeza", "correo": "ENERGYSURSPA@gmail.com", "telefono": "976504682", "zona": "Sur"}, {"nombre": "Constructora Rios SPA", "representante": "Juan Rios Moraga", "correo": "juan.rios@constructorarios.cl", "telefono": "968372906", "zona": "Austral"}, {"nombre": "Soc. Lagos Y Puebla Ltda", "representante": "Daniel Lagos Carrasco", "correo": "sociedadlagosypuebla@gmail.com", "telefono": "963444966", "zona": "Austral"}, {"nombre": "Energasur SPA", "representante": "Claudio Ruiz", "correo": "mantencion@energasurspa.cl", "telefono": "977570804", "zona": "Austral"}, {"nombre": "Serv. de Ing. Juan Sepúlveda EIRL", "representante": "Juan Sepúlveda", "correo": "newingchile@gmail.com", "telefono": "974510267", "zona": "Austral"}, {"nombre": "Juan Cárdenas Gómez", "representante": "Juan Cárdenas", "correo": "j.cardenas.g@hotmail.com", "telefono": "991861923", "zona": "Austral"}, {"nombre": "Leonidas Álvarez y Cia LTDA", "representante": "Leonidas Álvarez", "correo": "leonidas.alvarez@gmail.com", "telefono": "951354851", "zona": "Austral"}, {"nombre": "Servicios CH SPA", "representante": "Carlos Herrera", "correo": "servicioschspa@gmail.com", "telefono": "985008088", "zona": "Austral"}, {"nombre": "AMG Instalgas SPA", "representante": "Alexis Muñoz", "correo": "amginstalgas@gmail.com", "telefono": "972201572", "zona": "Austral"}, {"nombre": "Ferluc Gas SpA", "representante": "Manuel Osorio", "correo": "manuel.osorio@ferluc.cl", "telefono": "999991105", "zona": "Austral"}, {"nombre": "IC Ingeniería y Construcciones LTDA", "representante": "Ignacio Parada", "correo": "ignacio.parada@kalorgroup.cl", "telefono": "954177415", "zona": "Austral"}, {"nombre": "CM Ingeniería", "representante": "Carlos Montanares", "correo": "instaladormontanares@gmail.com", "telefono": "997230630", "zona": "Austral"}];
+
+function normaliza(s){
+  return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]/g,'');
+}
+
+function poblarDatalist(){
+  const dl = document.getElementById('listaContratistas');
+  dl.innerHTML = CONTRATISTAS.map(c => `<option value="${c.nombre}">`).join('');
+}
+
+function buscarContratista(nombre){
+  const n = normaliza(nombre);
+  if(!n) return null;
+  return CONTRATISTAS.find(c => normaliza(c.nombre) === n)
+      || CONTRATISTAS.find(c => normaliza(c.nombre).includes(n) || n.includes(normaliza(c.nombre)));
+}
+
+function formatoTelefonoCL(tel){
+  const digitos = (tel || '').replace(/\D/g,'');
+  if(!digitos) return '';
+  const sinCero = digitos.replace(/^0+/,'');
+  const nueveDigitos = sinCero.length > 9 ? sinCero.slice(-9) : sinCero;
+  return '+56' + nueveDigitos;
+}
+
+function onContratistaChange(){
+  const match = buscarContratista(g('contratista'));
+  const hintCorreo = document.getElementById('correoContratistaHint');
+  const hintContacto = document.getElementById('contactoContratistaHint');
+  const hintTelefono = document.getElementById('telefonoContratistaHint');
+
+  if(match){
+    document.getElementById('correoContratista').value = match.correo;
+    document.getElementById('contactoContratista').value = match.representante;
+    document.getElementById('telefonoContratista').value = formatoTelefonoCL(match.telefono);
+    hintCorreo.textContent = `encontrado en Listado de Contratistas · zona ${match.zona}`;
+    hintCorreo.style.color = 'var(--verde)';
+    hintContacto.textContent = 'representante — Listado de Contratistas';
+    hintContacto.style.color = 'var(--texto-suave)';
+    hintTelefono.textContent = '+56 agregado automáticamente';
+    hintTelefono.style.color = 'var(--texto-suave)';
+  } else {
+    hintCorreo.textContent = 'sin coincidencia en el listado — verificar correo manualmente';
+    hintCorreo.style.color = 'var(--ambar)';
+    hintContacto.textContent = 'sin coincidencia — completar manualmente';
+    hintContacto.style.color = 'var(--ambar)';
+    hintTelefono.textContent = 'sin coincidencia — completar manualmente';
+    hintTelefono.style.color = 'var(--ambar)';
+  }
+  render();
+}
+
+function g(id){ return document.getElementById(id).value.trim(); }
+
+const AZUL_ABASTIBLE = '#001489';
+const NARANJA_ABASTIBLE = '#FE5100';
+
+function row(label, val, opts={}){
+  const zebraBg = opts.zebra ? '#F4F6FC' : '#FFFFFF';
+  const valBg = opts.highlight ? '#FFF3EC' : zebraBg;
+  const valColor = opts.highlight ? NARANJA_ABASTIBLE : '#1C1E26';
+  const valWeight = opts.highlight ? '700' : '400';
+  return `<tr>
+    <td width="34%" style="background:${AZUL_ABASTIBLE};border:1px solid #001489;padding:9px 12px;font-family:${UB};font-size:11px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#ffffff;">${label}</td>
+    <td style="background:${valBg};border:1px solid #dfe2ea;border-left:${opts.highlight ? `3px solid ${NARANJA_ABASTIBLE}` : '1px solid #dfe2ea'};padding:9px 12px;font-family:${UB};font-size:13px;font-weight:${valWeight};color:${valColor};">${val || '—'}</td>
+  </tr>`;
+}
+
+function templateCorreo(d){
+  const formatoTanque = d.cantTanques && d.tanqueCodigo ? `${d.cantTanques} x ${d.tanqueCodigo}` : (d.tanqueCodigo || '');
+
+  return `
+  <p style="margin:0 0 14px;font-family:${UB};font-size:14px;">Buenas tardes estimado Luis</p>
+  <p style="margin:0 0 14px;font-family:${UB};font-size:14px;">Espero que te encuentres bien.</p>
+  <p style="margin:0 0 18px;font-family:${UB};font-size:14px;">Favor, gestionar guía de despacho de TQ de RESERVA <span style="color:${NARANJA_ABASTIBLE};font-weight:bold;">${d.numReserva || '[N° RESERVA]'}</span></p>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin-bottom:4px;">
+    <tr><td style="background:${NARANJA_ABASTIBLE};height:4px;line-height:4px;font-size:0;">&nbsp;</td></tr>
+  </table>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border:1px solid ${AZUL_ABASTIBLE};border-top:none;margin-bottom:18px;">
+    ${row('N° Renova', d.numeroProyecto, {highlight:true})}
+    ${row('N° Reserva', d.numReserva, {highlight:true})}
+    ${row('Contratista', d.contratista, {zebra:true})}
+    ${row('Contacto contratista', [d.contactoContratista, d.telefonoContratista].filter(Boolean).join(' · '))}
+    ${row('Cliente', d.cliente, {zebra:true})}
+    ${row('Cantidad de tanques', d.cantTanques)}
+    ${row('Formato de tanque', formatoTanque, {zebra:true})}
+    ${row('Ubicación', [d.region, d.direccion].filter(Boolean).join(' - '))}
+  </table>
+
+  <p style="margin:0 0 18px;font-family:${UB};font-size:14px;">Por favor avisar cuando estén disponibles para coordinar retiro con <span style="color:${NARANJA_ABASTIBLE};font-weight:bold;">Luis Puentes</span>, quien va en correo también.</p>
+  <p style="margin:0;font-family:${UB};font-size:14px;">Saludos</p>
+  `;
+}
+
+function render(){
+  const d = {
+    cliente: g('cliente'),
+    numeroProyecto: g('numeroProyecto'),
+    contratista: g('contratista'),
+    cantTanques: g('cantTanques'),
+    tanqueCodigo: g('tanqueCodigo'),
+    region: g('region'),
+    direccion: g('direccion'),
+    numReserva: g('numReserva'),
+    correoContratista: g('correoContratista'),
+    contactoContratista: g('contactoContratista'),
+    telefonoContratista: g('telefonoContratista'),
+  };
+
+  document.getElementById('emailContent').innerHTML = templateCorreo(d);
+  document.getElementById('metaAsunto').textContent = `Solicitud Retiro y Envío de TQ — Proyecto ${d.cliente || '—'} — ${d.numeroProyecto || '—'}`;
+  document.getElementById('metaCC').textContent = d.correoContratista ? `${d.contratista} <${d.correoContratista}>` : `${d.contratista || '—'} (falta correo)`;
+
+  const faltantes = [];
+  if(!d.numReserva) faltantes.push('N° Reserva');
+  if(!d.correoContratista) faltantes.push('Correo del contratista (sin coincidencia en el listado)');
+
+  const flag = document.getElementById('missingFlag');
+  if(faltantes.length){
+    flag.classList.add('show');
+    flag.innerHTML = `⚠️ Faltan datos antes de enviar: <b>${faltantes.join(', ')}</b>.`;
+  } else {
+    flag.classList.remove('show');
+  }
+}
+
+function copiarHTML(){
+  const el = document.getElementById('emailContent');
+  const btn = document.getElementById('copyBtn');
+  const outerHtml = `<table role="presentation" width="650" cellpadding="0" cellspacing="0" border="0" style="width:650px;font-family:${UB};font-size:14px;color:#000000;"><tr><td>${el.innerHTML}</td></tr></table>`;
+
+  const blob = new Blob([outerHtml], { type: 'text/html' });
+  navigator.clipboard.write([new ClipboardItem({ 'text/html': blob })]).then(() => {
+    btn.textContent = '✅ ¡Copiado! Pega en Outlook';
+    btn.classList.add('success');
+    setTimeout(() => { btn.textContent = '📋 Copiar HTML para Outlook'; btn.classList.remove('success'); }, 2500);
+  }).catch(() => {
+    const range = document.createRange();
+    range.selectNode(el);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+    document.execCommand('copy');
+    window.getSelection().removeAllRanges();
+    btn.textContent = '✅ Copiado — Ctrl+V en Outlook';
+    btn.classList.add('success');
+    setTimeout(() => { btn.textContent = '📋 Copiar HTML para Outlook'; btn.classList.remove('success'); }, 2500);
+  });
+}
+
+function limpiarManuales(){
+  document.getElementById('numReserva').value = '';
+  render();
+}
+
+poblarDatalist();
+
+// Prellenar desde la Planilla Maestra (query params) si vienen en la URL
+(function(){
+  const params = new URLSearchParams(window.location.search);
+  let huboPrefill = false;
+  params.forEach((val, key) => {
+    if(!val) return;
+    const el = document.getElementById(key);
+    if(el){ el.value = val; huboPrefill = true; }
+  });
+
+  if(huboPrefill){
+    const banner = document.createElement('div');
+    banner.style.cssText = 'background:#fff3ee;border-bottom:1px solid #ffd5c0;padding:8px 20px;font-size:11px;color:#d44200;font-weight:600;';
+    banner.textContent = '✅ Datos cargados desde la Planilla Maestra — revisa y completa N° Reserva antes de copiar el HTML.';
+    document.body.insertBefore(banner, document.body.firstChild);
+  }
+})();
+
+onContratistaChange();
+</script>
+
+</body>
+</html>
