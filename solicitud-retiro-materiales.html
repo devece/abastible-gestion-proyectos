@@ -416,15 +416,15 @@ function tablaMateriales(materiales){
 }
 
 function templateCorreo(d){
-  const parrafo = (texto, padBottom) => `<tr><td style="padding:0 0 ${padBottom} 0;font-family:${UB};font-size:14px;line-height:150%;mso-line-height-rule:exactly;">${texto}</td></tr>`;
-  const parrafoBold = (texto, padBottom) => `<tr><td style="padding:0 0 ${padBottom} 0;font-family:${UB};font-size:14px;font-weight:700;line-height:150%;mso-line-height-rule:exactly;">${texto}</td></tr>`;
+  const parrafo = (texto, padBottom) => `<tr><td style="padding:0 0 ${padBottom} 0;font-family:${UB};font-size:14px;line-height:175%;mso-line-height-rule:exactly;">${texto}</td></tr>`;
+  const parrafoBold = (texto, padBottom) => `<tr><td style="padding:0 0 ${padBottom} 0;font-family:${UB};font-size:14px;font-weight:700;line-height:175%;mso-line-height-rule:exactly;">${texto}</td></tr>`;
 
   return `
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
-    ${parrafo('Buenas tardes estimado Raúl', '14px')}
-    ${parrafo('Espero que te encuentres bien.', '14px')}
-    ${parrafo(`Favor necesitamos su apoyo para preparar la entrega de los siguientes materiales para la siguiente reserva <span style="color:${NARANJA_ABASTIBLE};font-weight:bold;">${d.numReserva || '[N° RESERVA]'}</span> la cual retirará <span style="color:${NARANJA_ABASTIBLE};font-weight:bold;">${d.contactoContratista || '[CONTACTO CONTRATISTA]'}</span>${d.telefonoContratista ? `, teléfono <span style="color:${NARANJA_ABASTIBLE};font-weight:bold;">${d.telefonoContratista}</span>` : ''}`, '14px')}
-    ${parrafoBold('Favor confirmar cuando estés disponible para despacho', '20px')}
+    ${parrafo('Buenas tardes estimado Raúl', '18px')}
+    ${parrafo('Espero que te encuentres bien.', '18px')}
+    ${parrafo(`Favor necesitamos su apoyo para preparar la entrega de los materiales señalados y demás equipos de la reserva <span style="color:${NARANJA_ABASTIBLE};font-weight:bold;">${d.numReserva || '[N° RESERVA]'}</span>, la cual retirará <span style="color:${NARANJA_ABASTIBLE};font-weight:bold;">${d.contactoContratista || '[CONTACTO CONTRATISTA]'}</span>${d.telefonoContratista ? `, teléfono <span style="color:${NARANJA_ABASTIBLE};font-weight:bold;">${d.telefonoContratista}</span>` : ''}`, '18px')}
+    ${parrafoBold('Favor confirmar cuando estés disponible para despacho', '26px')}
   </table>
 
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin-bottom:4px;">
@@ -438,6 +438,9 @@ function templateCorreo(d){
 
   ${tablaMateriales(d.materiales)}
 
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+    <tr><td style="height:20px;line-height:20px;font-size:0;">&nbsp;</td></tr>
+  </table>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
     ${parrafo('Saludos', '0')}
   </table>
