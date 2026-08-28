@@ -1774,7 +1774,9 @@ function abrirRetiroTQ(idx){
     cantTanques:(p.cant_tanque!=null?String(p.cant_tanque):''),
     tanqueCodigo:p.tanque||'',
     region:(p.region||'')+(p.comuna?' / Comuna '+p.comuna:''),
-    direccion:p.direccion||''
+    direccion:p.direccion||'',
+    regionCodigo:p.region||'',
+    ito:p.ito||''
   });
   window.open('solicitud-retiro-tq.html?'+qs.toString(),'_blank');
 }
