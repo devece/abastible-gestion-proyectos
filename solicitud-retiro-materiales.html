@@ -205,6 +205,13 @@
           <input type="text" id="numReserva" placeholder="Ej: 3584217" oninput="render()">
           <div class="hint">no existe en el sistema — lo ingresa el Supervisor al generar el HTML</div>
         </div>
+
+        <div class="field" style="margin-top:2px;">
+          <label for="dcFile">📄 Cargar Detalle Comercial (PDF)</label>
+          <input type="file" id="dcFile" accept="application/pdf" onchange="cargarDetalleComercial(this.files[0])">
+          <div class="hint" id="dcHint">extrae Código/Descripción/QTY de la categoría <code>EQUIPOS</code> — lo que se entrega por reserva</div>
+        </div>
+
         <div class="field manual">
           <label for="codigoMaterial">Código</label>
           <input type="text" id="codigoMaterial" placeholder="Ej: 24615" oninput="render()">
@@ -224,7 +231,7 @@
     </div>
 
     <div class="static-box" style="margin:0 0 1.25rem;">
-      ⚠️ Los reguladores se extraen del <b>Detalle Comercial</b> al crear el proyecto. Si <b>Cantidad (QTY)</b> aparece en 0 o faltan Código/Descripción, pide que vuelvan a cargar el Detalle Comercial (PDF) del proyecto para completarlos.
+      ⚠️ Los reguladores se extraen del <b>Detalle Comercial</b> al crear el proyecto. Si <b>Cantidad (QTY)</b> aparece en 0 o faltan Código/Descripción, carga el Detalle Comercial (PDF) del proyecto arriba para completarlos automáticamente, o pide que te lo vuelvan a enviar.
     </div>
 
     <div class="panel">
@@ -265,7 +272,12 @@
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <script>
+if(typeof pdfjsLib !== 'undefined'){
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+}
+
 const UB = "'Ubuntu Sans', 'Ubuntu', Arial, sans-serif";
 
 // Fuente: Listado_contratistas_actualizados.xlsx (hoja "Contratistas")
@@ -354,7 +366,7 @@ function templateCorreo(d){
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
     ${parrafo('Buenas tardes estimado Raúl', '14px')}
     ${parrafo('Espero que te encuentres bien.', '14px')}
-    ${parrafo(`Favor necesitamos su apoyo para preparar la entrega de los siguientes materiales para la siguiente reserva <span style="color:${NARANJA_ABASTIBLE};font-weight:bold;">${d.numReserva || '[N° RESERVA]'}</span> la cual retirará <span style="color:${NARANJA_ABASTIBLE};font-weight:bold;">${d.contactoContratista || '[CONTACTO CONTRATISTA]'}</span>`, '14px')}
+    ${parrafo(`Favor necesitamos su apoyo para preparar la entrega de los siguientes materiales para la siguiente reserva <span style="color:${NARANJA_ABASTIBLE};font-weight:bold;">${d.numReserva || '[N° RESERVA]'}</span> la cual retirará <span style="color:${NARANJA_ABASTIBLE};font-weight:bold;">${d.contactoContratista || '[CONTACTO CONTRATISTA]'}</span>${d.telefonoContratista ? `, teléfono <span style="color:${NARANJA_ABASTIBLE};font-weight:bold;">${d.telefonoContratista}</span>` : ''}`, '14px')}
     ${parrafoBold('Favor confirmar cuando estés disponible para despacho', '20px')}
   </table>
 
@@ -463,7 +475,96 @@ function abrirEnOutlook(){
 
 function limpiarManuales(){
   ['numReserva','codigoMaterial','descripcionMaterial','materialesAdicionales'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('dcFile').value = '';
   render();
+}
+
+/* ── Carga de Detalle Comercial (PDF) — extrae la categoría EQUIPOS ── */
+
+async function extraerTextoPDF(file){
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({data:buf}).promise;
+  const lineas = [];
+  for(let n=1; n<=pdf.numPages; n++){
+    const page = await pdf.getPage(n);
+    const content = await page.getTextContent();
+    const porFila = [];
+    content.items.forEach(it => {
+      const y = Math.round(it.transform[5]);
+      let fila = porFila.find(f => Math.abs(f.y-y) < 3);
+      if(!fila){ fila = {y:y, partes:[]}; porFila.push(fila); }
+      fila.partes.push({x: it.transform[4], texto: it.str});
+    });
+    porFila.sort((a,b) => b.y - a.y);
+    porFila.forEach(f => {
+      f.partes.sort((a,b) => a.x - b.x);
+      const texto = f.partes.map(p => p.texto).join(' ').replace(/\s+/g,' ').trim();
+      if(texto) lineas.push(texto);
+    });
+  }
+  return lineas.join('\n');
+}
+
+// La categoría EQUIPOS del Detalle Comercial es lo que se entrega por reserva
+// (reguladores y otros materiales de bodega) — a diferencia de TANQUES, que
+// tiene su propio flujo (solicitud-retiro-tq.html).
+function extraerEquiposDesdeTexto(texto){
+  const idx = /EQUIPOS\s*\n\s*EQUIPOS\s+C[oó]digo\s+Stock/i.exec(texto);
+  if(!idx) return [];
+  const resto = texto.slice(idx.index);
+  const bloqueMatch = /Final([\s\S]*?)Subtotal\s+Equipos/i.exec(resto);
+  if(!bloqueMatch) return [];
+
+  const itemPattern = /^(.+?)\s+0*(\d{4,9})\s+.*?\bUn\b\s+(\d+)\s+[\d.,]+\s+[\d.,]+\s*$/i;
+  const items = [];
+  bloqueMatch[1].split('\n').map(l => l.trim()).filter(Boolean).forEach(linea => {
+    const lm = itemPattern.exec(linea);
+    if(lm){
+      items.push({ descripcion: lm[1].trim(), codigo: lm[2], cantidad: parseInt(lm[3],10) || 1 });
+    } else if(items.length){
+      items[items.length-1].descripcion += ' ' + linea; // continuación de descripción larga
+    }
+  });
+  return items;
+}
+
+async function cargarDetalleComercial(file){
+  const hint = document.getElementById('dcHint');
+  if(!file) return;
+  if(typeof pdfjsLib === 'undefined'){
+    hint.textContent = 'No se pudo cargar el lector de PDF (sin conexión al CDN) — completa los campos manualmente.';
+    hint.style.color = 'var(--ambar)';
+    return;
+  }
+  hint.textContent = 'Leyendo PDF...';
+  hint.style.color = 'var(--texto-suave)';
+  try{
+    const texto = await extraerTextoPDF(file);
+    const items = extraerEquiposDesdeTexto(texto);
+
+    if(!items.length){
+      hint.textContent = 'No se encontró la categoría EQUIPOS en este PDF — completa los campos manualmente.';
+      hint.style.color = 'var(--ambar)';
+      return;
+    }
+
+    const principal = items[0];
+    document.getElementById('cantReguladores').value = principal.cantidad;
+    document.getElementById('codigoMaterial').value = principal.codigo;
+    document.getElementById('descripcionMaterial').value = principal.descripcion;
+
+    const adicionales = items.slice(1)
+      .map(it => `${it.descripcion} CODIGO SAP: ${it.codigo}, (${it.cantidad} UN)`)
+      .join('; ');
+    document.getElementById('materialesAdicionales').value = adicionales;
+
+    hint.textContent = `✅ ${items.length} ítem(s) de EQUIPOS extraído(s) del Detalle Comercial — revisa antes de enviar.`;
+    hint.style.color = 'var(--verde)';
+    render();
+  } catch(e){
+    hint.textContent = 'No se pudo leer el PDF — completa los campos manualmente.';
+    hint.style.color = 'var(--ambar)';
+  }
 }
 
 poblarDatalist();
