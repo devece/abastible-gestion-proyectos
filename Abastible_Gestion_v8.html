@@ -1784,7 +1784,8 @@ function abrirRetiroMateriales(idx){
     cliente:p.cliente||'',
     numeroProyecto:p.codigo||'',
     contratista:p.contratista||'',
-    cantReguladores:(p.reguladores_cant!=null?String(p.reguladores_cant):'')
+    cantReguladores:(p.reguladores_cant!=null?String(p.reguladores_cant):''),
+    regionCodigo:p.region||''
   });
   window.open('solicitud-retiro-materiales.html?'+qs.toString(),'_blank');
 }
