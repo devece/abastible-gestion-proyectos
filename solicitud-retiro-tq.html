@@ -113,6 +113,7 @@
   .btn-primary.success { background: var(--verde); }
   .btn-secondary { background: var(--blanco); color: var(--texto-suave); border: 1px solid var(--gris-borde); }
   .btn-secondary:hover { background: var(--gris-bg); }
+  .btn-secondary.success { background: var(--verde-claro); color: var(--verde); border-color: var(--verde-borde); }
 
   .missing-flag {
     display: none;
@@ -226,23 +227,8 @@
       <div class="panel-header" style="background:var(--gris);">📌 Fijo — Región VII</div>
       <div class="panel-body">
         <div class="static-box">
-          El HTML copiado es solo el <b>cuerpo</b> del correo — Outlook no permite autocompletar Para/CC al pegar. Cópialos aparte y pégalos en los campos correspondientes:
-        </div>
-        <div class="field" style="margin-top:10px;">
-          <label>Para</label>
-          <div style="display:flex;gap:6px;">
-            <input type="text" readonly id="paraFijo" value="Luis Muñoz H. <luis.munozh@abastible.cl>; Luis Puentes <transportes_lpc@hotmail.com>" style="font-size:11.5px;">
-            <button class="btn-secondary" style="flex:none;" onclick="copiarTexto('paraFijo',this)">📋</button>
-          </div>
-        </div>
-        <div class="field">
-          <label>CC (contratista)</label>
-          <div style="display:flex;gap:6px;">
-            <input type="text" readonly id="ccFijo" value="" style="font-size:11.5px;">
-            <button class="btn-secondary" style="flex:none;" onclick="copiarTexto('ccFijo',this)">📋</button>
-          </div>
-        </div>
-        <div class="static-box" style="margin-top:10px;">
+          <b>Para:</b> Luis Muñoz H. &lt;luis.munozh@abastible.cl&gt;, Luis Puentes &lt;transportes_lpc@hotmail.com&gt;<br>
+          <b>CC:</b> contratista del proyecto (campo de arriba)<br>
           <b>Coordina retiro:</b> Luis Puentes<br>
           <b>De:</b> quien envíe el correo (no se define aquí)
         </div>
@@ -250,7 +236,10 @@
     </div>
 
     <div class="btnbar">
-      <button class="btn-primary" id="copyBtn" onclick="copiarHTML()">📋 Copiar HTML para Outlook</button>
+      <button class="btn-primary" id="outlookBtn" onclick="abrirEnOutlook()">📨 Abrir en Outlook</button>
+      <button class="btn-secondary" id="copyBtn" onclick="copiarHTML()">📋 Copiar HTML</button>
+    </div>
+    <div class="btnbar">
       <button class="btn-secondary" onclick="limpiarManuales()">Limpiar manuales</button>
     </div>
     <div class="missing-flag" id="missingFlag"></div>
@@ -350,10 +339,14 @@ function row(label, val, opts={}){
 function templateCorreo(d){
   const formatoTanque = d.cantTanques && d.tanqueCodigo ? `${d.cantTanques} x ${d.tanqueCodigo}` : (d.tanqueCodigo || '');
 
+  const parrafo = (texto, padBottom) => `<tr><td style="padding:0 0 ${padBottom} 0;font-family:${UB};font-size:14px;line-height:150%;mso-line-height-rule:exactly;">${texto}</td></tr>`;
+
   return `
-  <p style="margin:0 0 16px;font-family:${UB};font-size:14px;line-height:1.7;">Buenas tardes estimado Luis</p>
-  <p style="margin:0 0 16px;font-family:${UB};font-size:14px;line-height:1.7;">Espero que te encuentres bien.</p>
-  <p style="margin:0 0 22px;font-family:${UB};font-size:14px;line-height:1.7;">Favor, gestionar guía de despacho de TQ de RESERVA <span style="color:${NARANJA_ABASTIBLE};font-weight:bold;">${d.numReserva || '[N° RESERVA]'}</span></p>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+    ${parrafo('Buenas tardes estimado Luis', '14px')}
+    ${parrafo('Espero que te encuentres bien.', '14px')}
+    ${parrafo(`Favor, gestionar guía de despacho de TQ de RESERVA <span style="color:${NARANJA_ABASTIBLE};font-weight:bold;">${d.numReserva || '[N° RESERVA]'}</span>`, '20px')}
+  </table>
 
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin-bottom:4px;">
     <tr><td style="background:${NARANJA_ABASTIBLE};height:4px;line-height:4px;font-size:0;">&nbsp;</td></tr>
@@ -369,8 +362,10 @@ function templateCorreo(d){
     ${row('Ubicación', [d.region, d.direccion].filter(Boolean).join(' - '))}
   </table>
 
-  <p style="margin:0 0 18px;font-family:${UB};font-size:14px;line-height:1.7;">Por favor avisar cuando estén disponibles para coordinar retiro con <span style="color:${NARANJA_ABASTIBLE};font-weight:bold;">Luis Puentes</span>, quien va en correo también.</p>
-  <p style="margin:0;font-family:${UB};font-size:14px;line-height:1.7;">Saludos</p>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+    ${parrafo(`Por favor avisar cuando estén disponibles para coordinar retiro con <span style="color:${NARANJA_ABASTIBLE};font-weight:bold;">Luis Puentes</span>, quien va en correo también.`, '16px')}
+    ${parrafo('Saludos', '0')}
+  </table>
   `;
 }
 
@@ -408,28 +403,21 @@ function render(){
   }
 }
 
-function copiarTexto(id, btn){
-  const input = document.getElementById(id);
-  navigator.clipboard.writeText(input.value).then(() => {
-    const original = btn.textContent;
-    btn.textContent = '✅';
-    setTimeout(() => { btn.textContent = original; }, 1500);
-  }).catch(() => {
-    input.select();
-    document.execCommand('copy');
-  });
+function outerHtmlCorreo(){
+  const el = document.getElementById('emailContent');
+  return `<table role="presentation" width="650" cellpadding="0" cellspacing="0" border="0" style="width:650px;font-family:${UB};font-size:14px;color:#000000;"><tr><td>${el.innerHTML}</td></tr></table>`;
 }
 
 function copiarHTML(){
   const el = document.getElementById('emailContent');
   const btn = document.getElementById('copyBtn');
-  const outerHtml = `<table role="presentation" width="650" cellpadding="0" cellspacing="0" border="0" style="width:650px;font-family:${UB};font-size:14px;line-height:1.7;color:#000000;"><tr><td>${el.innerHTML}</td></tr></table>`;
+  const outerHtml = outerHtmlCorreo();
 
   const blob = new Blob([outerHtml], { type: 'text/html' });
   navigator.clipboard.write([new ClipboardItem({ 'text/html': blob })]).then(() => {
     btn.textContent = '✅ ¡Copiado! Pega en Outlook';
     btn.classList.add('success');
-    setTimeout(() => { btn.textContent = '📋 Copiar HTML para Outlook'; btn.classList.remove('success'); }, 2500);
+    setTimeout(() => { btn.textContent = '📋 Copiar HTML'; btn.classList.remove('success'); }, 2500);
   }).catch(() => {
     const range = document.createRange();
     range.selectNode(el);
@@ -439,7 +427,27 @@ function copiarHTML(){
     window.getSelection().removeAllRanges();
     btn.textContent = '✅ Copiado — Ctrl+V en Outlook';
     btn.classList.add('success');
-    setTimeout(() => { btn.textContent = '📋 Copiar HTML para Outlook'; btn.classList.remove('success'); }, 2500);
+    setTimeout(() => { btn.textContent = '📋 Copiar HTML'; btn.classList.remove('success'); }, 2500);
+  });
+}
+
+function abrirEnOutlook(){
+  const btn = document.getElementById('outlookBtn');
+  const outerHtml = outerHtmlCorreo();
+  const blob = new Blob([outerHtml], { type: 'text/html' });
+
+  navigator.clipboard.write([new ClipboardItem({ 'text/html': blob })]).catch(() => {}).then(() => {
+    const paraFijo = 'luis.munozh@abastible.cl,transportes_lpc@hotmail.com';
+    const cc = g('correoContratista');
+    const asunto = document.getElementById('metaAsunto').textContent.trim();
+
+    let mailtoUrl = `mailto:${encodeURIComponent(paraFijo)}?subject=${encodeURIComponent(asunto)}`;
+    if(cc) mailtoUrl += `&cc=${encodeURIComponent(cc)}`;
+    window.location.href = mailtoUrl;
+
+    btn.textContent = '✅ ¡Outlook abierto! Pega el cuerpo (Ctrl+V)';
+    btn.classList.add('success');
+    setTimeout(() => { btn.textContent = '📨 Abrir en Outlook'; btn.classList.remove('success'); }, 4000);
   });
 }
 
