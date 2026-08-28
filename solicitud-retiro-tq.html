@@ -226,8 +226,23 @@
       <div class="panel-header" style="background:var(--gris);">📌 Fijo — Región VII</div>
       <div class="panel-body">
         <div class="static-box">
-          <b>Para:</b> Luis Muñoz H. &lt;luis.munozh@abastible.cl&gt;, Luis Puentes &lt;transportes_lpc@hotmail.com&gt;<br>
-          <b>CC:</b> contratista del proyecto (campo de arriba)<br>
+          El HTML copiado es solo el <b>cuerpo</b> del correo — Outlook no permite autocompletar Para/CC al pegar. Cópialos aparte y pégalos en los campos correspondientes:
+        </div>
+        <div class="field" style="margin-top:10px;">
+          <label>Para</label>
+          <div style="display:flex;gap:6px;">
+            <input type="text" readonly id="paraFijo" value="Luis Muñoz H. <luis.munozh@abastible.cl>; Luis Puentes <transportes_lpc@hotmail.com>" style="font-size:11.5px;">
+            <button class="btn-secondary" style="flex:none;" onclick="copiarTexto('paraFijo',this)">📋</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>CC (contratista)</label>
+          <div style="display:flex;gap:6px;">
+            <input type="text" readonly id="ccFijo" value="" style="font-size:11.5px;">
+            <button class="btn-secondary" style="flex:none;" onclick="copiarTexto('ccFijo',this)">📋</button>
+          </div>
+        </div>
+        <div class="static-box" style="margin-top:10px;">
           <b>Coordina retiro:</b> Luis Puentes<br>
           <b>De:</b> quien envíe el correo (no se define aquí)
         </div>
@@ -316,17 +331,19 @@ function onContratistaChange(){
 
 function g(id){ return document.getElementById(id).value.trim(); }
 
-const AZUL_ABASTIBLE = '#001489';
 const NARANJA_ABASTIBLE = '#FE5100';
+const NARANJA_SUAVE = '#FFD9BC';
+const NARANJA_SUAVE_BORDE = '#FFC59A';
+const NARANJA_TEXTO = '#9A3E00';
 
 function row(label, val, opts={}){
-  const zebraBg = opts.zebra ? '#F4F6FC' : '#FFFFFF';
-  const valBg = opts.highlight ? '#FFF3EC' : zebraBg;
+  const zebraBg = opts.zebra ? '#FFF9F4' : '#FFFFFF';
+  const valBg = opts.highlight ? '#FFF1E4' : zebraBg;
   const valColor = opts.highlight ? NARANJA_ABASTIBLE : '#1C1E26';
   const valWeight = opts.highlight ? '700' : '400';
   return `<tr>
-    <td width="34%" style="background:${AZUL_ABASTIBLE};border:1px solid #001489;padding:9px 12px;font-family:${UB};font-size:11px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#ffffff;">${label}</td>
-    <td style="background:${valBg};border:1px solid #dfe2ea;border-left:${opts.highlight ? `3px solid ${NARANJA_ABASTIBLE}` : '1px solid #dfe2ea'};padding:9px 12px;font-family:${UB};font-size:13px;font-weight:${valWeight};color:${valColor};">${val || '—'}</td>
+    <td width="34%" style="background:${NARANJA_SUAVE};border:1px solid ${NARANJA_SUAVE_BORDE};padding:11px 12px;font-family:${UB};font-size:11px;line-height:1.5;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:${NARANJA_TEXTO};">${label}</td>
+    <td style="background:${valBg};border:1px solid #ece7e2;border-left:${opts.highlight ? `3px solid ${NARANJA_ABASTIBLE}` : '1px solid #ece7e2'};padding:11px 12px;font-family:${UB};font-size:13px;line-height:1.6;font-weight:${valWeight};color:${valColor};">${val || '—'}</td>
   </tr>`;
 }
 
@@ -334,14 +351,14 @@ function templateCorreo(d){
   const formatoTanque = d.cantTanques && d.tanqueCodigo ? `${d.cantTanques} x ${d.tanqueCodigo}` : (d.tanqueCodigo || '');
 
   return `
-  <p style="margin:0 0 14px;font-family:${UB};font-size:14px;">Buenas tardes estimado Luis</p>
-  <p style="margin:0 0 14px;font-family:${UB};font-size:14px;">Espero que te encuentres bien.</p>
-  <p style="margin:0 0 18px;font-family:${UB};font-size:14px;">Favor, gestionar guía de despacho de TQ de RESERVA <span style="color:${NARANJA_ABASTIBLE};font-weight:bold;">${d.numReserva || '[N° RESERVA]'}</span></p>
+  <p style="margin:0 0 16px;font-family:${UB};font-size:14px;line-height:1.7;">Buenas tardes estimado Luis</p>
+  <p style="margin:0 0 16px;font-family:${UB};font-size:14px;line-height:1.7;">Espero que te encuentres bien.</p>
+  <p style="margin:0 0 22px;font-family:${UB};font-size:14px;line-height:1.7;">Favor, gestionar guía de despacho de TQ de RESERVA <span style="color:${NARANJA_ABASTIBLE};font-weight:bold;">${d.numReserva || '[N° RESERVA]'}</span></p>
 
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin-bottom:4px;">
     <tr><td style="background:${NARANJA_ABASTIBLE};height:4px;line-height:4px;font-size:0;">&nbsp;</td></tr>
   </table>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border:1px solid ${AZUL_ABASTIBLE};border-top:none;margin-bottom:18px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border:1px solid ${NARANJA_SUAVE_BORDE};border-top:none;margin-bottom:22px;">
     ${row('N° Renova', d.numeroProyecto, {highlight:true})}
     ${row('N° Reserva', d.numReserva, {highlight:true})}
     ${row('Contratista', d.contratista, {zebra:true})}
@@ -352,8 +369,8 @@ function templateCorreo(d){
     ${row('Ubicación', [d.region, d.direccion].filter(Boolean).join(' - '))}
   </table>
 
-  <p style="margin:0 0 18px;font-family:${UB};font-size:14px;">Por favor avisar cuando estén disponibles para coordinar retiro con <span style="color:${NARANJA_ABASTIBLE};font-weight:bold;">Luis Puentes</span>, quien va en correo también.</p>
-  <p style="margin:0;font-family:${UB};font-size:14px;">Saludos</p>
+  <p style="margin:0 0 18px;font-family:${UB};font-size:14px;line-height:1.7;">Por favor avisar cuando estén disponibles para coordinar retiro con <span style="color:${NARANJA_ABASTIBLE};font-weight:bold;">Luis Puentes</span>, quien va en correo también.</p>
+  <p style="margin:0;font-family:${UB};font-size:14px;line-height:1.7;">Saludos</p>
   `;
 }
 
@@ -374,7 +391,9 @@ function render(){
 
   document.getElementById('emailContent').innerHTML = templateCorreo(d);
   document.getElementById('metaAsunto').textContent = `Solicitud Retiro y Envío de TQ — Proyecto ${d.cliente || '—'} — ${d.numeroProyecto || '—'}`;
-  document.getElementById('metaCC').textContent = d.correoContratista ? `${d.contratista} <${d.correoContratista}>` : `${d.contratista || '—'} (falta correo)`;
+  const ccTexto = d.correoContratista ? `${d.contratista} <${d.correoContratista}>` : `${d.contratista || '—'} (falta correo)`;
+  document.getElementById('metaCC').textContent = ccTexto;
+  document.getElementById('ccFijo').value = ccTexto;
 
   const faltantes = [];
   if(!d.numReserva) faltantes.push('N° Reserva');
@@ -389,10 +408,22 @@ function render(){
   }
 }
 
+function copiarTexto(id, btn){
+  const input = document.getElementById(id);
+  navigator.clipboard.writeText(input.value).then(() => {
+    const original = btn.textContent;
+    btn.textContent = '✅';
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  }).catch(() => {
+    input.select();
+    document.execCommand('copy');
+  });
+}
+
 function copiarHTML(){
   const el = document.getElementById('emailContent');
   const btn = document.getElementById('copyBtn');
-  const outerHtml = `<table role="presentation" width="650" cellpadding="0" cellspacing="0" border="0" style="width:650px;font-family:${UB};font-size:14px;color:#000000;"><tr><td>${el.innerHTML}</td></tr></table>`;
+  const outerHtml = `<table role="presentation" width="650" cellpadding="0" cellspacing="0" border="0" style="width:650px;font-family:${UB};font-size:14px;line-height:1.7;color:#000000;"><tr><td>${el.innerHTML}</td></tr></table>`;
 
   const blob = new Blob([outerHtml], { type: 'text/html' });
   navigator.clipboard.write([new ClipboardItem({ 'text/html': blob })]).then(() => {
