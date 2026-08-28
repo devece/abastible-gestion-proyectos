@@ -2060,8 +2060,8 @@ function abrirDet(id){
   h+=hF(idx,'f_oc','Envío O.C. a Contratistas y Proveedores',p,'📄','Welcome Pack pendiente hasta confirmar inicio',cer);
   h+=hF(idx,'f_trabajos','Inicio de Trabajos',p,'🔨','',cer);
   if(!cer)h+=hBotonAccion('📧','Enviar Welcome Pack al cliente','','<button class="hbtn hb-reg" onclick="abrirWPEP('+idx+',\'WP\')">📧 Generar Welcome Pack</button>');
-  if(!cer&&p.region==='VII Maule')h+=hBotonAccion('🛢','Solicitar Retiro de TQ','Solo proyectos Región VII','<button class="hbtn hb-reg" onclick="abrirRetiroTQ('+idx+')">🛢 Generar Solicitud Retiro TQ</button>');
-  if(!cer&&p.region==='VII Maule')h+=hBotonAccion('📦','Solicitar Retiro de Materiales','Solo proyectos Región VII — reguladores y otros materiales','<button class="hbtn hb-reg" onclick="abrirRetiroMateriales('+idx+')">📦 Generar Solicitud Retiro Materiales</button>');
+  if(!cer)h+=hBotonAccion('🛢','Solicitar Retiro de TQ','','<button class="hbtn hb-reg" onclick="abrirRetiroTQ('+idx+')">🛢 Generar Solicitud Retiro TQ</button>');
+  if(!cer)h+=hBotonAccion('📦','Solicitar Retiro de Materiales','Reguladores y otros materiales de bodega','<button class="hbtn hb-reg" onclick="abrirRetiroMateriales('+idx+')">📦 Generar Solicitud Retiro Materiales</button>');
   h+=hF(idx,'f_tc8','Envío TC8',p,'📑','Indica retiro de tanque desde bodega',cer);
   h+=hF(idx,'f_montaje','Montaje de Tanque',p,'🛢','',cer);
   h+=hF(idx,'f_ampliacion','Ampliación de Cliente',p,'🔧','',cer);
