@@ -205,6 +205,17 @@
           <div class="hint">campos <code>region</code> / <code>comuna</code> de tabla proyectos</div>
         </div>
         <div class="field auto">
+          <label for="regionCodigo">Región (código)</label>
+          <input type="text" id="regionCodigo" value="VII Maule" list="listaRegionesTQ" oninput="onRegionChange()">
+          <datalist id="listaRegionesTQ"><option value="VI Ohiggins"></datalist>
+          <div class="hint" id="regionCodigoHint">Región VI usa un procedimiento distinto — ver abajo</div>
+        </div>
+        <div class="field auto">
+          <label for="ito">ITO / Supervisor</label>
+          <input type="text" id="ito" value="" oninput="render()">
+          <div class="hint">campo <code>ito</code> de tabla proyectos</div>
+        </div>
+        <div class="field auto">
           <label for="direccion">Dirección</label>
           <input type="text" id="direccion" value="Calle Callejón Las Espuelas, N° 039" oninput="render()">
           <div class="hint">campo <code>direccion</code> — confirmar número exacto</div>
@@ -223,34 +234,99 @@
       </div>
     </div>
 
-    <div class="panel">
-      <div class="panel-header manual">✏️ Destinatarios del correo</div>
-      <div class="panel-body">
-        <div class="field manual">
-          <label for="destNombre">Nombre para el saludo</label>
-          <input type="text" id="destNombre" value="Luis" oninput="render()">
-          <div class="hint">"Buenas tardes estimado/a ..."</div>
-        </div>
-        <div class="field manual">
-          <label for="destPara">Para (correos separados por ;)</label>
-          <input type="text" id="destPara" value="luis.munozh@abastible.cl;transportes_lpc@hotmail.com" oninput="render()">
-          <div class="hint">bodeguero/coordinador de retiro de la región — verifica antes de enviar</div>
-        </div>
-        <div class="field manual">
-          <label for="coordinaRetiro">Quién coordina el retiro (nombre)</label>
-          <input type="text" id="coordinaRetiro" value="Luis Puentes" oninput="render()">
+    <div id="panelRegionVI" style="display:none;">
+      <div class="panel">
+        <div class="panel-header" style="background:var(--gris);">📊 Región VI — despacho vía SharePoint</div>
+        <div class="panel-body">
+          <div class="static-box">
+            En Región VI <b>no se envían correos</b>. El despacho de tanques se solicita en dos pasos:
+          </div>
+          <div class="static-box" style="margin-top:8px;background:var(--ambar-claro);border-color:var(--ambar-borde);">
+            <b>1) Modificar el grafo:</b> cambiar el centro de estanque de la reserva de <b>0060</b> a <b>0062</b>. Si no se hace este cambio, <b>el tanque no se podrá despachar</b>.
+          </div>
+          <div class="static-box" style="margin-top:8px;">
+            <b>2) Completar la fila</b> de abajo y pegarla en la planilla de SharePoint (requiere tu credencial de Abastible):<br><br>
+            <a href="https://abastible.sharepoint.com/:x:/r/sites/DespachoEstanques/_layouts/15/Doc.aspx?sourcedoc=%7B0F0CF5B4-771C-481F-B064-4B7145003CF5%7D&file=Requerimientos%20y%20Despachos%20Tanques%20VI.xlsx&fromShare=true&action=default&mobileredirect=true&isSPOFile=1&ovuser=13aff87e-8ecf-406b-926f-b1c5df477126%2Cdaniel.villalobos%40abastible.cl&wdExp=TEAMS-TREATMENT&web=1" target="_blank" style="color:var(--azul-medio);font-weight:600;">📎 Abrir "Requerimientos y Despachos Tanques VI.xlsx"</a>
+          </div>
+          <div class="field manual" style="margin-top:12px;">
+            <label for="fechaSolicitud">Fecha de solicitud</label>
+            <input type="text" id="fechaSolicitud" oninput="render()">
+          </div>
+          <div class="field manual">
+            <label for="fechaEntrega">Fecha entrega</label>
+            <input type="text" id="fechaEntrega" placeholder="Ej: 15-08-2026" oninput="render()">
+          </div>
+          <div class="field manual">
+            <label for="aplicacion">Aplicación</label>
+            <input type="text" id="aplicacion" placeholder="Ej: Habitacional" oninput="render()">
+          </div>
         </div>
       </div>
+
+      <div class="panel">
+        <div class="panel-header preview">👁️ Fila para pegar en SharePoint (columnas B–I)</div>
+        <div class="preview-stage" style="overflow-x:auto;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="1" style="border-collapse:collapse;background:#fff;font-size:12px;">
+            <tr style="background:var(--azul);color:#fff;">
+              <td style="padding:8px;">ITO</td>
+              <td style="padding:8px;">Fecha de Solicitud</td>
+              <td style="padding:8px;">Fecha Entrega</td>
+              <td style="padding:8px;">Reserva</td>
+              <td style="padding:8px;">Aplicación</td>
+              <td style="padding:8px;">Formato</td>
+              <td style="padding:8px;">Cantidad</td>
+              <td style="padding:8px;">Dirección</td>
+            </tr>
+            <tr id="filaRegionVI">
+              <td style="padding:8px;border:1px solid var(--gris-borde);">—</td>
+              <td style="padding:8px;border:1px solid var(--gris-borde);">—</td>
+              <td style="padding:8px;border:1px solid var(--gris-borde);">—</td>
+              <td style="padding:8px;border:1px solid var(--gris-borde);">—</td>
+              <td style="padding:8px;border:1px solid var(--gris-borde);">—</td>
+              <td style="padding:8px;border:1px solid var(--gris-borde);">—</td>
+              <td style="padding:8px;border:1px solid var(--gris-borde);">—</td>
+              <td style="padding:8px;border:1px solid var(--gris-borde);">—</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="btnbar">
+        <button class="btn-primary" id="copyFilaBtn" onclick="copiarFilaRegionVI()">📋 Copiar fila para pegar en SharePoint</button>
+      </div>
+      <div class="hint" style="margin-top:6px;">pega directo en la celda B de la primera fila vacía — Excel Online distribuye cada valor en su columna</div>
     </div>
 
-    <div class="static-box" style="margin:0 0 1.25rem;">
-      <b>CC:</b> contratista del proyecto (campo de arriba)<br>
-      <b>De:</b> quien envíe el correo (no se define aquí)
-    </div>
+    <div id="flujoCorreoNormal">
+      <div class="panel">
+        <div class="panel-header manual">✏️ Destinatarios del correo</div>
+        <div class="panel-body">
+          <div class="field manual">
+            <label for="destNombre">Nombre para el saludo</label>
+            <input type="text" id="destNombre" value="Luis" oninput="render()">
+            <div class="hint">"Buenas tardes estimado/a ..."</div>
+          </div>
+          <div class="field manual">
+            <label for="destPara">Para (correos separados por ;)</label>
+            <input type="text" id="destPara" value="luis.munozh@abastible.cl;transportes_lpc@hotmail.com" oninput="render()">
+            <div class="hint">bodeguero/coordinador de retiro de la región — verifica antes de enviar</div>
+          </div>
+          <div class="field manual">
+            <label for="coordinaRetiro">Quién coordina el retiro (nombre)</label>
+            <input type="text" id="coordinaRetiro" value="Luis Puentes" oninput="render()">
+          </div>
+        </div>
+      </div>
 
-    <div class="btnbar">
-      <button class="btn-primary" id="outlookBtn" onclick="abrirEnOutlook()">📨 Abrir en Outlook</button>
-      <button class="btn-secondary" id="copyBtn" onclick="copiarHTML()">📋 Copiar HTML</button>
+      <div class="static-box" style="margin:0 0 1.25rem;">
+        <b>CC:</b> contratista del proyecto (campo de arriba)<br>
+        <b>De:</b> quien envíe el correo (no se define aquí)
+      </div>
+
+      <div class="btnbar">
+        <button class="btn-primary" id="outlookBtn" onclick="abrirEnOutlook()">📨 Abrir en Outlook</button>
+        <button class="btn-secondary" id="copyBtn" onclick="copiarHTML()">📋 Copiar HTML</button>
+      </div>
     </div>
     <div class="btnbar">
       <button class="btn-secondary" onclick="limpiarManuales()">Limpiar manuales</button>
@@ -258,7 +334,7 @@
     <div class="missing-flag" id="missingFlag"></div>
   </div>
 
-  <div class="panel">
+  <div class="panel" id="panelPreviewCorreo">
     <div class="panel-header preview">👁️ Vista previa del correo</div>
     <div class="preview-meta">
       <div><b>Para:</b> <span id="metaPara">—</span></div>
@@ -269,6 +345,13 @@
       <div class="email-shell">
         <div id="emailContent"></div>
       </div>
+    </div>
+  </div>
+
+  <div class="panel" id="panelPreviewRegionVI" style="display:none;">
+    <div class="panel-header" style="background:var(--gris);">ℹ️ Sin vista previa de correo</div>
+    <div class="panel-body">
+      <p style="font-size:13px;color:var(--texto-suave);line-height:1.6;">Región VI no usa correo — completa la fila a la izquierda y pégala directo en la planilla de SharePoint.</p>
     </div>
   </div>
 
@@ -302,6 +385,64 @@ function formatoTelefonoCL(tel){
   const sinCero = digitos.replace(/^0+/,'');
   const nueveDigitos = sinCero.length > 9 ? sinCero.slice(-9) : sinCero;
   return '+56' + nueveDigitos;
+}
+
+/* ── Región VI: sin correo, se pide por SharePoint ── */
+
+function esRegionVI(region){
+  return normaliza(region) === normaliza('VI Ohiggins');
+}
+
+function fechaHoyDDMMYYYY(){
+  const d = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  return `${pad(d.getDate())}-${pad(d.getMonth()+1)}-${d.getFullYear()}`;
+}
+
+function onRegionChange(){
+  const esVI = esRegionVI(g('regionCodigo'));
+  document.getElementById('panelRegionVI').style.display = esVI ? '' : 'none';
+  document.getElementById('flujoCorreoNormal').style.display = esVI ? 'none' : '';
+  document.getElementById('panelPreviewCorreo').style.display = esVI ? 'none' : '';
+  document.getElementById('panelPreviewRegionVI').style.display = esVI ? '' : 'none';
+
+  const hint = document.getElementById('regionCodigoHint');
+  if(esVI){
+    hint.textContent = 'Región VI: no se envía correo — completa la fila para SharePoint más abajo';
+    hint.style.color = 'var(--ambar)';
+    if(!g('fechaSolicitud')) document.getElementById('fechaSolicitud').value = fechaHoyDDMMYYYY();
+  } else {
+    hint.textContent = 'Región VI usa un procedimiento distinto — ver abajo';
+    hint.style.color = 'var(--texto-suave)';
+  }
+  render();
+}
+
+function filaRegionVIValores(){
+  return [
+    g('ito'), g('fechaSolicitud'), g('fechaEntrega'), g('numReserva'),
+    g('aplicacion'), g('tanqueCodigo'), g('cantTanques'), g('direccion')
+  ];
+}
+
+function actualizarFilaRegionVI(){
+  const valores = filaRegionVIValores();
+  const fila = document.getElementById('filaRegionVI');
+  fila.innerHTML = valores.map(v =>
+    `<td style="padding:8px;border:1px solid var(--gris-borde);">${v || '—'}</td>`
+  ).join('');
+}
+
+function copiarFilaRegionVI(){
+  const btn = document.getElementById('copyFilaBtn');
+  const texto = filaRegionVIValores().join('\t');
+  navigator.clipboard.writeText(texto).then(() => {
+    btn.textContent = '✅ ¡Copiado! Pega en la celda B de SharePoint';
+    setTimeout(() => { btn.textContent = '📋 Copiar fila para pegar en SharePoint'; }, 3000);
+  }).catch(() => {
+    btn.textContent = 'No se pudo copiar — selecciona y copia manualmente';
+    setTimeout(() => { btn.textContent = '📋 Copiar fila para pegar en SharePoint'; }, 3000);
+  });
 }
 
 function onContratistaChange(){
@@ -406,16 +547,28 @@ function render(){
   document.getElementById('metaCC').textContent = ccTexto;
   document.getElementById('metaPara').textContent = d.destPara || '—';
 
+  const esVI = esRegionVI(g('regionCodigo'));
+  actualizarFilaRegionVI();
+
   const faltantes = [];
-  if(!d.numReserva) faltantes.push('N° Reserva');
-  if(!d.destPara) faltantes.push('Para (destinatarios)');
-  if(!d.coordinaRetiro) faltantes.push('Quién coordina el retiro');
-  if(!d.correoContratista) faltantes.push('Correo del contratista (sin coincidencia en el listado)');
+  if(esVI){
+    if(!g('ito')) faltantes.push('ITO / Supervisor');
+    if(!d.numReserva) faltantes.push('Reserva');
+    if(!g('fechaEntrega')) faltantes.push('Fecha entrega');
+    if(!g('aplicacion')) faltantes.push('Aplicación');
+  } else {
+    if(!d.numReserva) faltantes.push('N° Reserva');
+    if(!d.destPara) faltantes.push('Para (destinatarios)');
+    if(!d.coordinaRetiro) faltantes.push('Quién coordina el retiro');
+    if(!d.correoContratista) faltantes.push('Correo del contratista (sin coincidencia en el listado)');
+  }
 
   const flag = document.getElementById('missingFlag');
   if(faltantes.length){
     flag.classList.add('show');
-    flag.innerHTML = `⚠️ Faltan datos antes de enviar: <b>${faltantes.join(', ')}</b>.`;
+    flag.innerHTML = esVI
+      ? `⚠️ Faltan datos antes de copiar la fila: <b>${faltantes.join(', ')}</b>.`
+      : `⚠️ Faltan datos antes de enviar: <b>${faltantes.join(', ')}</b>.`;
   } else {
     flag.classList.remove('show');
   }
@@ -495,6 +648,7 @@ poblarDatalist();
 })();
 
 onContratistaChange();
+onRegionChange();
 </script>
 
 </body>
