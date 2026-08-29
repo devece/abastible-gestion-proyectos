@@ -297,6 +297,25 @@
       <div class="hint" style="margin-top:6px;">pega directo en la celda B de la primera fila vacía — Excel Online distribuye cada valor en su columna</div>
     </div>
 
+    <div id="panelRegionVII" style="display:none;">
+      <div class="panel">
+        <div class="panel-header" style="background:var(--gris);">💬 Región VII — confirmar disponibilidad por WhatsApp</div>
+        <div class="panel-body">
+          <div class="static-box">
+            Antes de enviar el correo, se debe confirmar por WhatsApp con <b>Luis Puentes</b> (+56 9 9817 5535) si tiene disponibilidad para el retiro y entrega de tanque en la fecha requerida por el contratista.
+          </div>
+          <div class="field manual" style="margin-top:12px;">
+            <label for="fechaDespacho">Fecha requerida de retiro y entrega</label>
+            <input type="text" id="fechaDespacho" placeholder="Ej: 15-08-2026" oninput="render()">
+          </div>
+          <div class="btnbar">
+            <button class="btn-primary" id="whatsappBtn" onclick="abrirWhatsApp()">💬 Abrir WhatsApp</button>
+          </div>
+          <div class="hint" style="margin-top:6px;">se abre WhatsApp con el mensaje ya redactado — solo debes enviarlo</div>
+        </div>
+      </div>
+    </div>
+
     <div id="flujoCorreoNormal">
       <div class="panel">
         <div class="panel-header manual">✏️ Destinatarios del correo</div>
@@ -393,6 +412,10 @@ function esRegionVI(region){
   return normaliza(region) === normaliza('VI Ohiggins');
 }
 
+function esRegionVII(region){
+  return normaliza(region) === normaliza('VII Maule');
+}
+
 function fechaHoyDDMMYYYY(){
   const d = new Date();
   const pad = n => String(n).padStart(2,'0');
@@ -405,6 +428,7 @@ function onRegionChange(){
   document.getElementById('flujoCorreoNormal').style.display = esVI ? 'none' : '';
   document.getElementById('panelPreviewCorreo').style.display = esVI ? 'none' : '';
   document.getElementById('panelPreviewRegionVI').style.display = esVI ? '' : 'none';
+  document.getElementById('panelRegionVII').style.display = (!esVI && esRegionVII(g('regionCodigo'))) ? '' : 'none';
 
   const hint = document.getElementById('regionCodigoHint');
   if(esVI){
@@ -443,6 +467,19 @@ function copiarFilaRegionVI(){
     btn.textContent = 'No se pudo copiar — selecciona y copia manualmente';
     setTimeout(() => { btn.textContent = '📋 Copiar fila para pegar en SharePoint'; }, 3000);
   });
+}
+
+/* ── Región VII: confirmar disponibilidad por WhatsApp antes del correo ── */
+
+function mensajeWhatsApp(){
+  const fecha = g('fechaDespacho') || '[FECHA]';
+  const direccion = g('direccion') || '[DIRECCIÓN]';
+  return `Hola Luis, buenas tardes. ¿Tienes disponibilidad para el retiro y entrega de tanque el día ${fecha}, en la dirección ${direccion}? Quedo atento, saludos.`;
+}
+
+function abrirWhatsApp(){
+  const texto = encodeURIComponent(mensajeWhatsApp());
+  window.open(`https://wa.me/56998175535?text=${texto}`, '_blank');
 }
 
 function onContratistaChange(){
