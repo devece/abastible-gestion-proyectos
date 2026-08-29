@@ -1798,6 +1798,10 @@ function vencido(p){
   if(p.f_oc&&!p.f_trabajos)return diasDesde(p.f_oc)>7;
   return false;
 }
+function enEjecucion(p){
+  var s=p.status||'';
+  return s!=='7. Cierre Proyecto'&&s!=='8. Cierre Forzado'&&(p.f_v_coord||p.f_liberado);
+}
 
 // ─── BADGE ────────────────────────────────────────────────────────────────
 var SMAP={'1. Evaluación Previa':['b1','Evaluación Previa'],'2. Entregado a coordinador':['b2','Coordinador'],'4. Liberacion':['b4','Liberación'],'5. Proyecto en ejecucion':['b5','En Ejecución'],'5.1 Envío O.C':['b51','Envío O.C.'],'5.2 Inicio de Trabajos':['b52','Inicio Trabajos'],'5.4 Solicitud de carga al 20%':['b54','Carga 20%'],'6. Enviado a Gestor Doc':['b6','Gestor Doc'],'7. Cierre Proyecto':['b7','Cerrado'],'8. Cierre Forzado':['b8','Cierre Forzado']};
@@ -2064,6 +2068,7 @@ function abrirDet(id){
   h+=hF(idx,'f_trabajos','Inicio de Trabajos',p,'🔨','',cer);
   if(!cer)h+=hBotonAccion('📧','Enviar Welcome Pack al cliente','','<button class="hbtn hb-reg" onclick="abrirWPEP('+idx+',\'WP\')">📧 Generar Welcome Pack</button>');
   if(!cer)h+=hBotonAccion('🛢','Solicitar Retiro de TQ','','<button class="hbtn hb-reg" onclick="abrirRetiroTQ('+idx+')">🛢 Generar Solicitud Retiro TQ</button>');
+  h+=hF(idx,'f_despacho_tq','Correo Despacho Tanque Enviado',p,'📤','Marca cuando se envía el correo de despacho del tanque — recién ahí suma en Despacho Tanques',cer);
   if(!cer)h+=hBotonAccion('📦','Solicitar Retiro de Materiales','Reguladores y otros materiales de bodega','<button class="hbtn hb-reg" onclick="abrirRetiroMateriales('+idx+')">📦 Generar Solicitud Retiro Materiales</button>');
   h+=hF(idx,'f_tc8','Envío TC8',p,'📑','Indica retiro de tanque desde bodega',cer);
   h+=hF(idx,'f_montaje','Montaje de Tanque',p,'🛢','',cer);
@@ -2677,10 +2682,7 @@ function renderResumen(){
   var reg=document.getElementById('res-reg')?document.getElementById('res-reg').value:'';
 
   // Proyectos en ejecución (no cerrados, tienen f_liberado o f_v_coord)
-  var enEjec=BD.filter(function(p){
-    var s=p.status||'';
-    return s!=='7. Cierre Proyecto'&&s!=='8. Cierre Forzado'&&(p.f_v_coord||p.f_liberado);
-  });
+  var enEjec=BD.filter(enEjecucion);
 
   function semaforo(p){
     var d=diasProy(p);
@@ -2741,11 +2743,11 @@ function renderResumen(){
 function renderTanques(){
   var regFil=document.getElementById('dt-reg')?document.getElementById('dt-reg').value:'';
 
-  // Calcular tanques: solo proyectos con TC8 enviado
+  // Calcular tanques: solo proyectos en ejecución con correo de despacho de tanque enviado
   var tanData={};
   var tiposTanque={};
   BD.forEach(function(p){
-    if(!p.f_tc8||!p.region||!p.tanque)return;
+    if(!enEjecucion(p)||!p.f_despacho_tq||!p.region||!p.tanque)return;
     if(regFil&&p.region!==regFil)return;
     var r=p.region, t=p.tanque.trim();
     var c=parseInt(p.cant_tanque)||1;

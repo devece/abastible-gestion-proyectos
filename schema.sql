@@ -192,3 +192,8 @@ alter publication supabase_realtime add table public.proyectos;
 -- ── Stage: Término de Ejecución (dispara el recordatorio de End Pack) ──
 alter table public.proyectos add column if not exists f_termino_ejecucion timestamptz;
 alter table public.proyectos add column if not exists f_ut timestamptz;
+
+-- ── Stage: Despacho de Tanques — ya no se cuenta por TC8, sino por envío del correo ──
+-- Un tanque solo suma en el panel "Despacho Tanques" cuando el proyecto está en ejecución
+-- (status no cerrado y con f_v_coord o f_liberado) Y además tiene f_despacho_tq cargado.
+alter table public.proyectos add column if not exists f_despacho_tq timestamptz;
