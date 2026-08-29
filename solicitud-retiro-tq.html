@@ -207,7 +207,7 @@
         <div class="field auto">
           <label for="regionCodigo">Región (código)</label>
           <input type="text" id="regionCodigo" value="VII Maule" list="listaRegionesTQ" oninput="onRegionChange()">
-          <datalist id="listaRegionesTQ"><option value="VI Ohiggins"></datalist>
+          <datalist id="listaRegionesTQ"><option value="VI Ohiggins"><option value="VII Maule"><option value="X Los Lagos"><option value="XIV Los Ríos"></datalist>
           <div class="hint" id="regionCodigoHint">Región VI usa un procedimiento distinto — ver abajo</div>
         </div>
         <div class="field auto">
@@ -422,6 +422,21 @@ function fechaHoyDDMMYYYY(){
   return `${pad(d.getDate())}-${pad(d.getMonth()+1)}-${d.getFullYear()}`;
 }
 
+// Destinatarios del correo de Despacho de Tanque por región (bodeguero/coordinador de retiro)
+const BODEGUEROS_TQ = [
+  { region: 'VII Maule', destNombre: 'Luis', destPara: 'luis.munozh@abastible.cl;transportes_lpc@hotmail.com', coordinaRetiro: 'Luis Puentes' },
+  { region: 'XIV Los Ríos', destNombre: 'Waldemar', destPara: 'waldemar.munoz@abastible.cl;carlos.herrera@serviciosch.cl', coordinaRetiro: 'Carlos Herrera', ccExtra: 'servicioschspa@gmail.com' },
+  { region: 'X Los Lagos', destNombre: 'Jose', destPara: 'Jose.Gutierrez@abastible.cl;newingchile@gmail.com', coordinaRetiro: 'Juan Sepulveda' },
+];
+let EXTRA_CC_TQ = '';
+
+function buscarBodegueroTQ(region){
+  const n = normaliza(region);
+  if(!n) return null;
+  return BODEGUEROS_TQ.find(b => normaliza(b.region) === n)
+      || BODEGUEROS_TQ.find(b => normaliza(b.region).includes(n) || n.includes(normaliza(b.region)));
+}
+
 function onRegionChange(){
   const esVI = esRegionVI(g('regionCodigo'));
   document.getElementById('panelRegionVI').style.display = esVI ? '' : 'none';
@@ -436,8 +451,18 @@ function onRegionChange(){
     hint.style.color = 'var(--ambar)';
     if(!g('fechaSolicitud')) document.getElementById('fechaSolicitud').value = fechaHoyDDMMYYYY();
   } else {
-    hint.textContent = 'Región VI usa un procedimiento distinto — ver abajo';
-    hint.style.color = 'var(--texto-suave)';
+    const match = buscarBodegueroTQ(g('regionCodigo'));
+    EXTRA_CC_TQ = match && match.ccExtra ? match.ccExtra : '';
+    if(match){
+      document.getElementById('destNombre').value = match.destNombre;
+      document.getElementById('destPara').value = match.destPara;
+      document.getElementById('coordinaRetiro').value = match.coordinaRetiro;
+      hint.textContent = `destinatario encontrado para esta región`;
+      hint.style.color = 'var(--verde)';
+    } else {
+      hint.textContent = 'sin destinatario registrado para esta región — completa manualmente';
+      hint.style.color = 'var(--ambar)';
+    }
   }
   render();
 }
@@ -580,7 +605,8 @@ function render(){
 
   document.getElementById('emailContent').innerHTML = templateCorreo(d);
   document.getElementById('metaAsunto').textContent = `Solicitud Retiro y Envío de TQ — Proyecto ${d.cliente || '—'} — ${d.numeroProyecto || '—'}`;
-  const ccTexto = d.correoContratista ? `${d.contratista} <${d.correoContratista}>` : `${d.contratista || '—'} (falta correo)`;
+  let ccTexto = d.correoContratista ? `${d.contratista} <${d.correoContratista}>` : `${d.contratista || '—'} (falta correo)`;
+  if(EXTRA_CC_TQ) ccTexto += ` ; ${EXTRA_CC_TQ}`;
   document.getElementById('metaCC').textContent = ccTexto;
   document.getElementById('metaPara').textContent = d.destPara || '—';
 
@@ -646,7 +672,7 @@ function abrirEnOutlook(){
 
   navigator.clipboard.write([new ClipboardItem({ 'text/html': blob })]).catch(() => {}).then(() => {
     const para = g('destPara');
-    const cc = g('correoContratista');
+    const cc = [g('correoContratista'), EXTRA_CC_TQ].filter(Boolean).join(';');
     const asunto = document.getElementById('metaAsunto').textContent.trim();
 
     let mailtoUrl = `mailto:${encodeURIComponent(para)}?subject=${encodeURIComponent(asunto)}`;
