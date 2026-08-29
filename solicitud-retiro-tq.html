@@ -95,6 +95,9 @@
   .field.auto input, .field.auto textarea { background: var(--verde-claro); border-color: var(--verde-borde); }
   .field.manual input, .field.manual textarea { background: var(--ambar-claro); border-color: var(--ambar-borde); }
   .field.manual input:placeholder-shown, .field.manual textarea:placeholder-shown { border-style: dashed; }
+
+  .fields-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 1rem; }
+  .fields-row .field { margin-bottom: 0.9rem; }
   textarea { resize: vertical; min-height: 44px; }
 
   .static-box {
@@ -137,6 +140,7 @@
   @media (max-width: 900px) {
     .container { grid-template-columns: 1fr; }
     .form-col { position: static; }
+    .fields-row { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -248,17 +252,19 @@
             <b>2) Completar la fila</b> de abajo y pegarla en la planilla de SharePoint (requiere tu credencial de Abastible):<br><br>
             <a href="https://abastible.sharepoint.com/:x:/r/sites/DespachoEstanques/_layouts/15/Doc.aspx?sourcedoc=%7B0F0CF5B4-771C-481F-B064-4B7145003CF5%7D&file=Requerimientos%20y%20Despachos%20Tanques%20VI.xlsx&fromShare=true&action=default&mobileredirect=true&isSPOFile=1&ovuser=13aff87e-8ecf-406b-926f-b1c5df477126%2Cdaniel.villalobos%40abastible.cl&wdExp=TEAMS-TREATMENT&web=1" target="_blank" style="color:var(--azul-medio);font-weight:600;">📎 Abrir "Requerimientos y Despachos Tanques VI.xlsx"</a>
           </div>
-          <div class="field manual" style="margin-top:12px;">
-            <label for="fechaSolicitud">Fecha de solicitud</label>
-            <input type="text" id="fechaSolicitud" oninput="render()">
-          </div>
-          <div class="field manual">
-            <label for="fechaEntrega">Fecha entrega</label>
-            <input type="text" id="fechaEntrega" placeholder="Ej: 15-08-2026" oninput="render()">
-          </div>
-          <div class="field manual">
-            <label for="aplicacion">Aplicación</label>
-            <input type="text" id="aplicacion" placeholder="Ej: Habitacional" oninput="render()">
+          <div class="fields-row" style="margin-top:12px;">
+            <div class="field manual">
+              <label for="fechaSolicitud">Fecha de solicitud</label>
+              <input type="text" id="fechaSolicitud" oninput="render()">
+            </div>
+            <div class="field manual">
+              <label for="fechaEntrega">Fecha entrega</label>
+              <input type="text" id="fechaEntrega" placeholder="Ej: 15-08-2026" oninput="render()">
+            </div>
+            <div class="field manual">
+              <label for="aplicacion">Aplicación</label>
+              <input type="text" id="aplicacion" placeholder="Ej: Habitacional" oninput="render()">
+            </div>
           </div>
         </div>
       </div>
