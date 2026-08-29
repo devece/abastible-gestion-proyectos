@@ -1913,6 +1913,29 @@ function poblarContratistas(){
   nombres.sort(function(a,b){ return a.localeCompare(b,'es'); });
   sel.innerHTML = '<option value="">Contratista — todos</option>' + nombres.map(function(n){ return '<option'+(n===valorActual?' selected':'')+'>'+esc(n)+'</option>'; }).join('');
 }
+// Listado oficial de contratistas/proveedores (Listado_contratistas_actualizados.xlsx)
+var CONTRATISTAS_OFICIAL=[
+  {codigo:'9240',rut:'77899740-1',razon:'Sicor Ltda.',rep:'Ulises Narvaez Villalobos',zona:'Centro Sur',jefe:'Luis Berríos',correo:'sicor.ltda@sicorltda.com',telefono:'+56 9 9140 2402'},
+  {codigo:'13885',rut:'76824070-1',razon:'Empresa Contratista Y Serv Maule Ltda',rep:'Patricio Labra',zona:'Centro Sur',jefe:'Luis Berríos',correo:'proyectos.ecoser@gmail.com',telefono:'954066685'},
+  {codigo:'4302909',rut:'77585645-9',razon:'Inversiones AMAF SPA',rep:'Antonio Viveros',zona:'Centro Sur',jefe:'Luis Berríos',correo:'aviveros@inversionesamaf.com',telefono:'994012237'},
+  {codigo:'31744',rut:'76978396-2',razon:'CERTIFICADORA M&F SPA',rep:'Daniela Elizabeth Palma Sanhueza',zona:'Centro Sur',jefe:'Luis Berríos',correo:'certificadora.instalaciones@gmail.com',telefono:'953906463'},
+  {codigo:'4304970',rut:'78033574-2',razon:'Sexta Gas SpA',rep:'Pedro Pablo Contreras',zona:'Centro Sur',jefe:'Luis Berríos',correo:'sextagaspa@gmail.com',telefono:'964902686'},
+  {codigo:'24397',rut:'76340307-6',razon:'Instal. De Redes De Gas Gustavo A. Estobar',rep:'Gustavo Estobar Cid',zona:'Centro Sur',jefe:'Luis Berríos',correo:'estogaseirl@gmail.com',telefono:'984203084'},
+  {codigo:'32004',rut:'77002223-1',razon:'Sociedad Comercial Ggb Ltda',rep:'Gonzalo Gaete/maria jose azua',zona:'Centro Sur',jefe:'Luis Berríos',correo:'mjose.azua@ggbltda.cl',telefono:'990140517'},
+  {codigo:'33596',rut:'76703561-6',razon:'Rankal Ltda',rep:'Jorge Pinto y Ricardo Droguett (Issis Herrera)',zona:'Centro Sur',jefe:'Luis Berríos',correo:'contacto2@rankal.cl',telefono:'993633929'},
+  {codigo:'24843',rut:'76394413-1',razon:'Proy. De Ing. Roberto B. Barriga Osorio Eirl',rep:'Roberto Barriga Osorio',zona:'Centro Sur',jefe:'Luis Berríos',correo:'roberto-barriga@hotmail.com',telefono:'998271277'},
+  {codigo:'24365',rut:'76385441-8',razon:'Constructora Rios SPA',rep:'Juan Rios Moraga',zona:'Austral',jefe:'M. Estay',correo:'juan.rios@constructorarios.cl',telefono:'968372906'},
+  {codigo:'23853',rut:'76325749-5',razon:'Soc. Lagos Y Puebla Ltda',rep:'Daniel Lagos Carrasco',zona:'Austral',jefe:'M. Estay',correo:'sociedadlagosypuebla@gmail.com',telefono:'963444966'},
+  {codigo:'30833',rut:'76916506-1',razon:'Energasur SPA',rep:'Claudio Ruiz',zona:'Austral',jefe:'M. Estay',correo:'mantencion@energasurspa.cl',telefono:'977570804'},
+  {codigo:'4303295',rut:'76724248-4',razon:'Serv. de Ing. Juan Sepúlveda EIRL',rep:'Juan Sepúlveda',zona:'Austral',jefe:'M. Estay',correo:'newingchile@gmail.com',telefono:'974510267'},
+  {codigo:'16185',rut:'10009970-5',razon:'Juan Cárdenas Gómez',rep:'Juan Cárdenas',zona:'Austral',jefe:'M. Estay',correo:'j.cardenas.g@hotmail.com',telefono:'991861923'},
+  {codigo:'11477',rut:'77837190-1',razon:'Leonidas Álvarez y Cia LTDA',rep:'Leonidas Álvarez',zona:'Austral',jefe:'M. Estay',correo:'leonidas.alvarez@gmail.com',telefono:'951354851'},
+  {codigo:'28985',rut:'76744934-8',razon:'Servicios CH SPA',rep:'Carlos Herrera',zona:'Austral',jefe:'M. Estay',correo:'servicioschspa@gmail.com',telefono:'985008088'},
+  {codigo:'4303671',rut:'77812611-7',razon:'AMG Instalgas SPA',rep:'Alexis Muñoz',zona:'Austral',jefe:'M. Estay',correo:'amginstalgas@gmail.com',telefono:'972201572'},
+  {codigo:'4304745',rut:'78080989-2',razon:'Ferluc Gas SpA',rep:'Manuel Osorio',zona:'Austral',jefe:'M. Estay',correo:'manuel.osorio@ferluc.cl',telefono:'999991105'},
+  {codigo:'4303558',rut:'77548892-1',razon:'IC Ingeniería y Construcciones LTDA',rep:'Ignacio Parada',zona:'Austral',jefe:'M. Estay',correo:'ignacio.parada@kalorgroup.cl',telefono:'954177415'},
+  {codigo:'4305362',rut:'78327186-9',razon:'CM Ingeniería',rep:'Carlos Montanares',zona:'Austral',jefe:'M. Estay',correo:'instaladormontanares@gmail.com',telefono:'997230630'}
+];
 function poblarListasNuevoProyecto(){
   function nombresUnicos(campo){
     var vistos = {}, out = [];
@@ -1927,7 +1950,12 @@ function poblarListasNuevoProyecto(){
     var dl = document.getElementById(idDatalist);
     if(dl) dl.innerHTML = valores.map(function(v){ return '<option value="'+esc(v)+'">'; }).join('');
   }
-  llenar('dl-contratista', nombresUnicos('contratista'));
+  // Contratista: lista oficial de proveedores + cualquier otro valor ya cargado en la BD que no esté en la oficial
+  var vistosCt = {}, contratistas = [];
+  CONTRATISTAS_OFICIAL.forEach(function(c){ vistosCt[c.razon.toUpperCase()]=true; contratistas.push(c.razon); });
+  nombresUnicos('contratista').forEach(function(v){ if(!vistosCt[v.toUpperCase()]){ vistosCt[v.toUpperCase()]=true; contratistas.push(v); } });
+  contratistas.sort(function(a,b){ return a.localeCompare(b,'es'); });
+  llenar('dl-contratista', contratistas);
   llenar('dl-jefe', nombresUnicos('jefe'));
   llenar('dl-vendedor', nombresUnicos('vendedor'));
   llenar('dl-cert', nombresUnicos('cert'));
