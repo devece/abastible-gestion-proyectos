@@ -550,6 +550,8 @@ tbody td:first-child{padding-left:20px}
     <div class="mbody" id="m-body"></div>
   </div>
 </div>
+<input type="file" id="detPdInput" accept="application/pdf" style="display:none" onchange="manejarRecargaPlanilla(event)">
+<input type="file" id="detDcInput" accept="application/pdf" style="display:none" onchange="manejarRecargaDC(event)">
 
 <!-- MODAL NUEVO -->
 <div class="ov" id="ov-new">
@@ -724,7 +726,7 @@ tbody td:first-child{padding-left:20px}
 var SUPABASE_URL='https://aocbetucqvgxxjopjbjm.supabase.co';
 var SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvY2JldHVjcXZneHhqb3BqYmptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxMzI1ODEsImV4cCI6MjEwMTcwODU4MX0.QfsInd_7iyeUHInGEMMSzLUh_FILaG4QPVn9pC8RByI';
 var sb=supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-var BD=[], FLT=[], PAG=1, PPP=50, SC='item', SA=true, CFI=null, DELCI=null, DELCK='', DELPI=null;
+var BD=[], FLT=[], PAG=1, PPP=50, SC='item', SA=true, CFI=null, DELCI=null, DELCK='', DELPI=null, DET_IDX=null;
 var CERT_POR_REGION={}, certManual=false;
 
 // ─── LECTURA AUTOMÁTICA DE PLANILLA DE DATOS (PDF/OCR) ─────────────────────
@@ -1438,6 +1440,49 @@ function mostrarDebugDC(texto){
   }catch(e){ console.error('No se pudo mostrar el debug DC', e); }
 }
 
+async function leerDetalleComercialPDF(file, onProgress){
+  var texto = await extraerTextoPDF(file);
+  var columnas = await extraerBloqueIdentificacionDC(file);
+  var campos = extraerCamposDetalleComercial(texto, columnas);
+  var debugLog = '=== TEXTO EXTRAÍDO (pdf.js) ===\n'+texto+'\n\n=== COLUMNAS IDENTIFICACIÓN ===\n'+JSON.stringify(columnas,null,2)+'\n\n=== CAMPOS (pre-OCR) ===\n'+JSON.stringify(campos,null,2);
+  var necesitaOCR = campos.potencia === undefined ||
+    campos.toneladas_estimadas === undefined || campos.toneladas_estimadas > 100 ||
+    (campos.cant_tanque === 1 && /\bTQ\d+[A-Z0-9]*\b/i.test(texto));
+  if(necesitaOCR){
+    if(onProgress)onProgress('Ordenando tablas del DC...');
+    var textoOCR = await extraerTextoOCRDC(file);
+    var camposOCR = extraerCamposDetalleComercial(textoOCR);
+    debugLog += '\n\n=== TEXTO EXTRAÍDO (OCR) ===\n'+textoOCR+'\n\n=== CAMPOS (OCR) ===\n'+JSON.stringify(camposOCR,null,2);
+    Object.keys(camposOCR).forEach(function(campo){
+      if(campos[campo] === undefined && camposOCR[campo] !== undefined) campos[campo] = camposOCR[campo];
+    });
+    ['potencia','toneladas_estimadas','consumo_kgs_anio','tanque','cant_tanque','reguladores_cant'].forEach(function(campo){
+      if(camposOCR[campo] !== undefined && (camposOCR[campo] || campos[campo] === undefined)) campos[campo] = camposOCR[campo];
+    });
+  }
+  debugLog += '\n\n=== CAMPOS (final) ===\n'+JSON.stringify(campos,null,2);
+  console.log('[DC debug]\n'+debugLog);
+  mostrarDebugDC(debugLog);
+  return campos;
+}
+
+// convierte los campos crudos del DC a nombres de columna de la tabla "proyectos"
+function camposDCaColumnas(campos){
+  var out = {};
+  if(campos.nombre_proyecto || campos.contacto) out.nombre_proyecto = campos.nombre_proyecto || campos.contacto;
+  if(campos.direccion) out.direccion = campos.direccion;
+  if(campos.comuna) out.comuna = campos.comuna;
+  if(campos.region_dc){ var rm = mapearRegionDC(campos.region_dc); if(rm) out.region = rm; }
+  if(campos.tipo_codigo){ var tm = mapearTipoDC(campos.tipo_codigo, campos.tipo_desc); if(tm) out.tipo = tm; }
+  if(campos.costo) out.costo = campos.costo;
+  if(campos.tanque) out.tanque = campos.tanque;
+  if(campos.cant_tanque !== undefined) out.cant_tanque = campos.cant_tanque;
+  if(campos.potencia !== undefined) out.potencia = campos.potencia;
+  if(campos.reguladores_cant !== undefined) out.reguladores_cant = campos.reguladores_cant;
+  if(campos.toneladas_estimadas !== undefined) out.toneladas_estimadas = campos.toneladas_estimadas;
+  return out;
+}
+
 async function manejarPdfDetalleComercial(){
   var input = document.getElementById('dcPdfInput');
   var file = input.files[0];
@@ -1448,28 +1493,7 @@ async function manejarPdfDetalleComercial(){
   prog.style.display='block';
   prog.textContent='Leyendo Detalle Comercial...';
   try{
-    var texto = await extraerTextoPDF(file);
-    var columnas = await extraerBloqueIdentificacionDC(file);
-    var campos = extraerCamposDetalleComercial(texto, columnas);
-    var debugLog = '=== TEXTO EXTRAÍDO (pdf.js) ===\n'+texto+'\n\n=== COLUMNAS IDENTIFICACIÓN ===\n'+JSON.stringify(columnas,null,2)+'\n\n=== CAMPOS (pre-OCR) ===\n'+JSON.stringify(campos,null,2);
-    var necesitaOCR = campos.potencia === undefined ||
-      campos.toneladas_estimadas === undefined || campos.toneladas_estimadas > 100 ||
-      (campos.cant_tanque === 1 && /\bTQ\d+[A-Z0-9]*\b/i.test(texto));
-    if(necesitaOCR){
-      prog.textContent='Ordenando tablas del DC...';
-      var textoOCR = await extraerTextoOCRDC(file);
-      var camposOCR = extraerCamposDetalleComercial(textoOCR);
-      debugLog += '\n\n=== TEXTO EXTRAÍDO (OCR) ===\n'+textoOCR+'\n\n=== CAMPOS (OCR) ===\n'+JSON.stringify(camposOCR,null,2);
-      Object.keys(camposOCR).forEach(function(campo){
-        if(campos[campo] === undefined && camposOCR[campo] !== undefined) campos[campo] = camposOCR[campo];
-      });
-      ['potencia','toneladas_estimadas','consumo_kgs_anio','tanque','cant_tanque','reguladores_cant'].forEach(function(campo){
-        if(camposOCR[campo] !== undefined && (camposOCR[campo] || campos[campo] === undefined)) campos[campo] = camposOCR[campo];
-      });
-    }
-    debugLog += '\n\n=== CAMPOS (final) ===\n'+JSON.stringify(campos,null,2);
-    console.log('[DC debug]\n'+debugLog);
-    mostrarDebugDC(debugLog);
+    var campos = await leerDetalleComercialPDF(file, function(msg){ prog.textContent = msg; });
     var llenados = 0;
 
     if(campos.codigo){ document.getElementById('nc').value = campos.codigo; llenados++; }
@@ -1553,6 +1577,80 @@ async function manejarPdfNuevoProyecto(){
     console.error('Error leyendo Planilla de Datos', e);
     prog.style.display='none';
     toast('⚠️ No se pudo leer el PDF automáticamente: '+(e.message||e),'err');
+  }
+}
+
+// ─── RECARGAR PLANILLA / DC EN UN PROYECTO YA EXISTENTE ────────────────────
+// Solo completa campos que están vacíos — nunca pisa un dato ya cargado o editado a mano.
+function camposVacios(p, candidatos){
+  var out = {}, n = 0;
+  Object.keys(candidatos).forEach(function(k){
+    var actual = p[k];
+    var vacio = actual===null || actual===undefined || actual==='' || actual==='null' || actual==='None';
+    if(vacio && candidatos[k]!==undefined && candidatos[k]!==null && candidatos[k]!==''){
+      out[k] = candidatos[k];
+      n++;
+    }
+  });
+  return {campos:out, n:n};
+}
+
+async function aplicarRecarga(idx, candidatos, origen){
+  var p = BD[idx];
+  if(!p)return;
+  var r = camposVacios(p, candidatos);
+  if(r.n===0){
+    toast('ℹ️ No había campos vacíos que completar desde '+origen+' — el proyecto ya tenía esos datos.','info');
+    return;
+  }
+  Object.assign(p, r.campos);
+  await guardar(idx);
+  toast('✅ '+r.n+' campo'+(r.n===1?'':'s')+' completado'+(r.n===1?'':'s')+' desde '+origen+'.','ok');
+  if(document.getElementById('ov-det').classList.contains('open')) abrirDet(p._id);
+  filtrar();
+}
+
+function abrirRecargaPlanilla(idx){
+  DET_IDX = idx;
+  document.getElementById('detPdInput').value='';
+  document.getElementById('detPdInput').click();
+}
+function abrirRecargaDC(idx){
+  DET_IDX = idx;
+  document.getElementById('detDcInput').value='';
+  document.getElementById('detDcInput').click();
+}
+
+async function manejarRecargaPlanilla(ev){
+  var file = ev.target.files[0];
+  var idx = DET_IDX;
+  if(!file || idx===null || !BD[idx])return;
+  toast('⏳ Leyendo Planilla de Datos...','info');
+  try{
+    var filas = await extraerFilasDePDF(file);
+    var r = mapearFilasACamposObjeto(filas);
+    var candidatos = Object.assign({}, r.campos);
+    var cliente = r.campos.hab_nombre_cliente || r.campos.const_razon_social || r.campos.com_razon_social;
+    if(cliente) candidatos.cliente = cliente;
+    await aplicarRecarga(idx, candidatos, 'la Planilla de Datos');
+  }catch(e){
+    console.error('Error recargando Planilla de Datos', e);
+    toast('⚠️ No se pudo leer el PDF: '+(e.message||e),'err');
+  }
+}
+
+async function manejarRecargaDC(ev){
+  var file = ev.target.files[0];
+  var idx = DET_IDX;
+  if(!file || idx===null || !BD[idx])return;
+  toast('⏳ Leyendo Detalle Comercial...','info');
+  try{
+    var campos = await leerDetalleComercialPDF(file);
+    var candidatos = camposDCaColumnas(campos);
+    await aplicarRecarga(idx, candidatos, 'el Detalle Comercial');
+  }catch(e){
+    console.error('Error recargando Detalle Comercial', e);
+    toast('⚠️ No se pudo leer el Detalle Comercial: '+(e.message||e),'err');
   }
 }
 
@@ -2045,6 +2143,7 @@ function goPag(n){var tot=Math.ceil(FLT.length/PPP);if(n<1||n>tot)return;PAG=n;r
 function abrirDet(id){
   var idx=BD.findIndex(function(p){return p._id===id;});
   if(idx<0)return;
+  DET_IDX=idx;
   var p=BD[idx];
   document.getElementById('m-titulo').textContent='Proyecto '+esc(p.codigo||'—');
   document.getElementById('m-sub').textContent=(p.cliente||'—')+'  ·  '+(p.region||'')+'  ·  '+(p.tipo||'');
@@ -2083,7 +2182,15 @@ function abrirDet(id){
   var dcInfo=datosClientePD(p);
   h+=infE(idx,'direccion','Dirección',p.direccion,cer)+inf('RUT Cliente',dcInfo.rut)+inf('Correo Cliente',dcInfo.correo)+inf('Teléfono Cliente',dcInfo.telefono);
   h+='</div>';
-  if(!p.pd_tipo_instalacion)h+='<div class="alerta al-b" style="margin-top:-6px;margin-bottom:16px">💡 &nbsp;Todavía no se ha cargado la <strong>Planilla de Datos</strong> de este proyecto (dirección, RUT, correo del cliente).</div>';
+  if(!cer){
+    h+='<div class="alerta al-b" style="margin-top:-6px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">';
+    h+='<span>🔄 &nbsp;<strong>Actualizar datos</strong> — vuelve a cargar la Planilla de Datos o el Detalle Comercial para completar campos que falten. Solo rellena lo que está vacío, no borra lo ya editado.</span>';
+    h+='<span style="display:flex;gap:8px;flex-shrink:0">';
+    h+='<button class="hbtn hb-reg" onclick="abrirRecargaPlanilla('+idx+')">📋 Recargar Planilla</button>';
+    h+='<button class="hbtn hb-reg" onclick="abrirRecargaDC('+idx+')">📄 Recargar Detalle Comercial</button>';
+    h+='</span></div>';
+  }
+  if(!p.pd_tipo_instalacion)h+='<div class="alerta al-w" style="margin-top:-6px;margin-bottom:16px">💡 &nbsp;Todavía no se ha cargado la <strong>Planilla de Datos</strong> de este proyecto (dirección, RUT, correo del cliente).</div>';
 
   // Etapas
   h+='<div class="etapas">';
