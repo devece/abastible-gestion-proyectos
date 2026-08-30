@@ -1800,7 +1800,7 @@ function vencido(p){
 }
 function enEjecucion(p){
   var s=p.status||'';
-  return s!=='7. Cierre Proyecto'&&s!=='8. Cierre Forzado'&&(p.f_v_coord||p.f_liberado);
+  return s!=='6. Enviado a Gestor Doc'&&s!=='7. Cierre Proyecto'&&s!=='8. Cierre Forzado'&&(p.f_v_coord||p.f_liberado);
 }
 
 // ─── BADGE ────────────────────────────────────────────────────────────────
@@ -2427,7 +2427,7 @@ async function crearProyecto(){
 // ─── DASHBOARD ────────────────────────────────────────────────────────────
 function renderDash(){
   var total=BD.length;
-  var activos=BD.filter(function(p){return p.status!=='7. Cierre Proyecto'&&p.status!=='8. Cierre Forzado';}).length;
+  var activos=BD.filter(function(p){return p.status!=='6. Enviado a Gestor Doc'&&p.status!=='7. Cierre Proyecto'&&p.status!=='8. Cierre Forzado';}).length;
   var cerrados=BD.filter(function(p){return p.status==='7. Cierre Proyecto';}).length;
   var forzados=BD.filter(function(p){return p.status==='8. Cierre Forzado';}).length;
   var venc=BD.filter(function(p){return vencido(p);}).length;
