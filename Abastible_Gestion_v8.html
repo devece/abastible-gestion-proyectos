@@ -169,6 +169,7 @@ tbody td:first-child{padding-left:20px}
 .e4 .ehdr{background:#FFFBEB;color:#78350F;border-color:#FDE68A}
 .e5 .ehdr{background:#FFF7ED;color:#7C2D12;border-color:#FED7AA}
 .e6 .ehdr{background:#F0FDF4;color:#14532D;border-color:#BBF7D0}
+.ehdr2{padding:8px 16px;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);background:var(--bg);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .hito{display:flex;align-items:flex-start;gap:10px;padding:10px 16px;border-bottom:1px solid var(--line)}
 .hito:last-child{border-bottom:none}
 .hico{font-size:18px;width:23px;text-align:center;flex-shrink:0;margin-top:1px}
@@ -341,21 +342,8 @@ tbody td:first-child{padding-left:20px}
 <div class="page on" id="p-gestion">
   <div class="filtros">
     <input class="fi" type="text" id="fi-q" placeholder="Buscar cliente, código, región, contratista, ITO, jefe de instalaciones..." oninput="filtrar()">
-    <select class="fi" id="fi-st" onchange="filtrar()">
-      <option value="">Estado — todos</option>
-      <option value="0. Por validar">0. Por validar</option>
-      <option value="0.1 Cuadre hecho">0.1 Cuadre hecho</option>
-      <option>1. Evaluación Previa</option>
-      <option>2. Entregado a coordinador</option>
-      <option>4. Liberacion</option>
-      <option>5. Proyecto en ejecucion</option>
-      <option>5.1 Envío O.C</option>
-      <option>5.2 Inicio de Trabajos</option>
-      <option>5.4 Solicitud de carga al 20%</option>
-      <option>6. Enviado a Gestor Doc</option>
-      <option>7. Cierre Proyecto</option>
-      <option>8. Cierre Forzado</option>
-    </select>
+    <input type="hidden" id="fi-etapa" value="">
+    <input type="hidden" id="fi-hito" value="">
     <select class="fi" id="fi-reg" onchange="filtrar()">
       <option value="">Región — todas</option>
       <option>IV Coquimbo</option><option>V Valparaíso</option>
@@ -382,19 +370,8 @@ tbody td:first-child{padding-left:20px}
     <button class="btn-clear" onclick="limpiar()">✕ Limpiar</button>
     <span class="fi-count" id="fi-count">—</span>
   </div>
-  <div class="chips">
-    <span class="chip on" data-s="" onclick="setChip(this)" style="background:#E4E8F8;color:#1E3A8A">Todos</span>
-    <span class="chip" data-s="1. Evaluación Previa" onclick="setChip(this)" style="background:#EDE9FE;color:#4C1D95">Evaluación</span>
-    <span class="chip" data-s="2. Entregado a coordinador" onclick="setChip(this)" style="background:#DBEAFE;color:#1E40AF">Coordinador</span>
-    <span class="chip" data-s="4. Liberacion" onclick="setChip(this)" style="background:#FEF3C7;color:#B45309">Liberación</span>
-    <span class="chip" data-s="5. Proyecto en ejecucion" onclick="setChip(this)" style="background:#D1FAE5;color:#065F46">Ejecución</span>
-    <span class="chip" data-s="5.1 Envío O.C" onclick="setChip(this)" style="background:#CCFBF1;color:#0F766E">Envío O.C.</span>
-    <span class="chip" data-s="5.2 Inicio de Trabajos" onclick="setChip(this)" style="background:#E0E7FF;color:#3730A3">Trabajos</span>
-    <span class="chip" data-s="5.4 Solicitud de carga al 20%" onclick="setChip(this)" style="background:#F3E8FF;color:#6B21A8">Carga 20%</span>
-    <span class="chip" data-s="6. Enviado a Gestor Doc" onclick="setChip(this)" style="background:#FFEDD5;color:#9A3412">Gestor Doc</span>
-    <span class="chip" data-s="7. Cierre Proyecto" onclick="setChip(this)" style="background:#DCFCE7;color:#14532D">Cierre</span>
-    <span class="chip" data-s="8. Cierre Forzado" onclick="setChip(this)" style="background:#FEE2E2;color:#991B1B">Forzado</span>
-  </div>
+  <div class="chips" id="etapa-chips"></div>
+  <div class="chips" id="hito-chips" style="display:none;margin-top:6px"></div>
   <div class="twrap">
     <table>
       <thead><tr>
@@ -1661,6 +1638,7 @@ document.addEventListener('DOMContentLoaded', async function() {
   poblarContratistas();
   poblarListasNuevoProyecto();
   poblarExplorerSelects();
+  poblarEtapaChips();
 
   filtrar();
   renderDash();
@@ -1938,6 +1916,57 @@ function autoStatus(p){
   if(tieneFecha(p.f_v_coord)){p.status='2. Entregado a coordinador';return;}
   p.status='1. Evaluación Previa';
 }
+
+// ─── ETAPAS Y HITOS (para el filtro superior Etapa → Hito) ────────────────
+var ETAPAS_DEF=['Anteproyecto y Coordinación','Tareas Previas','En Ejecución','Documentos Normativos','Término y Cierre'];
+// orden de MÁS TEMPRANO a MÁS TARDÍO — hitoActual() recorre al revés y devuelve el primero que calce
+var HITOS_DEF=[
+  {id:'ingreso',etapa:0,label:'Ingreso',chk:function(p){return tieneFecha(p.f_v_validar);}},
+  {id:'validacion',etapa:0,label:'Validación',chk:function(p){return tieneFecha(p.f_v_respondido);}},
+  {id:'asignacion',etapa:0,label:'Asignación',chk:function(p){return tieneFecha(p.f_v_coord);}},
+  {id:'revision',etapa:1,label:'Revisión',chk:function(p){return tieneFecha(p.f_rev_ant);}},
+  {id:'visita_previa',etapa:1,label:'Visita Previa',chk:function(p){return tieneFecha(p.f_visita);}},
+  {id:'envio_a_liberar',etapa:1,label:'Envío a Liberar',chk:function(p){return tieneFecha(p.f_liberar);}},
+  {id:'liberado',etapa:2,label:'Liberado',chk:function(p){return tieneFecha(p.f_liberado);}},
+  {id:'crear_ut',etapa:2,label:'Crear UT',chk:function(p){return tieneFecha(p.f_ut);}},
+  {id:'envio_oc',etapa:2,label:'Envío OC',chk:function(p){return tieneFecha(p.f_oc);}},
+  {id:'inicio_trabajos',etapa:2,label:'Inicio Trabajos',chk:function(p){return tieneFecha(p.f_trabajos);}},
+  {id:'despacho_tq_equipos',etapa:2,label:'Despacho Tanque y Equipos',chk:function(p){return tieneFecha(p.f_despacho_tq);}},
+  {id:'envio_tc8',etapa:2,label:'Envío TC8',chk:function(p){return tieneFecha(p.f_tc8);}},
+  {id:'montaje_tk',etapa:2,label:'Montaje TK',chk:function(p){return tieneFecha(p.f_montaje);}},
+  {id:'ampliar_cliente',etapa:2,label:'Ampliar Cliente',chk:function(p){return tieneFecha(p.f_ampliacion);}},
+  {id:'carga_1',etapa:2,label:'Carga 1',chk:function(p){return tieneFecha(p.f_c1);}},
+  {id:'carga_2',etapa:2,label:'Carga 2',chk:function(p){return tieneFecha(p.f_c2);}},
+  {id:'carga_3',etapa:2,label:'Carga 3',chk:function(p){return tieneFecha(p.f_c3);}},
+  {id:'carga_4',etapa:2,label:'Carga 4',chk:function(p){return tieneFecha(p.f_c4);}},
+  {id:'carga_5',etapa:2,label:'Carga 5',chk:function(p){return tieneFecha(p.f_c5);}},
+  {id:'carga_6',etapa:2,label:'Carga 6',chk:function(p){return tieneFecha(p.f_c6);}},
+  {id:'carga_7',etapa:2,label:'Carga 7',chk:function(p){return tieneFecha(p.f_c7);}},
+  {id:'carga_8',etapa:2,label:'Carga 8',chk:function(p){return tieneFecha(p.f_c8);}},
+  {id:'carga_9',etapa:2,label:'Carga 9',chk:function(p){return tieneFecha(p.f_c9);}},
+  {id:'carga_10',etapa:2,label:'Carga 10',chk:function(p){return tieneFecha(p.f_c10);}},
+  {id:'tc2',etapa:3,label:'TC2',chk:function(p){return p.tc2==='OK';}},
+  {id:'sello_verde',etapa:3,label:'Sello Verde',chk:function(p){return p.sello==='OK';}},
+  {id:'tc6',etapa:3,label:'TC6',chk:function(p){return p.tc6==='OK';}},
+  {id:'ir',etapa:3,label:'IR',chk:function(p){return p.ir==='OK';}},
+  {id:'tc5_tc7_otros',etapa:3,label:'TC5 - TC7 - Otros',chk:function(p){return p.tc7==='OK';}},
+  {id:'pago_1',etapa:3,label:'Pago 1',chk:function(p){return p.pago1==='OK';}},
+  {id:'pago_2',etapa:3,label:'Pago 2',chk:function(p){return p.pago2==='OK';}},
+  {id:'pago_3',etapa:3,label:'Pago 3',chk:function(p){return p.pago3==='OK';}},
+  {id:'pago_4',etapa:3,label:'Pago 4',chk:function(p){return p.pago4==='OK';}},
+  {id:'termino_trabajos',etapa:4,label:'Término Trabajos',chk:function(p){return tieneFecha(p.f_termino_ejecucion);}},
+  {id:'envio_gestor_documental',etapa:4,label:'Envío a Gestor Documental',chk:function(p){return tieneFecha(p.f_gestor);}},
+  {id:'pasado_post_venta',etapa:4,label:'Pasado a Post Venta',chk:function(p){return p.status==='7. Cierre Proyecto';}},
+  {id:'cierre_forzado',etapa:4,label:'Cierre Forzado',chk:function(p){return tieneFecha(p.f_forzado)||p.status==='8. Cierre Forzado';}},
+];
+var HITO_BY_ID={};
+HITOS_DEF.forEach(function(hd){HITO_BY_ID[hd.id]=hd;});
+function hitoActual(p){
+  for(var i=HITOS_DEF.length-1;i>=0;i--){
+    if(HITOS_DEF[i].chk(p))return HITOS_DEF[i].id;
+  }
+  return HITOS_DEF[0].id;
+}
 function estadoHumano(s){
   var mapa={
     '1. Evaluación Previa':'Evaluación previa',
@@ -2070,16 +2099,19 @@ function poblarListasNuevoProyecto(){
 }
 function filtrar(){
   var q=(document.getElementById('fi-q').value||'').toLowerCase();
-  var st=document.getElementById('fi-st').value||'';
+  var etapaSel=document.getElementById('fi-etapa').value;
+  var hitoSel=document.getElementById('fi-hito').value;
   var reg=document.getElementById('fi-reg').value||'';
   var sup=document.getElementById('fi-sup').value||'';
   var tip=document.getElementById('fi-tip').value||'';
   var cont=document.getElementById('fi-cont').value||'';
   FLT=BD.filter(function(p){
     if(q){var t=[p.codigo,p.cliente,p.region,p.contratista,p.ito,p.supervisor,p.vendedor,p.comuna,p.tipo,p.jefe,String(p.item)].join(' ').toLowerCase();if(t.indexOf(q)<0)return false;}
-    if(st==='0. Por validar'&&!(tieneFecha(p.f_v_validar)&&!tieneFecha(p.f_v_respondido)))return false;
-    else if(st==='0.1 Cuadre hecho'&&!tieneFecha(p.f_v_respondido))return false;
-    else if(st&&st!=='0. Por validar'&&st!=='0.1 Cuadre hecho'&&p.status!==st)return false;
+    if(etapaSel!==''||hitoSel){
+      var ha=hitoActual(p);
+      if(hitoSel){ if(ha!==hitoSel)return false; }
+      else if(etapaSel!==''){ if(String(HITO_BY_ID[ha].etapa)!==etapaSel)return false; }
+    }
     if(reg&&p.region!==reg)return false;
     if(sup&&p.supervisor!==sup)return false;
     if(tip&&p.tipo!==tip)return false;
@@ -2096,8 +2128,62 @@ function filtrar(){
   document.getElementById('fi-count').textContent=FLT.length+' de '+BD.length+' proyectos';
   PAG=1; renderTabla(); renderPag();
 }
-function setChip(el){document.querySelectorAll('.chip').forEach(function(c){c.classList.remove('on');});el.classList.add('on');document.getElementById('fi-st').value=el.getAttribute('data-s');filtrar();}
-function limpiar(){['fi-q','fi-st','fi-reg','fi-sup','fi-tip','fi-cont'].forEach(function(id){document.getElementById(id).value='';});document.querySelectorAll('.chip').forEach(function(c){c.classList.remove('on');});document.querySelector('.chip[data-s=""]').classList.add('on');filtrar();}
+
+// ─── Filtro Etapa → Hito ────────────────────────────────────────────────
+var ETAPA_CHIP_COLORS=[
+  {bg:'#E4E8F8',fg:'#1E3A8A'},
+  {bg:'#EDE9FE',fg:'#4C1D95'},
+  {bg:'#D1FAE5',fg:'#065F46'},
+  {bg:'#FEF3C7',fg:'#B45309'},
+  {bg:'#FFE4D6',fg:'#9A3412'}
+];
+function poblarEtapaChips(){
+  var cont=document.getElementById('etapa-chips');
+  var h='<span class="chip on" data-e="" onclick="setEtapaChip(this)" style="background:#E4E8F8;color:#1E3A8A">Todas las etapas</span>';
+  ETAPAS_DEF.forEach(function(nombre,i){
+    var c=ETAPA_CHIP_COLORS[i];
+    h+='<span class="chip" data-e="'+i+'" onclick="setEtapaChip(this)" style="background:'+c.bg+';color:'+c.fg+'">'+esc(nombre)+'</span>';
+  });
+  cont.innerHTML=h;
+}
+function poblarHitoChips(etapaIdx){
+  var cont=document.getElementById('hito-chips');
+  if(etapaIdx===''){
+    cont.style.display='none';
+    cont.innerHTML='';
+    document.getElementById('fi-hito').value='';
+    return;
+  }
+  var c=ETAPA_CHIP_COLORS[Number(etapaIdx)];
+  var h='<span class="chip on" data-h="" onclick="setHitoChip(this)" style="background:#EEF1FA;color:#33415E">Toda la etapa</span>';
+  HITOS_DEF.filter(function(hd){return hd.etapa===Number(etapaIdx);}).forEach(function(hd){
+    h+='<span class="chip" data-h="'+hd.id+'" onclick="setHitoChip(this)" style="background:'+c.bg+';color:'+c.fg+'">'+esc(hd.label)+'</span>';
+  });
+  cont.innerHTML=h;
+  cont.style.display='flex';
+  document.getElementById('fi-hito').value='';
+}
+function setEtapaChip(el){
+  document.querySelectorAll('#etapa-chips .chip').forEach(function(c){c.classList.remove('on');});
+  el.classList.add('on');
+  var etapaIdx=el.getAttribute('data-e');
+  document.getElementById('fi-etapa').value=etapaIdx;
+  poblarHitoChips(etapaIdx);
+  filtrar();
+}
+function setHitoChip(el){
+  document.querySelectorAll('#hito-chips .chip').forEach(function(c){c.classList.remove('on');});
+  el.classList.add('on');
+  document.getElementById('fi-hito').value=el.getAttribute('data-h');
+  filtrar();
+}
+function limpiar(){
+  ['fi-q','fi-etapa','fi-hito','fi-reg','fi-sup','fi-tip','fi-cont'].forEach(function(id){document.getElementById(id).value='';});
+  document.querySelectorAll('#etapa-chips .chip').forEach(function(c){c.classList.remove('on');});
+  document.querySelector('#etapa-chips .chip[data-e=""]').classList.add('on');
+  poblarHitoChips('');
+  filtrar();
+}
 function ord(col){SA=(SC===col)?!SA:(col==='item');SC=col;filtrar();}
 
 // ─── RENDER TABLA ─────────────────────────────────────────────────────────
@@ -2192,60 +2278,58 @@ function abrirDet(id){
   }
   if(!p.pd_tipo_instalacion)h+='<div class="alerta al-w" style="margin-top:-6px;margin-bottom:16px">💡 &nbsp;Todavía no se ha cargado la <strong>Planilla de Datos</strong> de este proyecto (dirección, RUT, correo del cliente).</div>';
 
-  // Etapas
+  // Etapas (5 etapas — ver ETAPAS_DEF/HITOS_DEF)
   h+='<div class="etapas">';
-  h+='<div class="etapa e0"><div class="ehdr">🗂 Etapa 0 &nbsp;·&nbsp; Ingreso</div>';
-  h+=hF(idx,'f_v_validar','Envío para validar (fuera de Renova)',p,'📮','',cer);
-  h+=hF(idx,'f_v_respondido','Validado - Cuadre - Respondido',p,'✅','',cer);
+  h+='<div class="etapa e0"><div class="ehdr">🗂 Etapa 1 &nbsp;·&nbsp; Anteproyecto y Coordinación</div>';
+  h+=hF(idx,'f_v_validar','Ingreso',p,'📮','Envío para validar, fuera de Renova',cer);
+  h+=hF(idx,'f_v_respondido','Validación',p,'✅','Cuadre hecho y respondido',cer);
+  h+=hF(idx,'f_v_coord','Asignación',p,'📤','Envío Ventas → Coordinador — inicio del plazo de revisión de 4 días',cer);
   h+='</div>';
-  h+='<div class="etapa e1"><div class="ehdr">📋 Etapa 1 &nbsp;·&nbsp; Validación de Proyectos</div>';
-  h+=hF(idx,'f_v_coord','Envío Ventas → Coordinador',p,'📤','Inicio del plazo de revisión de 4 días',cer);
-  h+=hF(idx,'f_rev_ant','Revisión de Antecedentes (ITO / Coordinador)',p,'🔍','',cer);
-  h+=hF(idx,'f_visita','Primera Visita al Cliente',p,'🏠','',cer);
+
+  h+='<div class="etapa e1"><div class="ehdr">🔍 Etapa 2 &nbsp;·&nbsp; Tareas Previas</div>';
+  h+=hF(idx,'f_rev_ant','Revisión',p,'🔍','Revisión de Antecedentes (ITO / Coordinador)',cer);
+  h+=hF(idx,'f_visita','Visita Previa',p,'🏠','Primera visita al cliente',cer);
   h+=hF(idx,'f_liberar','Envío a Liberar',p,'📨','',cer);
   h+=hDevITO(idx,p,cer);
   h+='</div>';
 
-  h+='<div class="etapa e2"><div class="ehdr">🏗 Etapa 2 &nbsp;·&nbsp; Construcción y Ejecución</div>';
-  h+=hF(idx,'f_liberado','Proyecto Liberado',p,'🔓','Jefe de Proyectos Masivos',cer);
+  h+='<div class="etapa e2"><div class="ehdr">🏗 Etapa 3 &nbsp;·&nbsp; En Ejecución</div>';
+  h+=hF(idx,'f_liberado','Liberado',p,'🔓','Jefe de Proyectos Masivos',cer);
   h+=hF(idx,'f_ut','Crear UT',p,'🧾','',cer);
-  h+=hF(idx,'f_oc','Envío O.C. a Contratistas y Proveedores',p,'📄','',cer,'<button class="hbtn hb-reg" onclick="abrirEnvioOC('+idx+')">📄 Generar Solicitud Envío OC</button>');
-  h+=hF(idx,'f_trabajos','Inicio de Trabajos',p,'🔨','',cer);
+  h+=hF(idx,'f_oc','Envío OC',p,'📄','',cer,'<button class="hbtn hb-reg" onclick="abrirEnvioOC('+idx+')">📄 Generar Solicitud Envío OC</button>');
+  h+=hF(idx,'f_trabajos','Inicio Trabajos',p,'🔨','',cer);
   if(!cer)h+=hBotonAccion('📧','Enviar Welcome Pack al cliente','','<button class="hbtn hb-reg" onclick="abrirWPEP('+idx+',\'WP\')">📧 Generar Welcome Pack</button>');
   if(!cer)h+=hBotonAccion('🛢','Solicitar Retiro de TQ','','<button class="hbtn hb-reg" onclick="abrirRetiroTQ('+idx+')">🛢 Generar Solicitud Retiro TQ</button>');
-  h+=hF(idx,'f_despacho_tq','Correo Despacho Tanque Enviado',p,'📤','Marca cuando se envía el correo de despacho del tanque — recién ahí suma en Despacho Tanques',cer);
+  h+=hF(idx,'f_despacho_tq','Despacho Tanque y Equipos',p,'📤','Marca cuando se envía el correo de despacho del tanque — recién ahí suma en Despacho Tanques',cer);
   if(!cer)h+=hBotonAccion('📦','Solicitar Retiro de Materiales','Reguladores y otros materiales de bodega','<button class="hbtn hb-reg" onclick="abrirRetiroMateriales('+idx+')">📦 Generar Solicitud Retiro Materiales</button>');
   h+=hF(idx,'f_tc8','Envío TC8',p,'📑','Indica retiro de tanque desde bodega',cer);
-  h+=hF(idx,'f_montaje','Montaje de Tanque',p,'🛢','',cer);
-  h+=hF(idx,'f_ampliacion','Ampliación de Cliente',p,'🔧','',cer);
-  h+='</div>';
+  h+=hF(idx,'f_montaje','Montaje TK',p,'🛢','',cer);
+  h+=hF(idx,'f_ampliacion','Ampliar Cliente',p,'🔧','',cer);
 
-  // Cargas
   var CK=['f_c1','f_c2','f_c3','f_c4','f_c5','f_c6','f_c7','f_c8','f_c9','f_c10'];
   var nextN=-1, nextK='';
-  h+='<div class="etapa e3"><div class="ehdr">⛽ Etapa 3 &nbsp;·&nbsp; Solicitudes de Carga al 20%</div><div class="cgrid">';
+  h+='<div class="ehdr2">⛽ Cargas Provisorias</div><div class="cgrid">';
   CK.forEach(function(k,i){
     var v=p[k], ok=v&&v!=='null';
-    h+='<div class="cc"><label>Carga N°'+(i+1)+'</label><div class="cv'+(ok?'':' nd')+'">'+(ok?'📅 '+(fFH(v)||v):'Pendiente')+'</div>'
+    h+='<div class="cc"><label>Carga '+(i+1)+'</label><div class="cv'+(ok?'':' nd')+'">'+(ok?'📅 '+(fFH(v)||v):'Pendiente')+'</div>'
       +(ok&&!cer?'<button class="cc-del" onclick="abrirDelCarga('+idx+',\''+k+'\','+(i+1)+',event)" title="Eliminar carga N°'+(i+1)+'">🗑</button>':'')
       +'</div>';
     if(!ok&&nextN<0){nextN=i+1;nextK=k;}
   });
   h+='</div>';
-  if(nextN>0&&!cer)h+='<button class="btn-carga" onclick="mkCarga('+idx+',\''+nextK+'\',event)">⛽ &nbsp;Registrar Carga N°'+nextN+' — ahora</button>';
+  if(nextN>0&&!cer)h+='<button class="btn-carga" onclick="mkCarga('+idx+',\''+nextK+'\',event)">⛽ &nbsp;Registrar Carga '+nextN+' — ahora</button>';
   h+='</div>';
 
-  h+='<div class="etapa e4"><div class="ehdr">📜 Etapa 4 &nbsp;·&nbsp; Normalización SEC</div>';
+  h+='<div class="etapa e3"><div class="ehdr">📜 Etapa 4 &nbsp;·&nbsp; Documentos Normativos</div>';
   h+=hOK(idx,'tc2','TC2',p,'📝',cer);
   h+=hOK(idx,'sello','Sello Verde',p,'✅',cer);
   h+=hOK(idx,'tc6','TC6',p,'📝',cer);
-  h+=hOK(idx,'ir','Informe de Revisión (IR)',p,'📄',cer);
-  h+=hOK(idx,'tc7','TC7',p,'📝',cer);
-  h+='</div>';
+  h+=hOK(idx,'ir','IR',p,'📄',cer);
+  h+=hOK(idx,'tc7','TC5 - TC7 - Otros',p,'📝',cer);
 
   var PK=['pago1','pago2','pago3','pago4'];
   var pagosOk=PK.filter(function(k){return p[k]==='OK';}).length;
-  h+='<div class="etapa e5"><div class="ehdr">💰 Etapa 5 &nbsp;·&nbsp; Estados de Pago al Contratista</div><div class="pgrid">';
+  h+='<div class="ehdr2">💰 Estados de Pago</div><div class="pgrid">';
   PK.forEach(function(k,i){
     var ok=p[k]==='OK';
     h+='<div class="pcard'+(ok?' pok':'')+'"'+((!ok&&!cer)?' onclick="mkPago('+idx+',\''+k+'\',event)"':'')+' title="'+(ok?'Pago registrado':'Clic para registrar')+'">';
@@ -2253,10 +2337,10 @@ function abrirDet(id){
   });
   h+='</div><div style="padding:0 16px 12px;font-size:14.5px;color:var(--muted)"><strong style="color:var(--navy)">'+pagosOk+' de '+PK.length+'</strong> estados de pago registrados</div></div>';
 
-  h+='<div class="etapa e6"><div class="ehdr">🏁 Etapa 6 &nbsp;·&nbsp; Cierre del Proyecto</div>';
-  h+=hF(idx,'f_termino_ejecucion','Término de Ejecución',p,'🏗','',cer);
+  h+='<div class="etapa e4"><div class="ehdr">🏁 Etapa 5 &nbsp;·&nbsp; Término y Cierre</div>';
+  h+=hF(idx,'f_termino_ejecucion','Término Trabajos',p,'🏗','',cer);
   if(!cer)h+=hBotonAccion('🏁','Enviar End Pack al cliente','','<button class="hbtn hb-reg" onclick="abrirWPEP('+idx+',\'EP\')">🏁 Generar End Pack</button>');
-  h+=hF(idx,'f_gestor','Enviado a Gestor Documental',p,'📁','Días en gestor se calculan automáticamente',cer);
+  h+=hF(idx,'f_gestor','Envío a Gestor Documental',p,'📁','Días en gestor se calculan automáticamente',cer);
   if(p.f_forzado)h+='<div class="hito"><div class="hico">⛔</div><div class="hlbl">Cierre Forzado<small>Registrado permanentemente</small></div><div class="hright"><div class="hval hf">📅 '+esc(fFH(p.f_forzado)||p.f_forzado)+'</div><button class="hbtn hb-done" disabled>Registrado</button></div></div>';
   h+='</div></div>';
 
