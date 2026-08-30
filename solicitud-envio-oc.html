@@ -274,7 +274,8 @@ const NARANJA_TEXTO = '#9A3E00';
 function filaDato(label, valorPrellenado, notaVacio, zebra){
   const bg = zebra ? '#FFF9F4' : '#FFFFFF';
   const valor = valorPrellenado
-    ? `📍 ${valorPrellenado}<br><span style="color:${NARANJA_ABASTIBLE};font-weight:700;">Favor confirmar dirección e indicar fecha</span>`
+    ? `📍 ${valorPrellenado} — <span style="color:${NARANJA_ABASTIBLE};font-weight:700;">confirmar dirección</span>`
+      + `<br><span style="color:${NARANJA_ABASTIBLE};font-weight:700;">Indicar fecha:</span> ______________`
     : `<span style="color:#9AA0AC;">${notaVacio || 'A completar por el contratista'}</span>`;
   return `<tr>
     <td width="46%" style="background:${NARANJA_SUAVE};border:1px solid ${NARANJA_SUAVE_BORDE};padding:11px 12px;font-family:${UB};font-size:13px;line-height:1.5;font-weight:700;color:${NARANJA_TEXTO};">${label}</td>
