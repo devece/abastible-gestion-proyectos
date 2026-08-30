@@ -183,32 +183,15 @@
           <div class="hint" id="contactoContratistaHint">representante — Listado de Contratistas</div>
         </div>
         <div class="field auto">
-          <label for="direccion">Dirección</label>
+          <label for="direccion">Dirección (entrega de tanque)</label>
           <input type="text" id="direccion" value="" oninput="render()">
-          <div class="hint">campo <code>direccion</code> de tabla proyectos — se precarga en las filas de cañerías/tanque del correo</div>
-        </div>
-        <div class="field auto">
-          <label for="ito">ITO / Supervisor (CC)</label>
-          <input type="text" id="ito" value="" oninput="render()">
-          <div class="hint">campo <code>ito</code> — va en copia</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-header manual">🟠 Completar manualmente</div>
-      <div class="panel-body">
-        <div class="field manual">
-          <label for="correoITO">Correo ITO / Supervisor (CC)</label>
-          <input type="text" id="correoITO" placeholder="Ej: nombre.apellido@abastible.cl" oninput="render()">
-          <div class="hint">no existe en el sistema — se usa como copia del correo</div>
+          <div class="hint">campo <code>direccion</code> de tabla proyectos — se precarga en la fila de envío de tanque; el contratista solo confirma la fecha</div>
         </div>
       </div>
     </div>
 
     <div class="static-box" style="margin:1.25rem 0;">
       <b>Para:</b> correo del contratista (campo de arriba)<br>
-      <b>CC:</b> correo del ITO / Supervisor (opcional)<br>
       <b>De:</b> quien envíe el correo (no se define aquí)
     </div>
 
@@ -223,7 +206,6 @@
     <div class="panel-header preview">👁️ Vista previa del correo</div>
     <div class="preview-meta">
       <div><b>Para:</b> <span id="metaPara">—</span></div>
-      <div><b>CC:</b> <span id="metaCC">—</span></div>
       <div><b>Asunto:</b> <span id="metaAsunto">—</span></div>
     </div>
     <div class="preview-stage">
@@ -319,7 +301,7 @@ function templateCorreo(d){
     ${filaDato('Fecha Inicio de Trabajos', '', '')}
     ${filaDato('Fecha termino trabajos', '', '', true)}
     ${filaDato('Plazo de ejecución', '')}
-    ${filaDato('Fecha de necesidad de cañerías (si corresponde)', direccion, 'Sin dirección cargada — indicar dirección y fecha', true)}
+    ${filaDato('Fecha de necesidad de cañerías (si corresponde, incluir dirección)', '', '', true)}
     ${filaDato('Fecha de necesidad de envío de tanque (si corresponde)', direccion, 'Sin dirección cargada — indicar dirección y fecha')}
   </table>
 
@@ -337,8 +319,6 @@ function render(){
     correoContratista: g('correoContratista'),
     contactoContratista: g('contactoContratista'),
     direccion: g('direccion'),
-    ito: g('ito'),
-    correoITO: g('correoITO'),
   };
 
   document.getElementById('emailContent').innerHTML = templateCorreo(d);
@@ -347,7 +327,6 @@ function render(){
   document.getElementById('metaPara').textContent = d.correoContratista
     ? `${d.contratista} <${d.correoContratista}>`
     : `${d.contratista || '—'} (falta correo)`;
-  document.getElementById('metaCC').textContent = d.correoITO ? `${d.ito || 'ITO'} <${d.correoITO}>` : '—';
 
   const faltantes = [];
   if(!d.cliente) faltantes.push('Cliente / Proyecto');
@@ -397,11 +376,9 @@ function abrirEnOutlook(){
 
   navigator.clipboard.write([new ClipboardItem({ 'text/html': blob })]).catch(() => {}).then(() => {
     const para = g('correoContratista');
-    const cc = g('correoITO');
     const asunto = document.getElementById('metaAsunto').textContent.trim();
 
-    let mailtoUrl = `mailto:${encodeURIComponent(para)}?subject=${encodeURIComponent(asunto)}`;
-    if(cc) mailtoUrl += `&cc=${encodeURIComponent(cc)}`;
+    const mailtoUrl = `mailto:${encodeURIComponent(para)}?subject=${encodeURIComponent(asunto)}`;
     window.location.href = mailtoUrl;
 
     btn.textContent = '✅ ¡Outlook abierto! Pega el cuerpo (Ctrl+V)';
