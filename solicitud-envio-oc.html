@@ -268,12 +268,13 @@ const NARANJA_SUAVE_BORDE = '#FFC59A';
 const NARANJA_TEXTO = '#9A3E00';
 
 // Fila de la tabla de datos a solicitar. Cuando ya tenemos el dato (p.ej. la dirección
-// del proyecto) se precarga y sólo se le pide al contratista confirmar la fecha; si no
-// hay dato, queda un campo vacío para que el contratista lo complete.
+// del proyecto) se precarga y se le pide al contratista confirmar la dirección e indicar
+// la fecha (la fecha no la tenemos, sólo la dirección); si no hay dato, queda un campo
+// vacío para que el contratista lo complete entero.
 function filaDato(label, valorPrellenado, notaVacio, zebra){
   const bg = zebra ? '#FFF9F4' : '#FFFFFF';
   const valor = valorPrellenado
-    ? `📍 ${valorPrellenado}<br><span style="color:${NARANJA_ABASTIBLE};font-weight:700;">Favor confirmar fecha</span>`
+    ? `📍 ${valorPrellenado}<br><span style="color:${NARANJA_ABASTIBLE};font-weight:700;">Favor confirmar dirección e indicar fecha</span>`
     : `<span style="color:#9AA0AC;">${notaVacio || 'A completar por el contratista'}</span>`;
   return `<tr>
     <td width="46%" style="background:${NARANJA_SUAVE};border:1px solid ${NARANJA_SUAVE_BORDE};padding:11px 12px;font-family:${UB};font-size:13px;line-height:1.5;font-weight:700;color:${NARANJA_TEXTO};">${label}</td>
