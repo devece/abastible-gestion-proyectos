@@ -1918,7 +1918,7 @@ function autoStatus(p){
 }
 
 // ─── ETAPAS Y HITOS (para el filtro superior Etapa → Hito) ────────────────
-var ETAPAS_DEF=['Anteproyecto y Coordinación','Tareas Previas','En Ejecución','Documentos Normativos','Término y Cierre'];
+var ETAPAS_DEF=['Anteproyecto y Coordinación','Tareas Previas','En Ejecución','Término y Cierre'];
 // orden de MÁS TEMPRANO a MÁS TARDÍO — hitoActual() recorre al revés y devuelve el primero que calce
 var HITOS_DEF=[
   {id:'ingreso',etapa:0,label:'Ingreso',chk:function(p){return tieneFecha(p.f_v_validar);}},
@@ -1935,29 +1935,29 @@ var HITOS_DEF=[
   {id:'envio_tc8',etapa:2,label:'Envío TC8',chk:function(p){return tieneFecha(p.f_tc8);}},
   {id:'montaje_tk',etapa:2,label:'Montaje TK',chk:function(p){return tieneFecha(p.f_montaje);}},
   {id:'ampliar_cliente',etapa:2,label:'Ampliar Cliente',chk:function(p){return tieneFecha(p.f_ampliacion);}},
-  {id:'carga_1',etapa:2,label:'Carga 1',chk:function(p){return tieneFecha(p.f_c1);}},
-  {id:'carga_2',etapa:2,label:'Carga 2',chk:function(p){return tieneFecha(p.f_c2);}},
-  {id:'carga_3',etapa:2,label:'Carga 3',chk:function(p){return tieneFecha(p.f_c3);}},
-  {id:'carga_4',etapa:2,label:'Carga 4',chk:function(p){return tieneFecha(p.f_c4);}},
-  {id:'carga_5',etapa:2,label:'Carga 5',chk:function(p){return tieneFecha(p.f_c5);}},
-  {id:'carga_6',etapa:2,label:'Carga 6',chk:function(p){return tieneFecha(p.f_c6);}},
-  {id:'carga_7',etapa:2,label:'Carga 7',chk:function(p){return tieneFecha(p.f_c7);}},
-  {id:'carga_8',etapa:2,label:'Carga 8',chk:function(p){return tieneFecha(p.f_c8);}},
-  {id:'carga_9',etapa:2,label:'Carga 9',chk:function(p){return tieneFecha(p.f_c9);}},
-  {id:'carga_10',etapa:2,label:'Carga 10',chk:function(p){return tieneFecha(p.f_c10);}},
-  {id:'tc2',etapa:3,label:'TC2',chk:function(p){return p.tc2==='OK';}},
-  {id:'sello_verde',etapa:3,label:'Sello Verde',chk:function(p){return p.sello==='OK';}},
-  {id:'tc6',etapa:3,label:'TC6',chk:function(p){return p.tc6==='OK';}},
-  {id:'ir',etapa:3,label:'IR',chk:function(p){return p.ir==='OK';}},
-  {id:'tc5_tc7_otros',etapa:3,label:'TC5 - TC7 - Otros',chk:function(p){return p.tc7==='OK';}},
-  {id:'pago_1',etapa:3,label:'Pago 1',chk:function(p){return p.pago1==='OK';}},
-  {id:'pago_2',etapa:3,label:'Pago 2',chk:function(p){return p.pago2==='OK';}},
-  {id:'pago_3',etapa:3,label:'Pago 3',chk:function(p){return p.pago3==='OK';}},
-  {id:'pago_4',etapa:3,label:'Pago 4',chk:function(p){return p.pago4==='OK';}},
-  {id:'termino_trabajos',etapa:4,label:'Término Trabajos',chk:function(p){return tieneFecha(p.f_termino_ejecucion);}},
-  {id:'envio_gestor_documental',etapa:4,label:'Envío a Gestor Documental',chk:function(p){return tieneFecha(p.f_gestor);}},
-  {id:'pasado_post_venta',etapa:4,label:'Pasado a Post Venta',chk:function(p){return p.status==='7. Cierre Proyecto';}},
-  {id:'cierre_forzado',etapa:4,label:'Cierre Forzado',chk:function(p){return tieneFecha(p.f_forzado)||p.status==='8. Cierre Forzado';}},
+  {id:'carga_1',etapa:2,label:'Carga 1',chk:function(p){return tieneFecha(p.f_c1);},enFiltro:false},
+  {id:'carga_2',etapa:2,label:'Carga 2',chk:function(p){return tieneFecha(p.f_c2);},enFiltro:false},
+  {id:'carga_3',etapa:2,label:'Carga 3',chk:function(p){return tieneFecha(p.f_c3);},enFiltro:false},
+  {id:'carga_4',etapa:2,label:'Carga 4',chk:function(p){return tieneFecha(p.f_c4);},enFiltro:false},
+  {id:'carga_5',etapa:2,label:'Carga 5',chk:function(p){return tieneFecha(p.f_c5);},enFiltro:false},
+  {id:'carga_6',etapa:2,label:'Carga 6',chk:function(p){return tieneFecha(p.f_c6);},enFiltro:false},
+  {id:'carga_7',etapa:2,label:'Carga 7',chk:function(p){return tieneFecha(p.f_c7);},enFiltro:false},
+  {id:'carga_8',etapa:2,label:'Carga 8',chk:function(p){return tieneFecha(p.f_c8);},enFiltro:false},
+  {id:'carga_9',etapa:2,label:'Carga 9',chk:function(p){return tieneFecha(p.f_c9);},enFiltro:false},
+  {id:'carga_10',etapa:2,label:'Carga 10',chk:function(p){return tieneFecha(p.f_c10);},enFiltro:false},
+  {id:'tc2',etapa:2,label:'TC2',chk:function(p){return p.tc2==='OK';},enFiltro:false},
+  {id:'sello_verde',etapa:2,label:'Sello Verde',chk:function(p){return p.sello==='OK';},enFiltro:false},
+  {id:'tc6',etapa:2,label:'TC6',chk:function(p){return p.tc6==='OK';},enFiltro:false},
+  {id:'ir',etapa:2,label:'IR',chk:function(p){return p.ir==='OK';},enFiltro:false},
+  {id:'tc5_tc7_otros',etapa:2,label:'TC5 - TC7 - Otros',chk:function(p){return p.tc7==='OK';},enFiltro:false},
+  {id:'pago_1',etapa:2,label:'Pago 1',chk:function(p){return p.pago1==='OK';},enFiltro:false},
+  {id:'pago_2',etapa:2,label:'Pago 2',chk:function(p){return p.pago2==='OK';},enFiltro:false},
+  {id:'pago_3',etapa:2,label:'Pago 3',chk:function(p){return p.pago3==='OK';},enFiltro:false},
+  {id:'pago_4',etapa:2,label:'Pago 4',chk:function(p){return p.pago4==='OK';},enFiltro:false},
+  {id:'termino_trabajos',etapa:3,label:'Término Trabajos',chk:function(p){return tieneFecha(p.f_termino_ejecucion);}},
+  {id:'envio_gestor_documental',etapa:3,label:'Envío a Gestor Documental',chk:function(p){return tieneFecha(p.f_gestor);}},
+  {id:'pasado_post_venta',etapa:3,label:'Pasado a Post Venta',chk:function(p){return p.status==='7. Cierre Proyecto';}},
+  {id:'cierre_forzado',etapa:3,label:'Cierre Forzado',chk:function(p){return tieneFecha(p.f_forzado)||p.status==='8. Cierre Forzado';}},
 ];
 var HITO_BY_ID={};
 HITOS_DEF.forEach(function(hd){HITO_BY_ID[hd.id]=hd;});
@@ -2134,7 +2134,6 @@ var ETAPA_CHIP_COLORS=[
   {bg:'#E4E8F8',fg:'#1E3A8A'},
   {bg:'#EDE9FE',fg:'#4C1D95'},
   {bg:'#D1FAE5',fg:'#065F46'},
-  {bg:'#FEF3C7',fg:'#B45309'},
   {bg:'#FFE4D6',fg:'#9A3412'}
 ];
 function poblarEtapaChips(){
@@ -2156,7 +2155,7 @@ function poblarHitoChips(etapaIdx){
   }
   var c=ETAPA_CHIP_COLORS[Number(etapaIdx)];
   var h='<span class="chip on" data-h="" onclick="setHitoChip(this)" style="background:#EEF1FA;color:#33415E">Toda la etapa</span>';
-  HITOS_DEF.filter(function(hd){return hd.etapa===Number(etapaIdx);}).forEach(function(hd){
+  HITOS_DEF.filter(function(hd){return hd.etapa===Number(etapaIdx)&&hd.enFiltro!==false;}).forEach(function(hd){
     h+='<span class="chip" data-h="'+hd.id+'" onclick="setHitoChip(this)" style="background:'+c.bg+';color:'+c.fg+'">'+esc(hd.label)+'</span>';
   });
   cont.innerHTML=h;
@@ -2278,7 +2277,7 @@ function abrirDet(id){
   }
   if(!p.pd_tipo_instalacion)h+='<div class="alerta al-w" style="margin-top:-6px;margin-bottom:16px">💡 &nbsp;Todavía no se ha cargado la <strong>Planilla de Datos</strong> de este proyecto (dirección, RUT, correo del cliente).</div>';
 
-  // Etapas (5 etapas — ver ETAPAS_DEF/HITOS_DEF)
+  // Etapas (4 etapas — ver ETAPAS_DEF/HITOS_DEF; Cargas, Documentos Normativos y Estados de Pago son puntos a registrar dentro de En Ejecución, no etapas propias)
   h+='<div class="etapas">';
   h+='<div class="etapa e0"><div class="ehdr">🗂 Etapa 1 &nbsp;·&nbsp; Anteproyecto y Coordinación</div>';
   h+=hF(idx,'f_v_validar','Ingreso',p,'📮','Envío para validar, fuera de Renova',cer);
@@ -2318,9 +2317,8 @@ function abrirDet(id){
   });
   h+='</div>';
   if(nextN>0&&!cer)h+='<button class="btn-carga" onclick="mkCarga('+idx+',\''+nextK+'\',event)">⛽ &nbsp;Registrar Carga '+nextN+' — ahora</button>';
-  h+='</div>';
 
-  h+='<div class="etapa e3"><div class="ehdr">📜 Etapa 4 &nbsp;·&nbsp; Documentos Normativos</div>';
+  h+='<div class="ehdr2">📜 Documentos Normativos</div>';
   h+=hOK(idx,'tc2','TC2',p,'📝',cer);
   h+=hOK(idx,'sello','Sello Verde',p,'✅',cer);
   h+=hOK(idx,'tc6','TC6',p,'📝',cer);
@@ -2335,9 +2333,10 @@ function abrirDet(id){
     h+='<div class="pcard'+(ok?' pok':'')+'"'+((!ok&&!cer)?' onclick="mkPago('+idx+',\''+k+'\',event)"':'')+' title="'+(ok?'Pago registrado':'Clic para registrar')+'">';
     h+='<span class="pico">'+(ok?'✅':'○')+'</span><span class="plbl">Pago '+(i+1)+'</span></div>';
   });
-  h+='</div><div style="padding:0 16px 12px;font-size:14.5px;color:var(--muted)"><strong style="color:var(--navy)">'+pagosOk+' de '+PK.length+'</strong> estados de pago registrados</div></div>';
+  h+='</div><div style="padding:0 16px 12px;font-size:14.5px;color:var(--muted)"><strong style="color:var(--navy)">'+pagosOk+' de '+PK.length+'</strong> estados de pago registrados</div>';
+  h+='</div>';
 
-  h+='<div class="etapa e4"><div class="ehdr">🏁 Etapa 5 &nbsp;·&nbsp; Término y Cierre</div>';
+  h+='<div class="etapa e3"><div class="ehdr">🏁 Etapa 4 &nbsp;·&nbsp; Término y Cierre</div>';
   h+=hF(idx,'f_termino_ejecucion','Término Trabajos',p,'🏗','',cer);
   if(!cer)h+=hBotonAccion('🏁','Enviar End Pack al cliente','','<button class="hbtn hb-reg" onclick="abrirWPEP('+idx+',\'EP\')">🏁 Generar End Pack</button>');
   h+=hF(idx,'f_gestor','Envío a Gestor Documental',p,'📁','Días en gestor se calculan automáticamente',cer);
