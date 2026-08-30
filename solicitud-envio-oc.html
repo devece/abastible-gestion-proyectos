@@ -183,9 +183,9 @@
           <div class="hint" id="contactoContratistaHint">representante — Listado de Contratistas</div>
         </div>
         <div class="field auto">
-          <label for="direccion">Dirección (entrega de tanque)</label>
+          <label for="direccion">Dirección del proyecto</label>
           <input type="text" id="direccion" value="" oninput="render()">
-          <div class="hint">campo <code>direccion</code> de tabla proyectos — se precarga en la fila de envío de tanque; el contratista solo confirma la fecha</div>
+          <div class="hint">campo <code>direccion</code> de tabla proyectos — de referencia; en la tabla del correo se le pide al contratista confirmarla o indicar una distinta</div>
         </div>
       </div>
     </div>
@@ -266,26 +266,28 @@ const NARANJA_ABASTIBLE = '#FE5100';
 const NARANJA_SUAVE = '#FFD9BC';
 const NARANJA_SUAVE_BORDE = '#FFC59A';
 const NARANJA_TEXTO = '#9A3E00';
+const AMARILLO_SUAVE = '#FFF6D9';
+const AMARILLO_SUAVE_ZEBRA = '#FFFCF0';
+const AMARILLO_BORDE = '#F3E3A8';
+const AZUL_NOTA = '#DDEBFA';
+const AZUL_NOTA_ZEBRA = '#EAF3FC';
+const AZUL_NOTA_BORDE = '#C6DDF2';
+const AZUL_NOTA_TEXTO = '#1E4E8C';
 
-// Fila de la tabla de datos a solicitar. Cuando ya tenemos el dato (p.ej. la dirección
-// del proyecto) se precarga y se le pide al contratista confirmar la dirección e indicar
-// la fecha (la fecha no la tenemos, sólo la dirección); si no hay dato, queda un campo
-// vacío para que el contratista lo complete entero.
-function filaDato(label, valorPrellenado, notaVacio, zebra){
-  const bg = zebra ? '#FFF9F4' : '#FFFFFF';
-  const valor = valorPrellenado
-    ? `📍 ${valorPrellenado} — <span style="color:${NARANJA_ABASTIBLE};font-weight:700;">confirmar dirección</span>`
-      + `<br><span style="color:${NARANJA_ABASTIBLE};font-weight:700;">Indicar fecha:</span> ______________`
-    : `<span style="color:#9AA0AC;">${notaVacio || 'A completar por el contratista'}</span>`;
+// Fila de la tabla de datos a solicitar: etiqueta | campo en blanco (lo completa el
+// contratista a mano) | nota aclaratoria de qué se necesita y para qué se usa.
+function filaDatoOC(label, nota, zebra){
+  const bgVacio = zebra ? AMARILLO_SUAVE_ZEBRA : AMARILLO_SUAVE;
+  const bgNota = zebra ? AZUL_NOTA_ZEBRA : AZUL_NOTA;
   return `<tr>
-    <td width="46%" style="background:${NARANJA_SUAVE};border:1px solid ${NARANJA_SUAVE_BORDE};padding:11px 12px;font-family:${UB};font-size:13px;line-height:1.5;font-weight:700;color:${NARANJA_TEXTO};">${label}</td>
-    <td style="background:${bg};border:1px solid #ece7e2;padding:11px 12px;font-family:${UB};font-size:14px;line-height:1.5;color:#1C1E26;">${valor}</td>
+    <td width="30%" style="background:${NARANJA_SUAVE};border:1px solid ${NARANJA_SUAVE_BORDE};padding:11px 12px;font-family:${UB};font-size:13px;line-height:1.4;font-weight:700;color:${NARANJA_TEXTO};">${label}</td>
+    <td width="22%" style="background:${bgVacio};border:1px solid ${AMARILLO_BORDE};padding:11px 12px;">&nbsp;</td>
+    <td style="background:${bgNota};border:1px solid ${AZUL_NOTA_BORDE};padding:11px 12px;font-family:${UB};font-size:12.5px;line-height:1.4;color:${AZUL_NOTA_TEXTO};">${nota}</td>
   </tr>`;
 }
 
 function templateCorreo(d){
   const proyectoRef = d.numeroProyecto ? `${d.cliente || '[PROYECTO]'} - N° ${d.numeroProyecto}` : (d.cliente || '[PROYECTO]');
-  const direccion = d.direccion || '';
 
   const parrafo = (texto, padBottom) => `<tr><td style="padding:0 0 ${padBottom} 0;font-family:${UB};font-size:14px;line-height:150%;mso-line-height-rule:exactly;">${texto}</td></tr>`;
 
@@ -300,11 +302,11 @@ function templateCorreo(d){
     <tr><td style="background:${NARANJA_ABASTIBLE};height:4px;line-height:4px;font-size:0;">&nbsp;</td></tr>
   </table>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border:1px solid ${NARANJA_SUAVE_BORDE};border-top:none;margin-bottom:20px;">
-    ${filaDato('Fecha Inicio de Trabajos', '', '')}
-    ${filaDato('Fecha termino trabajos', '', '', true)}
-    ${filaDato('Plazo de ejecución', '')}
-    ${filaDato('Fecha de necesidad de cañerías (si corresponde, incluir dirección)', '', '', true)}
-    ${filaDato('Fecha de necesidad de envío de tanque (si corresponde)', direccion, 'Sin dirección cargada — indicar dirección y fecha')}
+    ${filaDatoOC('Fecha Inicio de Trabajos', 'Para enviar Welcome Pack a cliente')}
+    ${filaDatoOC('Plazo de ejecución', 'Plazo a considerar sin contar documentación SEC (Declaraciones)', true)}
+    ${filaDatoOC('Fecha de necesidad de cañerías (si corresponde, incluir dirección)', 'Indicar cantidad o total de cañerías y la dirección de entrega')}
+    ${filaDatoOC('Fecha de necesidad de envío de tanque (si corresponde)', 'Si proyecto contempla tanque (s), indicar fecha requerida de entrega (sujeto al stock y transporte)', true)}
+    ${filaDatoOC('Confirmar que dirección es la del proyecto o indicar una distinta', 'Si la dirección de entrega de tanque (s) es distinta al de proyecto, indicar')}
   </table>
 
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
