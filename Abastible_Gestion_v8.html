@@ -2102,8 +2102,7 @@ function abrirDet(id){
   h+='<div class="etapa e2"><div class="ehdr">🏗 Etapa 2 &nbsp;·&nbsp; Construcción y Ejecución</div>';
   h+=hF(idx,'f_liberado','Proyecto Liberado',p,'🔓','Jefe de Proyectos Masivos',cer);
   h+=hF(idx,'f_ut','Crear UT',p,'🧾','',cer);
-  if(!cer)h+=hBotonAccion('📄','Enviar OC al Contratista','','<button class="hbtn hb-reg" onclick="abrirEnvioOC('+idx+')">📄 Generar Solicitud Envío OC</button>');
-  h+=hF(idx,'f_oc','Envío O.C. a Contratistas y Proveedores',p,'📄','',cer);
+  h+=hF(idx,'f_oc','Envío O.C. a Contratistas y Proveedores',p,'📄','',cer,'<button class="hbtn hb-reg" onclick="abrirEnvioOC('+idx+')">📄 Generar Solicitud Envío OC</button>');
   h+=hF(idx,'f_trabajos','Inicio de Trabajos',p,'🔨','',cer);
   if(!cer)h+=hBotonAccion('📧','Enviar Welcome Pack al cliente','','<button class="hbtn hb-reg" onclick="abrirWPEP('+idx+',\'WP\')">📧 Generar Welcome Pack</button>');
   if(!cer)h+=hBotonAccion('🛢','Solicitar Retiro de TQ','','<button class="hbtn hb-reg" onclick="abrirRetiroTQ('+idx+')">🛢 Generar Solicitud Retiro TQ</button>');
@@ -2191,11 +2190,12 @@ function saveCampoEdit(idx,key){
 }
 
 // ─── HITO FECHA EDITABLE ──────────────────────────────────────────────────
-function hF(idx, key, lbl, p, ico, sub, cer){
+function hF(idx, key, lbl, p, ico, sub, cer, botonExtra){
   var v=p[key], ok=v&&v!=='null'&&v!=='None'&&v!=='N/A';
   var h='<div class="hito"><div class="hico">'+ico+'</div>';
   h+='<div class="hlbl">'+lbl+(sub?'<small>'+sub+'</small>':'')+'</div>';
   h+='<div class="hright">';
+  if(botonExtra&&!cer)h+=botonExtra;
   if(ok){
     // Muestra fecha + input editable + botón guardar
     h+='<div class="fecha-edit">';
