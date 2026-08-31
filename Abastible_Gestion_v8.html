@@ -478,8 +478,8 @@ tbody td:first-child{padding-left:20px}
   <div class="dt-wrap">
     <div class="section-title">🛢 Despacho de Tanques por Región</div>
     <p style="font-size:15px;color:var(--muted);margin-bottom:18px;line-height:1.5">
-      Proyectos con TC8 enviado — cantidad de tanques despachados por tipo y región.<br>
-      Solo aparecen proyectos donde se ha registrado el <strong>Envío de TC8</strong>.
+      Cantidad de tanques despachados por tipo y región.<br>
+      Solo aparecen proyectos donde se ha registrado el <strong>Envío de TC8</strong> o el <strong>Despacho de Tanque y Equipos</strong>.
     </p>
     <div class="dt-filters">
       <select class="fi" id="dt-reg" onchange="renderTanques()">
@@ -2945,11 +2945,11 @@ function renderResumen(){
 function renderTanques(){
   var regFil=document.getElementById('dt-reg')?document.getElementById('dt-reg').value:'';
 
-  // Calcular tanques: solo proyectos en ejecución con correo de despacho de tanque enviado
+  // Calcular tanques: solo proyectos en ejecución con TC8 enviado o despacho de tanque gestionado
   var tanData={};
   var tiposTanque={};
   BD.forEach(function(p){
-    if(!enEjecucion(p)||!p.f_despacho_tq||!p.region||!p.tanque)return;
+    if(!enEjecucion(p)||!(p.f_tc8||p.f_despacho_tq)||!p.region||!p.tanque)return;
     if(regFil&&p.region!==regFil)return;
     var r=p.region, t=p.tanque.trim();
     var c=parseInt(p.cant_tanque)||1;
