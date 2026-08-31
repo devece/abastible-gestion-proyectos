@@ -127,7 +127,7 @@
   .preview-meta div { padding: 2px 0; }
   .preview-meta b { color: var(--texto); font-weight: 600; }
   .preview-stage { padding: 1.5rem; background: #ececec; }
-  .email-shell { background: white; max-width: 650px; margin: 0 auto; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+  .email-shell { background: white; max-width: 900px; margin: 0 auto; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
   #emailContent { padding: 24px 26px; }
 
   code { font-family: 'DM Mono', monospace; font-size: 11px; background: var(--azul-claro); padding: 1px 5px; border-radius: 4px; }
@@ -347,7 +347,7 @@ function render(){
 
 function outerHtmlCorreo(){
   const el = document.getElementById('emailContent');
-  return `<table role="presentation" width="650" cellpadding="0" cellspacing="0" border="0" style="width:650px;font-family:${UB};font-size:14px;color:#000000;"><tr><td>${el.innerHTML}</td></tr></table>`;
+  return `<table role="presentation" width="900" cellpadding="0" cellspacing="0" border="0" style="width:900px;font-family:${UB};font-size:14px;color:#000000;"><tr><td>${el.innerHTML}</td></tr></table>`;
 }
 
 function copiarHTML(){
