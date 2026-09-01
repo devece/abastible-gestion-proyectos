@@ -514,6 +514,27 @@ tbody td:first-child{padding-left:20px}
         </table>
       </div>
     </div>
+
+    <div style="margin-top:36px;padding-top:24px;border-top:1.5px solid var(--line)">
+      <div class="section-title">📥 Exportar Tanques y Reguladores</div>
+      <p style="font-size:15px;color:var(--muted);margin-bottom:14px;line-height:1.5">
+        Genera un Excel con la cantidad de tanques y reguladores (con su modelo, cuando esté disponible) despachados en el período elegido.
+      </p>
+      <div class="dt-filters" style="align-items:center;gap:16px;flex-wrap:wrap">
+        <label style="display:flex;align-items:center;gap:6px;font-size:14px;cursor:pointer">
+          <input type="radio" name="expTrPeriodo" id="expTrDesdeUltima" checked onchange="actualizarExportTR()">
+          Desde la última exportación <span id="expTrUltimaFecha" style="color:var(--muted)"></span>
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:14px;cursor:pointer">
+          <input type="radio" name="expTrPeriodo" id="expTrRango" onchange="actualizarExportTR()">
+          Rango de fechas
+        </label>
+        <input type="date" id="expTrDesde" class="fi" disabled>
+        <span style="color:var(--muted)">a</span>
+        <input type="date" id="expTrHasta" class="fi" disabled>
+        <button class="hbtn hb-reg" onclick="exportarTanquesReguladores()">📥 Exportar Excel</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -696,6 +717,7 @@ tbody td:first-child{padding-left:20px}
 
 <div id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script>
@@ -1732,7 +1754,7 @@ function showTab(pageId, btn){
   btn.classList.add('on');
   if(pageId==='p-dash') renderDash();
   if(pageId==='p-resumen') renderResumen();
-  if(pageId==='p-tanques'){ renderTanques(); renderReguladores(); }
+  if(pageId==='p-tanques'){ renderTanques(); renderReguladores(); actualizarExportTRUltimaFecha(); }
 }
 
 // ─── FECHA/HORA ───────────────────────────────────────────────────────────
@@ -1839,6 +1861,20 @@ function abrirRetiroTQ(idx){
   });
   window.open('solicitud-retiro-tq.html?'+qs.toString(),'_blank');
 }
+// Recibe el detalle de materiales (con modelo) desde la pestaña de la solicitud de retiro
+// (solicitud-retiro-materiales.html) cuando el usuario genera/envía el correo — así queda
+// guardado en la ficha del proyecto sin tener que digitarlo dos veces.
+window.addEventListener('message', function(ev){
+  var d=ev.data;
+  if(!d||d.tipo!=='abastible_retiro_materiales'||d.item===undefined||d.item==='')return;
+  var idx=BD.findIndex(function(p){return p.item!=null && String(p.item)===String(d.item);});
+  if(idx<0)return;
+  var resumen=(d.materiales||[]).filter(function(m){return m&&(m.descripcion||m.codigo);})
+    .map(function(m){return (m.descripcion||m.codigo)+(m.cantidad?' x'+m.cantidad:'');}).join('; ');
+  if(!resumen)return;
+  BD[idx].reguladores_modelo=resumen;
+  guardar(idx); filtrar();
+});
 function abrirRetiroMateriales(idx){
   var p=BD[idx];
   var qs=new URLSearchParams({
@@ -1846,7 +1882,8 @@ function abrirRetiroMateriales(idx){
     numeroProyecto:p.codigo||'',
     contratista:p.contratista||'',
     cantReguladores:(p.reguladores_cant!=null?String(p.reguladores_cant):''),
-    regionCodigo:p.region||''
+    regionCodigo:p.region||'',
+    item:(p.item!=null?String(p.item):'')
   });
   window.open('solicitud-retiro-materiales.html?'+qs.toString(),'_blank');
   if(!p.f_retiro_materiales){
@@ -2243,7 +2280,7 @@ function abrirDet(id){
   h+=infE(idx,'potencia','Potencia (Mcal/h)',p.potencia,cer,'number');
   h+=infE(idx,'tanque','Tanque',p.tanque,cer)+infE(idx,'cant_tanque','Cant. Tanques',p.cant_tanque,cer,'number');
   h+=infE(idx,'costo','Costo Inversión ($)',p.costo,cer,'number');
-  h+=infE(idx,'reguladores_cant','Reguladores',p.reguladores_cant,cer,'number')+infE(idx,'medidores_cant','Medidores',p.medidores_cant,cer,'number')+infE(idx,'toneladas_estimadas','Toneladas Estimadas',p.toneladas_estimadas,cer,'number');
+  h+=infE(idx,'reguladores_cant','Reguladores',p.reguladores_cant,cer,'number')+infE(idx,'reguladores_modelo','Modelo(s) Regulador',p.reguladores_modelo,cer)+infE(idx,'medidores_cant','Medidores',p.medidores_cant,cer,'number')+infE(idx,'toneladas_estimadas','Toneladas Estimadas',p.toneladas_estimadas,cer,'number');
   var dcInfo=datosClientePD(p);
   h+=infE(idx,'direccion','Dirección',p.direccion,cer)+inf('RUT Cliente',dcInfo.rut)+inf('Correo Cliente',dcInfo.correo)+inf('Teléfono Cliente',dcInfo.telefono);
   h+='</div>';
@@ -3037,6 +3074,73 @@ function renderReguladores(){
     tbody += '<tr style="background:var(--info-bg);font-weight:800"><td>TOTAL</td><td style="text-align:center;font-family:var(--mono)">'+totProy+'</td><td style="text-align:center;font-weight:900;color:var(--navy);font-family:var(--mono)">'+totReg+'</td></tr>';
   }
   el.innerHTML = tbody || '<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--muted)">Sin datos</td></tr>';
+}
+
+// ─── EXPORTAR TANQUES Y REGULADORES (EXCEL, POR PERÍODO) ──────────────────
+var LS_ULTIMA_EXPORT_TR = 'abastible_ultima_export_tr';
+function actualizarExportTR(){
+  var rango = document.getElementById('expTrRango').checked;
+  document.getElementById('expTrDesde').disabled = !rango;
+  document.getElementById('expTrHasta').disabled = !rango;
+}
+function actualizarExportTRUltimaFecha(){
+  var el = document.getElementById('expTrUltimaFecha');
+  if(!el) return;
+  var ultima = localStorage.getItem(LS_ULTIMA_EXPORT_TR);
+  el.textContent = ultima ? ('(' + fFH(ultima) + ')') : '(nunca exportado en este equipo)';
+}
+function fechaEnRangoTs(v, desdeTs, hastaTs){
+  if(!v) return false;
+  var t = new Date(String(v).replace(' ', 'T')).getTime();
+  if(isNaN(t)) return false;
+  if(desdeTs !== null && t < desdeTs) return false;
+  if(hastaTs !== null && t > hastaTs) return false;
+  return true;
+}
+function exportarTanquesReguladores(){
+  var desdeTs = null, hastaTs = null, etiquetaPeriodo;
+  if(document.getElementById('expTrRango').checked){
+    var dV = document.getElementById('expTrDesde').value, hV = document.getElementById('expTrHasta').value;
+    if(!dV || !hV){ toast('⚠️ Completa el rango de fechas','warn'); return; }
+    desdeTs = new Date(dV + 'T00:00:00').getTime();
+    hastaTs = new Date(hV + 'T23:59:59').getTime();
+    etiquetaPeriodo = 'Del ' + dV + ' al ' + hV;
+  } else {
+    var ultima = localStorage.getItem(LS_ULTIMA_EXPORT_TR);
+    desdeTs = ultima ? new Date(ultima.replace(' ','T')).getTime() : null;
+    etiquetaPeriodo = ultima ? ('Desde la última exportación (' + fFH(ultima) + ')') : 'Todo el historial (sin exportación previa en este equipo)';
+  }
+
+  var tanRows = [], tanTotal = 0;
+  var regRows = [], regTotal = 0;
+  BD.forEach(function(p){
+    if(enEjecucion(p) && p.f_despacho_tq && p.region && p.tanque && fechaEnRangoTs(p.f_despacho_tq, desdeTs, hastaTs)){
+      var cant = parseInt(p.cant_tanque) || 1;
+      tanRows.push({ Item:p.item, Código:p.codigo, Cliente:p.cliente, Región:p.region, 'Modelo Tanque':p.tanque.trim(), Cantidad:cant, 'Despacho Enviado':fFH(p.f_despacho_tq) });
+      tanTotal += cant;
+    }
+    var califica = p.region && p.region !== 'RM Metropolitana' &&
+      ((p.f_tc8 && fechaEnRangoTs(p.f_tc8, desdeTs, hastaTs)) || (p.f_retiro_materiales && fechaEnRangoTs(p.f_retiro_materiales, desdeTs, hastaTs)));
+    if(califica){
+      var cantReg = Number(p.reguladores_cant) || 0;
+      regRows.push({ Item:p.item, Código:p.codigo, Cliente:p.cliente, Región:p.region, Cantidad:cantReg, 'Modelo(s) Regulador':p.reguladores_modelo || '(sin registrar)', 'TC8 Enviado':fFH(p.f_tc8) || '', 'Retiro Materiales Generado':fFH(p.f_retiro_materiales) || '' });
+      regTotal += cantReg;
+    }
+  });
+
+  if(!tanRows.length && !regRows.length){ toast('⚠️ No hay tanques ni reguladores despachados en ese período','warn'); return; }
+
+  var msg = 'Se exportarán:\n• ' + tanRows.length + ' proyecto(s) con tanques (total ' + tanTotal + ' unid.)\n• ' + regRows.length + ' proyecto(s) con reguladores (total ' + regTotal + ' unid.)\n\nPeríodo: ' + etiquetaPeriodo + '\n\n¿Confirmas la exportación?';
+  if(!confirm(msg)) return;
+
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(tanRows), 'Tanques');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(regRows), 'Reguladores');
+  XLSX.writeFile(wb, 'Tanques_Reguladores_' + ahora().slice(0,10).replace(/-/g,'') + '.xlsx');
+
+  localStorage.setItem(LS_ULTIMA_EXPORT_TR, ahora());
+  actualizarExportTRUltimaFecha();
+  toast('📥 Excel exportado — ' + tanRows.length + ' tanques, ' + regRows.length + ' reguladores', 'ok');
 }
 
 // ─── EXPORTAR ─────────────────────────────────────────────────────────────

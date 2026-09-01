@@ -559,6 +559,7 @@ function copiarHTML(){
 
   const blob = new Blob([outerHtml], { type: 'text/html' });
   navigator.clipboard.write([new ClipboardItem({ 'text/html': blob })]).then(() => {
+    avisarMaterialesAlOpener();
     btn.textContent = '✅ ¡Copiado! Pega en Outlook';
     btn.classList.add('success');
     setTimeout(() => { btn.textContent = '📋 Copiar HTML'; btn.classList.remove('success'); }, 2500);
@@ -581,6 +582,7 @@ function abrirEnOutlook(){
   const blob = new Blob([outerHtml], { type: 'text/html' });
 
   navigator.clipboard.write([new ClipboardItem({ 'text/html': blob })]).catch(() => {}).then(() => {
+    avisarMaterialesAlOpener();
     const para = g('destPara');
     const cc = g('correoContratista');
     const asunto = document.getElementById('metaAsunto').textContent.trim();
@@ -681,6 +683,17 @@ async function cargarDetalleComercial(file){
 poblarDatalist();
 
 // Prellenar desde la Planilla Maestra (query params) si vienen en la URL
+const ITEM_PROYECTO = new URLSearchParams(window.location.search).get('item') || '';
+
+// Avisa a la pestaña de la Planilla Maestra (si sigue abierta) qué materiales/modelos
+// se enviaron, para que queden guardados en la ficha del proyecto sin digitarlos dos veces.
+function avisarMaterialesAlOpener(){
+  if(!ITEM_PROYECTO || !window.opener || window.opener.closed) return;
+  try{
+    window.opener.postMessage({ tipo:'abastible_retiro_materiales', item: ITEM_PROYECTO, materiales }, '*');
+  }catch(e){}
+}
+
 (function(){
   const params = new URLSearchParams(window.location.search);
   let huboPrefill = false;

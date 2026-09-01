@@ -202,3 +202,8 @@ alter table public.proyectos add column if not exists f_despacho_tq timestamptz;
 -- Se marca sola (sin intervención manual) al generar la Solicitud de Retiro de Materiales.
 -- El panel "Despacho de Reguladores" cuenta un proyecto si tiene f_tc8 O f_retiro_materiales (una sola vez si tiene ambos).
 alter table public.proyectos add column if not exists f_retiro_materiales timestamptz;
+
+-- ── Stage: guardar el/los modelos de regulador enviados en la Solicitud de Retiro de Materiales ──
+-- Se completa sola (vía postMessage) cuando se genera/copia el correo en solicitud-retiro-materiales.html;
+-- también editable a mano en la ficha del proyecto. Antes de esto no había ningún registro de modelo.
+alter table public.proyectos add column if not exists reguladores_modelo text;
