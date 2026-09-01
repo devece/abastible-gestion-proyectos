@@ -706,13 +706,13 @@ tbody td:first-child{padding-left:20px}
   <p>Los cambios se guardan automáticamente en la <strong>base de datos compartida</strong> (Supabase) — cualquiera con este link ve lo mismo, en cualquier equipo. El export sigue sirviendo como respaldo manual.</p>
   <button class="exp-btn exp-csv" onclick="expCSV()">
     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-    Exportar a Excel / CSV
+    Exportar a Excel
   </button>
   <button class="exp-btn exp-json" onclick="expJSON()">
     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
     Respaldo completo JSON
   </button>
-  <p class="exp-note">💡 El CSV abre directo en Excel con todas las columnas, fechas y estados. El JSON permite restaurar datos en otro equipo.</p>
+  <p class="exp-note">💡 El Excel (.xlsx) incluye todas las columnas, fechas y estados. El JSON permite restaurar datos en otro equipo.</p>
 </div>
 
 <div id="toast"></div>
@@ -3152,7 +3152,6 @@ function expJSON(){
   toast('📄 Respaldo JSON descargado','ok');
 }
 function expCSV(){
-  var BOM='\uFEFF';
   var HDR=['Item','Código','Cliente','Región','Comuna','Tipo','Construcción','Estado','Etapa',
     'Supervisor','ITO','Contratista','Certificador','Jefe Instalaciones','Vendedor',
     'Potencia Mcal/h','Tanque','Cant. Tanques','Costo Inversión',
@@ -3162,19 +3161,19 @@ function expCSV(){
     'Carga N°6','Carga N°7','Carga N°8','Carga N°9','Carga N°10',
     'TC2','Sello Verde','TC6','IR','TC7','Pago 1','Pago 2','Pago 3','Pago 4',
     'Término Ejecución','Gestor Documental','Devuelto ITO','Cierre Forzado','Días Totales','Observaciones'];
-  function ce(v){if(v===null||v===undefined)return '';var s=String(v).replace(/"/g,'""');return(s.indexOf(',')>=0||s.indexOf('"')>=0||s.indexOf('\n')>=0)?'"'+s+'"':s;}
   var rows=BD.map(function(p){
     return [p.item,p.codigo,p.cliente,p.region,p.comuna,p.tipo,p.construccion,p.status,p.etapa,
       p.supervisor,p.ito,p.contratista,p.cert,p.jefe,p.vendedor,p.potencia,p.tanque,p.cant_tanque,p.costo,
       p.f_v_validar,p.f_v_respondido,p.f_v_coord,p.f_rev_ant,p.f_visita,p.f_liberar,p.f_liberado,p.f_ut,p.f_oc,p.f_trabajos,p.f_tc8,p.f_montaje,
       p.f_c1,p.f_c2,p.f_c3,p.f_c4,p.f_c5,p.f_c6,p.f_c7,p.f_c8,p.f_c9,p.f_c10,
       p.tc2,p.sello,p.tc6,p.ir,p.tc7,p.pago1,p.pago2,p.pago3,p.pago4,
-      p.f_termino_ejecucion,p.f_gestor,p.dev_ito,p.f_forzado,diasProy(p),p.obs].map(ce).join(',');
+      p.f_termino_ejecucion,p.f_gestor,p.dev_ito,p.f_forzado,diasProy(p),p.obs];
   });
-  var blob=new Blob([BOM+HDR.join(',')+'\n'+rows.join('\n')],{type:'text/csv;charset=utf-8;'});
-  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
-  a.download='Abastible_Proyectos_'+ahora().slice(0,10)+'.csv';a.click();
-  toast('📗 CSV descargado — ábrelo en Excel','ok');
+  var ws=XLSX.utils.aoa_to_sheet([HDR].concat(rows));
+  var wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Proyectos');
+  XLSX.writeFile(wb, 'Abastible_Proyectos_'+ahora().slice(0,10)+'.xlsx');
+  toast('📗 Excel descargado','ok');
 }
 
 function closeOv(id){document.getElementById(id).classList.remove('open');}
