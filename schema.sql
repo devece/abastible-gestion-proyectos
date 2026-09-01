@@ -197,3 +197,8 @@ alter table public.proyectos add column if not exists f_ut timestamptz;
 -- Un tanque solo suma en el panel "Despacho Tanques" cuando el proyecto está en ejecución
 -- (status no cerrado y con f_v_coord o f_liberado) Y además tiene f_despacho_tq cargado.
 alter table public.proyectos add column if not exists f_despacho_tq timestamptz;
+
+-- ── Stage: Despacho de Reguladores — suma también el hito de automatización de Retiro de Materiales ──
+-- Se marca sola (sin intervención manual) al generar la Solicitud de Retiro de Materiales.
+-- El panel "Despacho de Reguladores" cuenta un proyecto si tiene f_tc8 O f_retiro_materiales (una sola vez si tiene ambos).
+alter table public.proyectos add column if not exists f_retiro_materiales timestamptz;

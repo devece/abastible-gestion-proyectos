@@ -505,11 +505,11 @@ tbody td:first-child{padding-left:20px}
     <div style="margin-top:36px;padding-top:24px;border-top:1.5px solid var(--line)">
       <div class="section-title">🔧 Despacho de Reguladores por Región</div>
       <p style="font-size:15px;color:var(--muted);margin-bottom:18px;line-height:1.5">
-        Misma lógica que los tanques — solo proyectos con <strong>TC8 enviado</strong>. No incluye la Región Metropolitana (ahí el control de reguladores no aplica).
+        Suma proyectos con <strong>TC8 enviado</strong> o con <strong>Retiro de Materiales generado</strong> (automatización de la solicitud de retiro) — un proyecto con ambos hitos cuenta una sola vez. No incluye la Región Metropolitana (ahí el control de reguladores no aplica).
       </p>
       <div style="overflow-x:auto">
         <table id="dr-table">
-          <thead><tr><th>Región</th><th>Proyectos con TC8</th><th>Reguladores despachados</th></tr></thead>
+          <thead><tr><th>Región</th><th>Proyectos</th><th>Reguladores despachados</th></tr></thead>
           <tbody id="dr-tbody"></tbody>
         </table>
       </div>
@@ -1849,6 +1849,12 @@ function abrirRetiroMateriales(idx){
     regionCodigo:p.region||''
   });
   window.open('solicitud-retiro-materiales.html?'+qs.toString(),'_blank');
+  if(!p.f_retiro_materiales){
+    p.f_retiro_materiales=ahora();
+    guardar(idx); filtrar();
+    if(document.getElementById('p-tanques')&&document.getElementById('p-tanques').classList.contains('on'))renderReguladores();
+    setTimeout(function(){abrirDet(BD[idx]._id);},60);
+  }
 }
 function vencido(p){
   var s=p.status||'';
@@ -1906,6 +1912,7 @@ var HITOS_DEF=[
   {id:'inicio_trabajos',etapa:2,label:'Inicio Trabajos',chk:function(p){return tieneFecha(p.f_trabajos);}},
   {id:'despacho_tq_equipos',etapa:2,label:'Despacho Tanque y Equipos',chk:function(p){return tieneFecha(p.f_despacho_tq);}},
   {id:'envio_tc8',etapa:2,label:'Envío TC8',chk:function(p){return tieneFecha(p.f_tc8);}},
+  {id:'retiro_materiales',etapa:2,label:'Retiro de Materiales Generado',chk:function(p){return tieneFecha(p.f_retiro_materiales);},enFiltro:false},
   {id:'montaje_tk',etapa:2,label:'Montaje TK',chk:function(p){return tieneFecha(p.f_montaje);}},
   {id:'ampliar_cliente',etapa:2,label:'Ampliar Cliente',chk:function(p){return tieneFecha(p.f_ampliacion);}},
   {id:'carga_1',etapa:2,label:'Carga 1',chk:function(p){return tieneFecha(p.f_c1);},enFiltro:false},
@@ -2274,6 +2281,7 @@ function abrirDet(id){
   if(!cer)h+=hBotonAccion('🛢','Solicitar Retiro de TQ','','<button class="hbtn hb-reg" onclick="abrirRetiroTQ('+idx+')">🛢 Generar Solicitud Retiro TQ</button>');
   h+=hF(idx,'f_despacho_tq','Despacho Tanque y Equipos',p,'📤','Marca cuando se envía el correo de despacho del tanque — recién ahí suma en Despacho Tanques',cer);
   if(!cer)h+=hBotonAccion('📦','Solicitar Retiro de Materiales','Reguladores y otros materiales de bodega','<button class="hbtn hb-reg" onclick="abrirRetiroMateriales('+idx+')">📦 Generar Solicitud Retiro Materiales</button>');
+  h+=hF(idx,'f_retiro_materiales','Retiro de Materiales Generado',p,'📦','Se marca sola al generar la Solicitud de Retiro de Materiales — junto con TC8 suma en Despacho de Reguladores',cer);
   h+=hF(idx,'f_tc8','Envío TC8',p,'📑','Indica retiro de tanque desde bodega',cer);
   h+=hF(idx,'f_montaje','Montaje TK',p,'🛢','',cer);
   h+=hF(idx,'f_ampliacion','Ampliar Cliente',p,'🔧','',cer);
@@ -3010,10 +3018,11 @@ function renderTanques(){
 function renderReguladores(){
   var el = document.getElementById('dr-tbody');
   if(!el) return;
-  // misma regla que tanques (TC8 enviado); RM Metropolitana no aplica
+  // Suma proyectos con TC8 enviado + proyectos con Retiro de Materiales generado (automatización);
+  // un mismo proyecto que cumpla ambos hitos cuenta una sola vez. RM Metropolitana no aplica.
   var datos = {};
   BD.forEach(function(p){
-    if(!p.f_tc8 || !p.region || p.region==='RM Metropolitana') return;
+    if((!p.f_tc8 && !p.f_retiro_materiales) || !p.region || p.region==='RM Metropolitana') return;
     if(!datos[p.region]) datos[p.region] = {proyectos:0, reguladores:0};
     datos[p.region].proyectos++;
     datos[p.region].reguladores += Number(p.reguladores_cant)||0;
