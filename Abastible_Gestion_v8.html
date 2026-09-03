@@ -1846,6 +1846,25 @@ function abrirEnvioOC(idx){
   });
   window.open('solicitud-envio-oc.html?'+qs.toString(),'_blank');
 }
+function abrirPedirGrafo(idx){
+  var p=BD[idx];
+  var qs=new URLSearchParams({
+    cliente:p.cliente||'',
+    numeroProyecto:p.codigo||'',
+    direccion:p.direccion||'',
+    region:p.region||'',
+    jefeInstalaciones:p.jefe||'',
+    numeroGrafo:p.num_grafo||''
+  });
+  window.open('solicitud-liberar-grafo.html?'+qs.toString(),'_blank');
+  if(!p.f_pedir_grafo){
+    p.f_pedir_grafo=ahora();
+    autoStatus(p);
+    guardar(idx); filtrar();
+    toast('🗺 Solicitud de Liberar Grafo generada','ok');
+    setTimeout(function(){abrirDet(BD[idx]._id);},60);
+  }
+}
 function abrirRetiroTQ(idx){
   var p=BD[idx];
   var qs=new URLSearchParams({
@@ -1945,6 +1964,7 @@ var HITOS_DEF=[
   {id:'envio_a_liberar',etapa:1,label:'Envío a Liberar',chk:function(p){return tieneFecha(p.f_liberar);}},
   {id:'liberado',etapa:2,label:'Liberado',chk:function(p){return tieneFecha(p.f_liberado);}},
   {id:'crear_ut',etapa:2,label:'Crear UT',chk:function(p){return tieneFecha(p.f_ut);}},
+  {id:'pedir_liberar_grafo',etapa:2,label:'Pedir Liberar Grafo',chk:function(p){return tieneFecha(p.f_pedir_grafo);}},
   {id:'envio_oc',etapa:2,label:'Envío OC',chk:function(p){return tieneFecha(p.f_oc);}},
   {id:'inicio_trabajos',etapa:2,label:'Inicio Trabajos',chk:function(p){return tieneFecha(p.f_trabajos);}},
   {id:'despacho_tq_equipos',etapa:2,label:'Despacho Tanque y Equipos',chk:function(p){return tieneFecha(p.f_despacho_tq);}},
@@ -2004,7 +2024,8 @@ function validarOrdenFechas(p){
     ['f_v_coord','f_rev_ant'],
     ['f_rev_ant','f_liberar'],
     ['f_liberar','f_liberado'],
-    ['f_liberado','f_oc'],
+    ['f_liberado','f_pedir_grafo'],
+    ['f_pedir_grafo','f_oc'],
     ['f_oc','f_trabajos'],
     ['f_trabajos','f_tc8'],
     ['f_tc8','f_montaje'],
@@ -2312,6 +2333,9 @@ function abrirDet(id){
   h+='<div class="etapa e2"><div class="ehdr">🏗 Etapa 3 &nbsp;·&nbsp; En Ejecución</div>';
   h+=hF(idx,'f_liberado','Liberado',p,'🔓','Jefe de Proyectos Masivos',cer);
   h+=hF(idx,'f_ut','Crear UT',p,'🧾','',cer);
+  h+=hF(idx,'f_pedir_grafo','Pedir Liberar Grafo',p,'🗺','Correo automático al Jefe de Instalaciones de la zona',cer,
+    '<input type="text" id="fi-'+idx+'-num_grafo" value="'+esc(p.num_grafo||'')+'" placeholder="N° Grafo" style="width:100px;margin-right:6px;padding:6px 8px;font-size:13px;border:1px solid var(--gris-borde,#d4d5d6);border-radius:6px" onchange="saveCampoEdit('+idx+',\'num_grafo\')">'
+    +(!cer?'<button class="hbtn hb-reg" onclick="abrirPedirGrafo('+idx+')">📨 Generar Solicitud Liberar Grafo</button>':''));
   h+=hF(idx,'f_oc','Envío OC',p,'📄','',cer,'<button class="hbtn hb-reg" onclick="abrirEnvioOC('+idx+')">📄 Generar Solicitud Envío OC</button>');
   h+=hF(idx,'f_trabajos','Inicio Trabajos',p,'🔨','',cer);
   if(!cer)h+=hBotonAccion('📧','Enviar Welcome Pack al cliente','','<button class="hbtn hb-reg" onclick="abrirWPEP('+idx+',\'WP\')">📧 Generar Welcome Pack</button>');
@@ -3156,7 +3180,7 @@ function expCSV(){
     'Supervisor','ITO','Contratista','Certificador','Jefe Instalaciones','Vendedor',
     'Potencia Mcal/h','Tanque','Cant. Tanques','Costo Inversión',
     'Envío para validar (fuera de Renova)','Validado - Cuadre - Respondido','Envío Ventas→Coord','Revisión Antecedentes','Primera Visita','Envío Liberar',
-    'Proyecto Liberado','Envío O.C.','Inicio Trabajos','Envío TC8','Montaje Tanque',
+    'Proyecto Liberado','Crear UT','Pedir Liberar Grafo','N° Grafo','Envío O.C.','Inicio Trabajos','Envío TC8','Montaje Tanque',
     'Carga N°1','Carga N°2','Carga N°3','Carga N°4','Carga N°5',
     'Carga N°6','Carga N°7','Carga N°8','Carga N°9','Carga N°10',
     'TC2','Sello Verde','TC6','IR','TC7','Pago 1','Pago 2','Pago 3','Pago 4',
@@ -3164,7 +3188,7 @@ function expCSV(){
   var rows=BD.map(function(p){
     return [p.item,p.codigo,p.cliente,p.region,p.comuna,p.tipo,p.construccion,p.status,p.etapa,
       p.supervisor,p.ito,p.contratista,p.cert,p.jefe,p.vendedor,p.potencia,p.tanque,p.cant_tanque,p.costo,
-      p.f_v_validar,p.f_v_respondido,p.f_v_coord,p.f_rev_ant,p.f_visita,p.f_liberar,p.f_liberado,p.f_ut,p.f_oc,p.f_trabajos,p.f_tc8,p.f_montaje,
+      p.f_v_validar,p.f_v_respondido,p.f_v_coord,p.f_rev_ant,p.f_visita,p.f_liberar,p.f_liberado,p.f_ut,p.f_pedir_grafo,p.num_grafo,p.f_oc,p.f_trabajos,p.f_tc8,p.f_montaje,
       p.f_c1,p.f_c2,p.f_c3,p.f_c4,p.f_c5,p.f_c6,p.f_c7,p.f_c8,p.f_c9,p.f_c10,
       p.tc2,p.sello,p.tc6,p.ir,p.tc7,p.pago1,p.pago2,p.pago3,p.pago4,
       p.f_termino_ejecucion,p.f_gestor,p.dev_ito,p.f_forzado,diasProy(p),p.obs];

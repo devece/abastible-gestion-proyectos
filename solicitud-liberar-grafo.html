@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solicitud Liberar Grafo</title>
+<link href="https://fonts.googleapis.com/css2?family=Ubuntu+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --azul:       #001489;
+    --azul-medio: #001eb8;
+    --azul-claro: #e8ecfa;
+    --gris:       #54585A;
+    --naranja:    #FE5100;
+    --naranja-claro: #fff3ee;
+    --gris-bg:    #f8f8f8;
+    --gris-borde: #d4d5d6;
+    --texto:      #1C1E26;
+    --texto-suave:#54585A;
+    --blanco:     #FFFFFF;
+    --verde:      #1a7a3c;
+    --verde-claro:#e9f7ee;
+    --verde-borde:#bfe3cc;
+    --ambar:      #b5560a;
+    --ambar-claro:#fff3e6;
+    --ambar-borde:#f3c893;
+    --radius:     8px;
+    --sombra:     0 2px 12px rgba(0,20,137,0.10);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Ubuntu Sans', 'Ubuntu', Arial, sans-serif;
+    background: var(--gris-bg);
+    color: var(--texto);
+    min-height: 100vh;
+  }
+  header {
+    background: var(--azul);
+    color: white;
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    box-shadow: 0 2px 14px rgba(0,20,137,0.30);
+  }
+  .logo { display: flex; align-items: center; gap: 14px; }
+  .logo-mark {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: var(--naranja);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .logo-divider { width: 1px; height: 28px; background: rgba(255,255,255,0.25); }
+  .logo-title { font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: white; opacity: 0.9; }
+  .logo-badge {
+    background: var(--naranja); color: white; font-size: 10px; padding: 2px 7px;
+    border-radius: 20px; font-weight: 600; letter-spacing: 0.05em; margin-left: 6px;
+  }
+  .header-right { font-size: 11px; opacity: 0.55; font-family: 'DM Mono', monospace; letter-spacing: 0.03em; }
+
+  .container {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 1.25rem 1.5rem 3rem;
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 1.25rem;
+    align-items: start;
+  }
+  .form-col { position: sticky; top: 1.25rem; }
+  .panel { background: var(--blanco); border-radius: var(--radius); border: 1px solid var(--gris-borde); box-shadow: var(--sombra); overflow: hidden; }
+  .panel-header {
+    padding: 0.85rem 1.25rem; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+    display: flex; align-items: center; gap: 8px; color: white;
+  }
+  .panel-header.auto { background: var(--verde); }
+  .panel-header.manual { background: var(--ambar); }
+  .panel-header.preview { background: var(--azul); }
+  .panel-body { padding: 1.1rem 1.25rem; }
+  .panel + .panel { margin-top: 1.25rem; }
+
+  .field { margin-bottom: 0.9rem; }
+  .field:last-child { margin-bottom: 0; }
+  .field label {
+    display: block; font-size: 10.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+    color: var(--texto-suave); margin-bottom: 4px;
+  }
+  .field .hint { font-size: 10.5px; color: var(--texto-suave); opacity: 0.75; margin-top: 3px; }
+  .field input, .field textarea, .field select {
+    width: 100%; padding: 8px 10px; font-size: 13px; font-family: inherit;
+    border: 1px solid var(--gris-borde); border-radius: 6px; color: var(--texto); background: var(--blanco);
+  }
+  .field input:focus, .field textarea:focus, .field select:focus { outline: none; border-color: var(--azul-medio); box-shadow: 0 0 0 3px var(--azul-claro); }
+  .field.auto input, .field.auto textarea { background: var(--verde-claro); border-color: var(--verde-borde); }
+  .field.manual input, .field.manual textarea, .field.manual select { background: var(--ambar-claro); border-color: var(--ambar-borde); }
+  .field.manual input:placeholder-shown, .field.manual textarea:placeholder-shown { border-style: dashed; }
+  textarea { resize: vertical; min-height: 44px; }
+
+  .static-box {
+    font-size: 12px; line-height: 1.6; color: var(--texto-suave);
+    background: var(--gris-bg); border: 1px solid var(--gris-borde); border-radius: 6px; padding: 10px 12px;
+  }
+  .static-box b { color: var(--texto); }
+
+  .btnbar { display: flex; gap: 8px; margin-top: 1.25rem; }
+  button {
+    font-family: inherit; font-size: 12.5px; font-weight: 600; border-radius: 6px; border: none;
+    padding: 10px 14px; cursor: pointer; letter-spacing: 0.01em;
+  }
+  .btn-primary { background: var(--naranja); color: white; flex: 1; }
+  .btn-primary:hover { background: #e04800; }
+  .btn-primary.success { background: var(--verde); }
+  .btn-secondary { background: var(--blanco); color: var(--texto-suave); border: 1px solid var(--gris-borde); }
+  .btn-secondary:hover { background: var(--gris-bg); }
+  .btn-secondary.success { background: var(--verde-claro); color: var(--verde); border-color: var(--verde-borde); }
+
+  .missing-flag {
+    display: none;
+    margin-top: 10px; padding: 9px 11px; border-radius: 6px;
+    background: #fdeceb; border: 1px solid #f3c0bd; color: #a3282a; font-size: 12px; line-height: 1.5;
+  }
+  .missing-flag.show { display: block; }
+
+  /* preview */
+  .preview-meta { padding: 0.9rem 1.25rem; border-bottom: 1px solid var(--gris-borde); font-size: 12.5px; color: var(--texto-suave); }
+  .preview-meta div { padding: 2px 0; }
+  .preview-meta b { color: var(--texto); font-weight: 600; }
+  .preview-stage { padding: 1.5rem; background: #ececec; }
+  .email-shell { background: white; max-width: 650px; margin: 0 auto; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+  #emailContent { padding: 24px 26px; }
+
+  code { font-family: 'DM Mono', monospace; font-size: 11px; background: var(--azul-claro); padding: 1px 5px; border-radius: 4px; }
+
+  @media (max-width: 900px) {
+    .container { grid-template-columns: 1fr; }
+    .form-col { position: static; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">🗺</div>
+    <div class="logo-divider"></div>
+    <div class="logo-title">Solicitud Liberar Grafo <span class="logo-badge">Todas las regiones</span></div>
+  </div>
+  <div class="header-right">abastible-gestion-proyectos</div>
+</header>
+
+<div class="container">
+
+  <div class="form-col">
+
+    <div class="panel">
+      <div class="panel-header auto">🟢 Desde la ficha del proyecto</div>
+      <div class="panel-body">
+        <div class="field auto">
+          <label for="cliente">Cliente / Proyecto</label>
+          <input type="text" id="cliente" value="" oninput="render()">
+          <div class="hint">campo <code>cliente</code> de tabla proyectos</div>
+        </div>
+        <div class="field auto">
+          <label for="numeroProyecto">N° Proyecto (código) / N° Renova</label>
+          <input type="text" id="numeroProyecto" value="" oninput="render()">
+          <div class="hint">campo <code>codigo</code></div>
+        </div>
+        <div class="field auto">
+          <label for="direccion">Dirección del proyecto</label>
+          <input type="text" id="direccion" value="" oninput="render()">
+          <div class="hint">campo <code>direccion</code> de tabla proyectos</div>
+        </div>
+        <div class="field auto">
+          <label for="numeroGrafo">N° de Grafo</label>
+          <input type="text" id="numeroGrafo" value="" oninput="render()">
+          <div class="hint">campo <code>num_grafo</code> ingresado en el hito "Pedir Liberar Grafo"</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header manual">🟠 Jefe de Instalaciones de la zona</div>
+      <div class="panel-body">
+        <div class="field manual">
+          <label for="zona">Zona</label>
+          <select id="zona" onchange="onZonaChange()">
+            <option value="">— Selecciona zona —</option>
+            <option value="Norte Grande">Norte Grande</option>
+            <option value="Centro Norte">Centro Norte</option>
+            <option value="Centro Sur">Centro Sur</option>
+            <option value="Sur">Sur</option>
+            <option value="Austral">Austral</option>
+          </select>
+          <div class="hint">según región del proyecto — define el Jefe de Instalaciones a notificar</div>
+        </div>
+        <div class="field manual">
+          <label for="jefeInstalaciones">Nombre Jefe de Instalaciones</label>
+          <input type="text" id="jefeInstalaciones" value="" placeholder="Nombre del Jefe de Instalaciones" oninput="render()">
+          <div class="hint" id="jefeHint">campo <code>jefe</code> de la ficha del proyecto — confirmar</div>
+        </div>
+        <div class="field manual">
+          <label for="correoJefe">Correo del Jefe de Instalaciones (Para)</label>
+          <input type="text" id="correoJefe" value="" placeholder="correo@abastible.cl" oninput="render()">
+          <div class="hint">no hay listado de correos cargado — completar manualmente</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="static-box" style="margin:1.25rem 0;">
+      <b>Para:</b> correo del Jefe de Instalaciones (campo de arriba)<br>
+      <b>De:</b> quien envíe el correo (no se define aquí)
+    </div>
+
+    <div class="btnbar">
+      <button class="btn-primary" id="outlookBtn" onclick="abrirEnOutlook()">📨 Abrir en Outlook</button>
+      <button class="btn-secondary" id="copyBtn" onclick="copiarHTML()">📋 Copiar HTML</button>
+    </div>
+    <div class="missing-flag" id="missingFlag"></div>
+  </div>
+
+  <div class="panel" id="panelPreviewCorreo">
+    <div class="panel-header preview">👁️ Vista previa del correo</div>
+    <div class="preview-meta">
+      <div><b>Para:</b> <span id="metaPara">—</span></div>
+      <div><b>Asunto:</b> <span id="metaAsunto">—</span></div>
+    </div>
+    <div class="preview-stage">
+      <div class="email-shell">
+        <div id="emailContent"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const UB = "'Ubuntu Sans', 'Ubuntu', Arial, sans-serif";
+
+// Zonas conocidas por región (aproximación — el usuario puede corregir la zona manualmente)
+const ZONA_POR_REGION = {
+  'XV Arica y Parinacota':'Norte Grande','I Tarapacá':'Norte Grande','II Antofagasta':'Norte Grande','III Atacama':'Norte Grande',
+  'IV Coquimbo':'Centro Norte','V Valparaíso':'Centro Norte','RM Metropolitana':'Centro Norte',
+  'VI Ohiggins':'Centro Sur','VII Maule':'Centro Sur','XVI Ñuble':'Centro Sur','VIII Biobío':'Centro Sur',
+  'IX Araucanía':'Sur','XIV Los Ríos':'Sur',
+  'X Los Lagos':'Austral','XI Aysén':'Austral','XII Magallanes':'Austral'
+};
+
+function g(id){ return document.getElementById(id).value.trim(); }
+
+function onZonaChange(){ render(); }
+
+function templateCorreo(d){
+  const proyectoRef = d.numeroProyecto ? `${d.cliente || '[PROYECTO]'} - N° ${d.numeroProyecto}` : (d.cliente || '[PROYECTO]');
+
+  const parrafo = (texto, padBottom) => `<tr><td style="padding:0 0 ${padBottom} 0;font-family:${UB};font-size:14px;line-height:150%;mso-line-height-rule:exactly;">${texto}</td></tr>`;
+
+  return `
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+    ${parrafo(`Estimado(a) ${d.jefeInstalaciones || ''}`.trim(), '14px')}
+    ${parrafo(`Junto con saludar, se solicita por favor <b>liberar el grafo</b> del Proyecto <span style="color:#FE5100;font-weight:bold;">${proyectoRef}</span>.`, '10px')}
+    ${parrafo(`<b>N° de Grafo:</b> ${d.numeroGrafo || '[N° GRAFO]'}`, '10px')}
+    ${d.direccion ? parrafo(`<b>Dirección:</b> ${d.direccion}`, '14px') : ''}
+    ${parrafo('Quedamos atentos a la liberación para continuar con el flujo del proyecto.', '10px')}
+    ${parrafo('Saludos cordiales', '0')}
+  </table>
+  `;
+}
+
+function render(){
+  const d = {
+    cliente: g('cliente'),
+    numeroProyecto: g('numeroProyecto'),
+    direccion: g('direccion'),
+    numeroGrafo: g('numeroGrafo'),
+    zona: g('zona'),
+    jefeInstalaciones: g('jefeInstalaciones'),
+    correoJefe: g('correoJefe'),
+  };
+
+  document.getElementById('emailContent').innerHTML = templateCorreo(d);
+  const proyectoRef = d.numeroProyecto ? `${d.cliente || '—'} - N° ${d.numeroProyecto}` : (d.cliente || '—');
+  document.getElementById('metaAsunto').textContent = `Liberar Grafo N° ${d.numeroGrafo || '—'} · ${proyectoRef}`;
+  document.getElementById('metaPara').textContent = d.correoJefe
+    ? `${d.jefeInstalaciones || 'Jefe de Instalaciones'} <${d.correoJefe}>`
+    : `${d.jefeInstalaciones || 'Jefe de Instalaciones'} (falta correo)`;
+
+  const faltantes = [];
+  if(!d.cliente) faltantes.push('Cliente / Proyecto');
+  if(!d.numeroGrafo) faltantes.push('N° de Grafo');
+  if(!d.jefeInstalaciones) faltantes.push('Nombre del Jefe de Instalaciones');
+  if(!d.correoJefe) faltantes.push('Correo del Jefe de Instalaciones');
+
+  const flag = document.getElementById('missingFlag');
+  if(faltantes.length){
+    flag.classList.add('show');
+    flag.innerHTML = `⚠️ Faltan datos antes de enviar: <b>${faltantes.join(', ')}</b>.`;
+  } else {
+    flag.classList.remove('show');
+  }
+}
+
+function outerHtmlCorreo(){
+  const el = document.getElementById('emailContent');
+  return `<table role="presentation" width="650" cellpadding="0" cellspacing="0" border="0" style="width:650px;font-family:${UB};font-size:14px;color:#000000;"><tr><td>${el.innerHTML}</td></tr></table>`;
+}
+
+function copiarHTML(){
+  const el = document.getElementById('emailContent');
+  const btn = document.getElementById('copyBtn');
+  const outerHtml = outerHtmlCorreo();
+
+  const blob = new Blob([outerHtml], { type: 'text/html' });
+  navigator.clipboard.write([new ClipboardItem({ 'text/html': blob })]).then(() => {
+    btn.textContent = '✅ ¡Copiado! Pega en Outlook';
+    btn.classList.add('success');
+    setTimeout(() => { btn.textContent = '📋 Copiar HTML'; btn.classList.remove('success'); }, 2500);
+  }).catch(() => {
+    const range = document.createRange();
+    range.selectNode(el);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+    document.execCommand('copy');
+    window.getSelection().removeAllRanges();
+    btn.textContent = '✅ Copiado — Ctrl+V en Outlook';
+    btn.classList.add('success');
+    setTimeout(() => { btn.textContent = '📋 Copiar HTML'; btn.classList.remove('success'); }, 2500);
+  });
+}
+
+function abrirEnOutlook(){
+  const btn = document.getElementById('outlookBtn');
+  const outerHtml = outerHtmlCorreo();
+  const blob = new Blob([outerHtml], { type: 'text/html' });
+
+  navigator.clipboard.write([new ClipboardItem({ 'text/html': blob })]).catch(() => {}).then(() => {
+    const para = g('correoJefe');
+    const asunto = document.getElementById('metaAsunto').textContent.trim();
+
+    const mailtoUrl = `mailto:${encodeURIComponent(para)}?subject=${encodeURIComponent(asunto)}`;
+    window.location.href = mailtoUrl;
+
+    btn.textContent = '✅ ¡Outlook abierto! Pega el cuerpo (Ctrl+V)';
+    btn.classList.add('success');
+    setTimeout(() => { btn.textContent = '📨 Abrir en Outlook'; btn.classList.remove('success'); }, 4000);
+  });
+}
+
+// Prellenar desde la ficha del proyecto (query params) si vienen en la URL
+(function(){
+  const params = new URLSearchParams(window.location.search);
+  let huboPrefill = false;
+  params.forEach((val, key) => {
+    if(!val) return;
+    if(key === 'region'){
+      const zona = ZONA_POR_REGION[val];
+      if(zona){ document.getElementById('zona').value = zona; huboPrefill = true; }
+      return;
+    }
+    const el = document.getElementById(key);
+    if(el){ el.value = val; huboPrefill = true; }
+  });
+
+  if(huboPrefill){
+    const banner = document.createElement('div');
+    banner.style.cssText = 'background:#fff3ee;border-bottom:1px solid #ffd5c0;padding:8px 20px;font-size:11px;color:#d44200;font-weight:600;';
+    banner.textContent = '✅ Datos cargados desde la ficha del proyecto — revisa el correo del Jefe de Instalaciones antes de enviar.';
+    document.body.insertBefore(banner, document.body.firstChild);
+  }
+})();
+
+render();
+</script>
+
+</body>
+</html>
