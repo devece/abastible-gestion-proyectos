@@ -378,6 +378,7 @@ tbody td:first-child{padding-left:20px}
         <th onclick="ord('item')">N° <span class="si">↕</span></th>
         <th onclick="ord('codigo')">Código <span class="si">↕</span></th>
         <th onclick="ord('cliente')">Cliente <span class="si">↕</span></th>
+        <th onclick="ord('nombre_proyecto')">Nombre Proyecto <span class="si">↕</span></th>
         <th onclick="ord('region')">Región <span class="si">↕</span></th>
         <th onclick="ord('status')">Estado <span class="si">↕</span></th>
         <th onclick="ord('supervisor')">Supervisor <span class="si">↕</span></th>
@@ -579,6 +580,7 @@ tbody td:first-child{padding-left:20px}
         <div class="fgrid">
           <div class="fg"><label>Código *</label><input id="nc" placeholder="Ej: 18700000"><div class="field-note">Usado como identificador principal del proyecto.</div></div>
           <div class="fg"><label>Cliente *</label><input id="ncl" placeholder="Nombre completo"><div class="field-note">Nombre del cliente o razón social.</div></div>
+          <div class="fg"><label>Nombre Proyecto</label><input id="nnp" placeholder="Ej: Instalación Casa Los Aromos"><div class="field-note">Nombre descriptivo del proyecto (usado en Welcome Pack / End Pack).</div></div>
           <div class="fg"><label>Región *</label>
             <select id="nr"><option value="">Seleccionar...</option>
               <option>IV Coquimbo</option><option>V Valparaíso</option>
@@ -2236,6 +2238,7 @@ function renderTabla(){
     html+='<td class="td-n">'+p.item+'</td>';
     html+='<td class="td-cod">'+esc(p.codigo||'—')+'</td>';
     html+='<td class="td-cli" title="'+esc(p.cliente||'')+'">'+esc(p.cliente||'—')+'</td>';
+    html+='<td title="'+esc(p.nombre_proyecto||'')+'">'+esc(p.nombre_proyecto||'—')+'</td>';
     html+='<td style="white-space:nowrap">'+esc(p.region||'—')+'</td>';
     html+='<td>'+mkBadge(p.status)+'</td>';
     html+='<td>'+esc(p.supervisor||'—')+'</td>';
@@ -2295,7 +2298,7 @@ function abrirDet(id){
 
   // Info (editable — datos ingresados al inicio del proyecto)
   h+='<div class="igrid">';
-  h+=infE(idx,'codigo','Código',p.codigo,cer)+infE(idx,'cliente','Cliente',p.cliente,cer)+infE(idx,'region','Región',p.region,cer,'select',SEL_REGION)+infE(idx,'comuna','Comuna',p.comuna,cer)+infE(idx,'tipo','Tipo',p.tipo,cer,'select',SEL_TIPO)+infE(idx,'construccion','Construcción',p.construccion,cer,'select',SEL_CONSTRUCCION);
+  h+=infE(idx,'codigo','Código',p.codigo,cer)+infE(idx,'cliente','Cliente',p.cliente,cer)+infE(idx,'nombre_proyecto','Nombre Proyecto',p.nombre_proyecto,cer)+infE(idx,'region','Región',p.region,cer,'select',SEL_REGION)+infE(idx,'comuna','Comuna',p.comuna,cer)+infE(idx,'tipo','Tipo',p.tipo,cer,'select',SEL_TIPO)+infE(idx,'construccion','Construcción',p.construccion,cer,'select',SEL_CONSTRUCCION);
   h+=infE(idx,'supervisor','Supervisor',p.supervisor,cer,'select',SEL_SUPERVISOR)+infE(idx,'ito','ITO / Coordinador',p.ito,cer)+infE(idx,'contratista','Contratista',p.contratista,cer);
   h+=infE(idx,'cert','Certificador',p.cert,cer)+infE(idx,'jefe','Jefe Instalaciones',p.jefe,cer)+infE(idx,'vendedor','Vendedor',p.vendedor,cer);
   h+=infE(idx,'potencia','Potencia (Mcal/h)',p.potencia,cer,'number');
@@ -2613,6 +2616,7 @@ async function crearProyecto(){
   var raw={
     codigo:(document.getElementById('nc').value||'').trim(),
     cliente:(document.getElementById('ncl').value||'').trim(),
+    nombre_proyecto:(document.getElementById('nnp').value||'').trim(),
     region:document.getElementById('nr').value||'',
     comuna:document.getElementById('nco').value,
     tipo:document.getElementById('ntp').value,
@@ -2649,7 +2653,7 @@ async function crearProyecto(){
     if(res.error) throw res.error;
     var creado=res.data; creado._id=String(creado.id);
     BD.push(creado);
-    ['nc','ncl','nco','ni','nct','nj','nv','nce','np','nta','nca','ncs','nreg','nmed','nton','no'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
+    ['nc','ncl','nnp','nco','ni','nct','nj','nv','nce','np','nta','nca','ncs','nreg','nmed','nton','no'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
     document.getElementById('nr').value='RM Metropolitana';
     document.getElementById('ntp').value='P01 Habitacional';
     document.getElementById('ncon').value='Inmediata';
