@@ -2238,7 +2238,7 @@ function renderTabla(){
     html+='<td class="td-n">'+p.item+'</td>';
     html+='<td class="td-cod">'+esc(p.codigo||'—')+'</td>';
     html+='<td class="td-cli" title="'+esc(p.cliente||'')+'">'+esc(p.cliente||'—')+'</td>';
-    html+='<td title="'+esc(p.nombre_proyecto||'')+'">'+esc(p.nombre_proyecto||'—')+'</td>';
+    html+='<td title="'+esc(p.nombre_proyecto||p.cliente||'')+'">'+esc(p.nombre_proyecto||p.cliente||'—')+'</td>';
     html+='<td style="white-space:nowrap">'+esc(p.region||'—')+'</td>';
     html+='<td>'+mkBadge(p.status)+'</td>';
     html+='<td>'+esc(p.supervisor||'—')+'</td>';
