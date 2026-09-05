@@ -272,6 +272,7 @@ textarea{min-height:90px}
 </div>
 <div class="buttons">
 <button type="button" class="btn-sec" onclick="generarPDF()">Descargar PDF</button>
+<button type="button" class="btn-sec" onclick="enviarCopia()">📧 Enviar copia</button>
 <button type="button" class="btn-main" id="btnGuardar" onclick="guardarYGenerarPDF()">Guardar en Planilla Maestra + PDF</button>
 </div>
 
@@ -684,6 +685,28 @@ function generarPDF(){
  };
 
  html2pdf().set(opt).from(element).save();
+}
+
+/* ================= ENVIAR COPIA POR CORREO ================= */
+
+function correoDestinoPlanilla(){
+  var tipo=v('tipoInstalacion');
+  if(tipo==='habitacional')return v('hab_correo')||'';
+  if(tipo==='constructora')return v('const_rep_correo')||v('const_contacto_correo')||'';
+  if(tipo==='comercial')return v('com_rep_correo')||v('com_contacto_correo')||'';
+  return '';
+}
+
+function enviarCopia(){
+  generarPDF();
+  var nombre=v('nombreProyecto')||v('codigo')||'Proyecto';
+  var correo=correoDestinoPlanilla();
+  var asunto='Planilla de Datos - '+nombre;
+  var cuerpo='Adjunto la Planilla de Datos de '+nombre+'.\n\n'
+    +'(El PDF se acaba de descargar a tu equipo — adjúntalo aquí antes de enviar, el navegador no permite adjuntarlo automáticamente).';
+  var mailto='mailto:'+encodeURIComponent(correo)+'?subject='+encodeURIComponent(asunto)+'&body='+encodeURIComponent(cuerpo);
+  window.location.href=mailto;
+  mostrarBanner('📧 Se descargó el PDF y se abrió tu correo — adjunta el archivo antes de enviar.','ok');
 }
 /* ================= FORMATO RUT ================= */
 
