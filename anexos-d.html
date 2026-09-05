@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anexos D — Suministro Provisorio · Abastible</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Ubuntu+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+<style>
+:root{--accent:#F47B20;--card:#fff;--muted:#777;--ink:#1a2e5a}
+*{box-sizing:border-box}
+body{font-family:"Ubuntu Sans",Tahoma,Verdana,sans-serif;background:#f4f7f8;padding:20px;color:#222;margin:0}
+
+.wrapper{max-width:980px;margin:auto}
+
+.header{border-bottom:3px solid var(--accent);margin-bottom:22px;padding-bottom:14px}
+.header h1{margin:0;font-size:1.9rem;font-weight:500;color:var(--ink)}
+.header .sub{color:var(--muted);margin-top:4px}
+
+.anexo-card{background:var(--card);border:1px solid #e6e6e6;border-radius:10px;box-shadow:0 4px 16px rgba(27,31,35,.05);padding:22px 26px;margin-bottom:22px}
+.anexo-card h2{margin:0 0 4px;font-size:1.3rem;color:var(--ink)}
+.anexo-card .desc{color:var(--muted);font-size:.92rem;margin-bottom:16px;line-height:1.5}
+
+.formatos{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-bottom:16px}
+.formato{border:1.5px solid #e6e6e6;border-radius:8px;padding:14px 16px;background:#fbfbfb}
+.formato .tag{display:inline-block;font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:var(--accent);padding:2px 9px;border-radius:4px;margin-bottom:8px}
+.formato p{font-size:.85rem;color:var(--muted);line-height:1.5;margin:0 0 12px}
+.formato a{display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-weight:600;font-size:.88rem;color:#fff;background:var(--ink);padding:8px 14px;border-radius:6px}
+.formato a:hover{background:#12234a}
+
+.copiar{display:flex;justify-content:flex-end;border-top:1px solid #eee;padding-top:14px}
+.btn-copia{background:none;border:1px solid var(--accent);color:var(--accent);border-radius:8px;padding:9px 16px;font-size:.9rem;font-weight:600;cursor:pointer;font-family:inherit}
+.btn-copia:hover{background:#fff3ee}
+
+.nota{background:#fff8ed;border:1px solid var(--accent);border-radius:8px;padding:12px 16px;font-size:.85rem;color:#7a4200;margin-bottom:22px;line-height:1.55}
+</style>
+</head>
+
+<body>
+
+<div class="wrapper">
+
+<div class="header">
+<h1>📎 Anexos D — Suministro Provisorio</h1>
+<div class="sub">Formatos disponibles para el supervisor: usar uno para completar o enviar una copia en blanco.</div>
+</div>
+
+<div class="nota">
+💡 <strong>¿Qué formato elegir?</strong> Word — se llena en Word, se agrega la firma como imagen y se imprime a PDF. HTML — se llena online en el navegador, se agrega la firma como imagen y se imprime a PDF. PDF — se imprime directo, se llena a mano, se firma, se escanea y se envía.
+</div>
+
+<div class="anexo-card">
+<h2>Anexo 1 — Suministro Provisorio</h2>
+<div class="desc">Autorización de suministro provisorio de GLP mientras se regulariza la instalación definitiva.</div>
+
+<div class="formatos">
+<div class="formato">
+<span class="tag">Word (.dotx)</span>
+<p>Llenar en Word, agregar la firma como imagen y luego imprimir a PDF.</p>
+<a href="anexos/Anexo1_Suministro_Provisorio_PLANTILLA_v10.dotx" download>⬇ Descargar plantilla</a>
+</div>
+
+<div class="formato">
+<span class="tag">HTML (online)</span>
+<p>Llenar online en el navegador, cargar la firma como imagen y luego imprimir a PDF.</p>
+<a href="anexo1-suministro-provisorio.html" target="_blank">📝 Abrir formulario</a>
+</div>
+
+<div class="formato">
+<span class="tag">PDF (a mano)</span>
+<p>Imprimir directo, llenar a mano, firmar, escanear y enviar.</p>
+<a href="anexos/Anexo1_Suministro_Provisorio.pdf" target="_blank">🖨 Abrir PDF</a>
+</div>
+</div>
+
+<div class="copiar">
+<button type="button" class="btn-copia" onclick="enviarCopiaAnexo(1)">📧 Enviar copia</button>
+</div>
+</div>
+
+<div class="anexo-card">
+<h2>Anexo 2 — Prórroga Suministro Provisorio</h2>
+<div class="desc">Solicitud de prórroga o aumento de carga del suministro provisorio ya autorizado.</div>
+
+<div class="formatos">
+<div class="formato">
+<span class="tag">Word (.dotx)</span>
+<p>Llenar en Word, agregar la firma como imagen y luego imprimir a PDF.</p>
+<a href="anexos/Anexo2_Prorroga_Suministro_Provisorio_PLANTILLA_v10.dotx" download>⬇ Descargar plantilla</a>
+</div>
+
+<div class="formato">
+<span class="tag">HTML (online)</span>
+<p>Llenar online en el navegador, cargar la firma como imagen y luego imprimir a PDF.</p>
+<a href="anexo2-prorroga-suministro-provisorio.html" target="_blank">📝 Abrir formulario</a>
+</div>
+
+<div class="formato">
+<span class="tag">PDF (a mano)</span>
+<p>Imprimir directo, llenar a mano, firmar, escanear y enviar.</p>
+<a href="anexos/Anexo2_Prorroga_Suministro_Provisorio.pdf" target="_blank">🖨 Abrir PDF</a>
+</div>
+</div>
+
+<div class="copiar">
+<button type="button" class="btn-copia" onclick="enviarCopiaAnexo(2)">📧 Enviar copia</button>
+</div>
+</div>
+
+</div>
+
+<script>
+function enviarCopiaAnexo(n){
+  var nombre = n===1 ? 'Anexo 1 - Suministro Provisorio' : 'Anexo 2 - Prórroga Suministro Provisorio';
+  var asunto = nombre;
+  var cuerpo = 'Adjunto el formato '+nombre+'.\n\n'
+    +'(Descarga el formato que necesites desde la página de Anexos D — Word, HTML impreso a PDF, o PDF — y adjúntalo aquí antes de enviar).';
+  var mailto = 'mailto:?subject='+encodeURIComponent(asunto)+'&body='+encodeURIComponent(cuerpo);
+  window.location.href = mailto;
+}
+</script>
+
+</body>
+</html>
