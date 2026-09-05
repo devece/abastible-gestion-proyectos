@@ -1703,9 +1703,9 @@ async function cargarDesdeSupabase(){
     BD=res.data.map(function(p){p._id=String(p.id);return p;});
     var cambios=[];
     BD.forEach(function(p,i){
-      var anterior=p.status;
+      var statusAnterior=p.status, etapaAnterior=p.etapa;
       autoStatus(p);
-      if(p.status!==anterior)cambios.push(guardar(i));
+      if(p.status!==statusAnterior||p.etapa!==etapaAnterior)cambios.push(guardar(i));
     });
     if(cambios.length)await Promise.all(cambios);
   }catch(e){
@@ -1940,19 +1940,35 @@ function tieneFecha(v){
   var d=new Date(String(v).replace(' ','T'));
   return !isNaN(d.getTime());
 }
+// Etapa (etiqueta comercial) según el status recién calculado — se mantiene
+// sincronizada sola siguiendo la regla "la etapa es la última fecha tickeada",
+// igual que el status. Único override manual: mkCierre() al cerrar el proyecto.
+var ETAPA_POR_STATUS={
+  '1. Evaluación Previa':'Validación',
+  '2. Entregado a coordinador':'Validación',
+  '4. Liberacion':'En Liberación',
+  '5. Proyecto en ejecucion':'Construye',
+  '5.1 Envío O.C':'Construye',
+  '5.2 Inicio de Trabajos':'Construye',
+  '5.4 Solicitud de carga al 20%':'Gas de Prueba',
+  '6. Enviado a Gestor Doc':'Gestor Documental',
+  '7. Cierre Proyecto':'Post Venta',
+  '8. Cierre Forzado':'Post Venta'
+};
 function autoStatus(p){
-  if(tieneFecha(p.f_forzado)||p.status==='8. Cierre Forzado'){p.status='8. Cierre Forzado';return;}
-  if(p.status==='7. Cierre Proyecto')return;
-  if(tieneFecha(p.f_gestor)){p.status='6. Enviado a Gestor Doc';return;}
-  if(Array.from({length:10},function(_,i){return p['f_c'+(i+1)];}).some(tieneFecha)){
-    p.status='5.4 Solicitud de carga al 20%';return;
-  }
-  if(tieneFecha(p.f_trabajos)){p.status='5.2 Inicio de Trabajos';return;}
-  if(tieneFecha(p.f_oc)){p.status='5.1 Envío O.C';return;}
-  if(tieneFecha(p.f_liberado)){p.status='5. Proyecto en ejecucion';return;}
-  if(tieneFecha(p.f_rev_ant)){p.status='4. Liberacion';return;}
-  if(tieneFecha(p.f_v_coord)){p.status='2. Entregado a coordinador';return;}
-  p.status='1. Evaluación Previa';
+  var s;
+  if(tieneFecha(p.f_forzado)||p.status==='8. Cierre Forzado'){s='8. Cierre Forzado';}
+  else if(p.status==='7. Cierre Proyecto'){s='7. Cierre Proyecto';}
+  else if(tieneFecha(p.f_gestor)){s='6. Enviado a Gestor Doc';}
+  else if(Array.from({length:10},function(_,i){return p['f_c'+(i+1)];}).some(tieneFecha)){s='5.4 Solicitud de carga al 20%';}
+  else if(tieneFecha(p.f_trabajos)){s='5.2 Inicio de Trabajos';}
+  else if(tieneFecha(p.f_oc)){s='5.1 Envío O.C';}
+  else if(tieneFecha(p.f_liberado)){s='5. Proyecto en ejecucion';}
+  else if(tieneFecha(p.f_rev_ant)){s='4. Liberacion';}
+  else if(tieneFecha(p.f_v_coord)){s='2. Entregado a coordinador';}
+  else{s='1. Evaluación Previa';}
+  p.status=s;
+  p.etapa=ETAPA_POR_STATUS[s]||p.etapa;
 }
 
 // ─── ETAPAS Y HITOS (para el filtro superior Etapa → Hito) ────────────────
