@@ -209,3 +209,9 @@ alter table public.proyectos add column if not exists f_retiro_materiales timest
 -- Se completa sola (vía postMessage) cuando se genera/copia el correo en solicitud-retiro-materiales.html;
 -- también editable a mano en la ficha del proyecto. Antes de esto no había ningún registro de modelo.
 alter table public.proyectos add column if not exists reguladores_modelo text;
+
+-- ── Stage: fecha propia para "Cierre de Proyecto" (cierre normal) ──
+-- Antes solo quedaba una nota de texto en Observaciones; f_forzado y dev_ito ya tenían su
+-- propia columna, así que este cierre quedaba sin fecha estructurada para poder medir
+-- tiempo real de cierre, tasa de cierre forzado, etc. Se completa en mkCierre().
+alter table public.proyectos add column if not exists f_cierre timestamptz;

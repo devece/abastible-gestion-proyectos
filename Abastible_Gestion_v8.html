@@ -417,7 +417,7 @@ tbody td:first-child{padding-left:20px}
       <div id="chart-explorer"></div>
     </div>
     <div class="card-panel dash-full">
-      <div class="section-title">📈 Proyectos ingresados por mes &nbsp;<span style="font-weight:500;color:var(--muted);font-size:13px;text-transform:none;letter-spacing:0">(últimos 12 meses, según envío a coordinador)</span></div>
+      <div class="section-title">📈 Proyectos ingresados por mes &nbsp;<span style="font-weight:500;color:var(--muted);font-size:13px;text-transform:none;letter-spacing:0">(últimos 12 meses, según fecha de ingreso)</span></div>
       <div id="chart-tendencia" class="trend-wrap"></div>
     </div>
     <div class="dash-2col">
@@ -2170,7 +2170,7 @@ function filtrar(){
   var tip=document.getElementById('fi-tip').value||'';
   var cont=document.getElementById('fi-cont').value||'';
   FLT=BD.filter(function(p){
-    if(q){var t=[p.codigo,p.cliente,p.region,p.contratista,p.ito,p.supervisor,p.vendedor,p.comuna,p.tipo,p.jefe,String(p.item)].join(' ').toLowerCase();if(t.indexOf(q)<0)return false;}
+    if(q){var t=[p.codigo,p.cliente,p.nombre_proyecto,p.direccion,p.region,p.contratista,p.ito,p.supervisor,p.vendedor,p.comuna,p.tipo,p.jefe,String(p.item)].join(' ').toLowerCase();if(t.indexOf(q)<0)return false;}
     if(etapaSel!==''||hitoSel){
       var ha=hitoActual(p);
       if(hitoSel){ if(ha!==hitoSel)return false; }
@@ -2409,6 +2409,7 @@ function abrirDet(id){
   h+=hF(idx,'f_termino_ejecucion','Término Trabajos',p,'🏗','',cer);
   if(!cer)h+=hBotonAccion('🏁','Enviar End Pack al cliente','','<button class="hbtn hb-reg" onclick="abrirWPEP('+idx+',\'EP\')">🏁 Generar End Pack</button>');
   h+=hF(idx,'f_gestor','Envío a Gestor Documental',p,'📁','Días en gestor se calculan automáticamente',cer);
+  if(p.f_cierre)h+='<div class="hito"><div class="hico">🏁</div><div class="hlbl">Cierre de Proyecto<small>Registrado permanentemente</small></div><div class="hright"><div class="hval hf">📅 '+esc(fFH(p.f_cierre)||p.f_cierre)+'</div><button class="hbtn hb-done" disabled>Registrado</button></div></div>';
   if(p.f_forzado)h+='<div class="hito"><div class="hico">⛔</div><div class="hlbl">Cierre Forzado<small>Registrado permanentemente</small></div><div class="hright"><div class="hval hf">📅 '+esc(fFH(p.f_forzado)||p.f_forzado)+'</div><button class="hbtn hb-done" disabled>Registrado</button></div></div>';
   h+='</div></div>';
 
@@ -2586,13 +2587,11 @@ async function okDelProy(){
   btn.textContent='🗑  Confirmar Eliminación';
 }
 function mkCierre(idx){
-  // Nota: no existe una columna de fecha propia para este cierre (a diferencia de f_forzado
-  // y dev_ito). Mientras no se agregue esa columna en Supabase, la fecha queda registrada
-  // en Observaciones para no perder trazabilidad — ver hallazgo "Cierre de Proyecto sin fecha".
   if(!BD[idx])return;
   if(!confirm('¿Confirmas el Cierre de Proyecto?\nEsta acción es permanente y no puede revertirse desde la app.'))return;
   var ts=ahora();
   BD[idx].status='7. Cierre Proyecto';BD[idx].etapa='Post Venta';
+  BD[idx].f_cierre=nowForDB();
   BD[idx].obs=(BD[idx].obs||'')+'\n[CIERRE DE PROYECTO '+ts+']';
   guardar(idx);filtrar();closeOv('ov-det');toast('🏁 Proyecto cerrado','ok');
 }
@@ -3040,7 +3039,7 @@ function renderResumen(){
   var html='';
   filtered.forEach(function(p,i){
     var d=diasProy(p), dr=p.f_v_coord?diasDesde(p.f_v_coord):null;
-    var sem=d>90?'bad':d>60?'warn':'ok';
+    var sem=semaforo(p);
     var semLabel={'ok':'<span class="semaforo sem-ok">✅ En plazo</span>','warn':'<span class="semaforo sem-warn">⚠️ Por vencer</span>','bad':'<span class="semaforo sem-bad">⛔ Atrasado</span>'}[sem]||'';
     html+='<tr onclick="abrirDet(\''+esc(p._id)+'\')" style="cursor:pointer">';
     html+='<td class="td-n">'+(i+1)+'</td>';
@@ -3060,6 +3059,8 @@ function renderResumen(){
 }
 
 // ─── DESPACHO TANQUES ─────────────────────────────────────────────────────
+// cant_tanque=0 explícito debe contar 0, no 1 — parseInt(0)||1 lo convertía a 1 por error
+function cantTanque(p){ var n=parseInt(p.cant_tanque,10); return isNaN(n)?1:n; }
 function renderTanques(){
   var regFil=document.getElementById('dt-reg')?document.getElementById('dt-reg').value:'';
 
@@ -3071,7 +3072,7 @@ function renderTanques(){
     if(!p.f_despacho_tq||!p.region||!p.tanque)return;
     if(regFil&&p.region!==regFil)return;
     var r=p.region, t=p.tanque.trim();
-    var c=parseInt(p.cant_tanque)||1;
+    var c=cantTanque(p);
     if(!tanData[r])tanData[r]={};
     tanData[r][t]=(tanData[r][t]||0)+c;
     tiposTanque[t]=true;
@@ -3189,7 +3190,7 @@ function exportarTanquesReguladores(){
   var regRows = [], regTotal = 0;
   BD.forEach(function(p){
     if(p.f_despacho_tq && p.region && p.tanque && fechaEnRangoTs(p.f_despacho_tq, desdeTs, hastaTs)){
-      var cant = parseInt(p.cant_tanque) || 1;
+      var cant = cantTanque(p);
       tanRows.push({ Item:p.item, Código:p.codigo, Cliente:p.cliente, Región:p.region, 'Modelo Tanque':p.tanque.trim(), Cantidad:cant, 'Despacho Enviado':fFH(p.f_despacho_tq) });
       tanTotal += cant;
     }
@@ -3234,14 +3235,14 @@ function expCSV(){
     'Carga N°1','Carga N°2','Carga N°3','Carga N°4','Carga N°5',
     'Carga N°6','Carga N°7','Carga N°8','Carga N°9','Carga N°10',
     'TC2','Sello Verde','TC6','IR','TC7','Pago 1','Pago 2','Pago 3','Pago 4',
-    'Término Ejecución','Gestor Documental','Devuelto ITO','Cierre Forzado','Días Totales','Observaciones'];
+    'Término Ejecución','Gestor Documental','Devuelto ITO','Cierre de Proyecto','Cierre Forzado','Días Totales','Observaciones'];
   var rows=BD.map(function(p){
     return [p.item,p.codigo,p.cliente,p.nombre_proyecto,p.region,p.comuna,p.direccion,p.tipo,p.construccion,p.status,p.etapa,
       p.supervisor,p.ito,p.contratista,p.cert,p.jefe,p.vendedor,p.potencia,p.tanque,p.cant_tanque,p.costo,p.reguladores_cant,p.reguladores_modelo,p.medidores_cant,p.toneladas_estimadas,
       p.f_v_validar,p.f_v_respondido,p.f_v_coord,p.f_rev_ant,p.f_visita,p.f_liberar,p.f_liberado,p.f_ut,p.f_pedir_grafo,p.num_grafo,p.f_oc,p.f_trabajos,p.f_despacho_tq,p.f_tc8,p.f_retiro_materiales,p.f_montaje,p.f_ampliacion,
       p.f_c1,p.f_c2,p.f_c3,p.f_c4,p.f_c5,p.f_c6,p.f_c7,p.f_c8,p.f_c9,p.f_c10,
       p.tc2,p.sello,p.tc6,p.ir,p.tc7,p.pago1,p.pago2,p.pago3,p.pago4,
-      p.f_termino_ejecucion,p.f_gestor,p.dev_ito,p.f_forzado,diasProy(p),p.obs];
+      p.f_termino_ejecucion,p.f_gestor,p.dev_ito,p.f_cierre,p.f_forzado,diasProy(p),p.obs];
   });
   var ws=XLSX.utils.aoa_to_sheet([HDR].concat(rows));
   var wb=XLSX.utils.book_new();
