@@ -181,8 +181,8 @@ tbody td:first-child{padding-left:20px}
 
 /* FECHA EDITABLE */
 .fecha-edit{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.fecha-edit input[type="datetime-local"]{border:1.5px solid var(--line2);border-radius:6px;padding:6px 10px;font-size:14px;font-family:var(--mono);color:var(--navy);outline:none;transition:border-color .15s}
-.fecha-edit input[type="datetime-local"]:focus{border-color:var(--navy)}
+.fecha-edit input[type="date"]{border:1.5px solid var(--line2);border-radius:6px;padding:6px 10px;font-size:14px;font-family:var(--mono);color:var(--navy);outline:none;transition:border-color .15s}
+.fecha-edit input[type="date"]:focus{border-color:var(--navy)}
 .fecha-edit .fe-ok{background:var(--navy);color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--sans)}
 .fecha-edit .fe-ok:hover{background:var(--navy2)}
 .fecha-edit .fe-auto{background:transparent;color:var(--brand);border:1.5px solid var(--brand);border-radius:6px;padding:5px 10px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:var(--sans)}
@@ -664,7 +664,7 @@ tbody td:first-child{padding-left:20px}
 <div class="ov" id="ov-cf">
   <div class="modal modal-sm">
     <div class="mhdr mhdr-red">
-      <div><h2>⛔ Cierre Forzado</h2><div class="msub">Se registra fecha/hora exacta · Acción permanente</div></div>
+      <div><h2>⛔ Cierre Forzado</h2><div class="msub">Se registra la fecha · Acción permanente</div></div>
       <button class="mx" onclick="closeOv('ov-cf')">✕</button>
     </div>
     <div class="mbody">
@@ -684,7 +684,7 @@ tbody td:first-child{padding-left:20px}
 <div class="ov" id="ov-dito">
   <div class="modal modal-sm">
     <div class="mhdr mhdr-amber">
-      <div><h2>↩️ Devuelto a ITO</h2><div class="msub">Se registra fecha/hora exacta · el proyecto sigue activo</div></div>
+      <div><h2>↩️ Devuelto a ITO</h2><div class="msub">Se registra la fecha · el proyecto sigue activo</div></div>
       <button class="mx" onclick="closeOv('ov-dito')">✕</button>
     </div>
     <div class="mbody">
@@ -1760,51 +1760,71 @@ function showTab(pageId, btn){
   if(pageId==='p-tanques'){ renderTanques(); renderReguladores(); actualizarExportTRUltimaFecha(); }
 }
 
-// ─── FECHA/HORA ───────────────────────────────────────────────────────────
+// ─── FECHA (sin hora) ───────────────────────────────────────────────────────
+// Los hitos solo registran el día, nunca la hora: la hora local del navegador,
+// guardada tal cual en una columna timestamptz, quedaba desplazada varias horas
+// (Postgres la toma como UTC) — eliminar la hora elimina ese problema de raíz.
+// Todo hito se guarda como medianoche UTC del día calendario elegido, y se LEE
+// siempre con los getters UTC (getUTCFullYear/getUTCMonth/getUTCDate), nunca
+// con los locales — usar los locales sobre una medianoche UTC puede mostrar el
+// día anterior o siguiente según el huso horario del navegador.
+function z2(n){return n<10?'0'+n:''+n;}
 function ahora(){
-  var d=new Date(), z=function(n){return n<10?'0'+n:''+n;};
-  return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())+' '+z(d.getHours())+':'+z(d.getMinutes())+':'+z(d.getSeconds());
+  var d=new Date();
+  return d.getFullYear()+'-'+z2(d.getMonth()+1)+'-'+z2(d.getDate());
 }
-// Instante actual en UTC real, para guardar en columnas timestamptz.
-// ahora() da la hora local en texto plano (para mostrar al usuario); si ese texto
-// se guarda tal cual en Supabase, Postgres lo interpreta como UTC y el dato queda
-// desplazado varias horas respecto al momento real. nowForDB() evita ese corrimiento.
-function nowForDB(){ return new Date().toISOString(); }
+// Fecha de hoy (calendario local del navegador) codificada como medianoche UTC,
+// para guardar en columnas timestamptz sin ambigüedad de huso horario.
+function nowForDB(){
+  var d=new Date();
+  return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())).toISOString();
+}
 function fFH(s){
   if(!s||s==='null'||s==='None'||s==='N/A')return null;
   var d=new Date(String(s).replace(' ','T')); if(isNaN(d.getTime()))return String(s);
-  return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear()+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
+  return z2(d.getUTCDate())+'/'+z2(d.getUTCMonth()+1)+'/'+d.getUTCFullYear();
+}
+function soloFecha(v){
+  // YYYY-MM-DD para exportar — evita que el Excel muestre "00:00:00" de relleno
+  if(!v||v==='null')return v;
+  var d=new Date(String(v).replace(' ','T')); if(isNaN(d.getTime()))return v;
+  return d.getUTCFullYear()+'-'+z2(d.getUTCMonth()+1)+'-'+z2(d.getUTCDate());
 }
 function isoLocal(s){
-  // Convierte fecha guardada a formato datetime-local (YYYY-MM-DDTHH:MM)
+  // Convierte fecha guardada a formato de <input type="date"> (YYYY-MM-DD)
   if(!s||s==='null')return '';
   var d=new Date(String(s).replace(' ','T')); if(isNaN(d.getTime()))return '';
-  var z=function(n){return n<10?'0'+n:''+n;};
-  return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())+'T'+z(d.getHours())+':'+z(d.getMinutes());
+  return d.getUTCFullYear()+'-'+z2(d.getUTCMonth()+1)+'-'+z2(d.getUTCDate());
 }
 function fromDtLocal(v){
-  // datetime-local (hora local del navegador) a instante UTC real para guardar en timestamptz
+  // <input type="date"> (YYYY-MM-DD) a medianoche UTC de ese día calendario
   if(!v)return null;
-  var d=new Date(v);
+  var p=v.split('-');
+  if(p.length<3)return null;
+  var d=new Date(Date.UTC(+p[0], +p[1]-1, +p[2]));
   if(isNaN(d.getTime()))return null;
   return d.toISOString();
 }
 function diasDesde(s){
   if(!s||s==='null'||s==='None')return null;
   var d=new Date(String(s).replace(' ','T')); if(isNaN(d.getTime()))return null;
-  return Math.floor((Date.now()-d.getTime())/86400000);
+  var fecha=Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  var hoy=new Date(), hoyUTC=Date.UTC(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+  return Math.round((hoyUTC-fecha)/86400000);
 }
 function diasProy(p){return diasDesde(p.f_liberado||p.f_v_coord||p.f_v_validar)||0;}
 function diasEntreFechas(a,b){
   var da=new Date(String(a).replace(' ','T')), db=new Date(String(b).replace(' ','T'));
   if(isNaN(da.getTime())||isNaN(db.getTime()))return null;
-  return Math.floor((db.getTime()-da.getTime())/86400000);
+  var ua=Date.UTC(da.getUTCFullYear(),da.getUTCMonth(),da.getUTCDate());
+  var ub=Date.UTC(db.getUTCFullYear(),db.getUTCMonth(),db.getUTCDate());
+  return Math.round((ub-ua)/86400000);
 }
 var MESES_ES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 function fechaLarga(s){
   if(!s||s==='null')return '';
   var d=new Date(String(s).replace(' ','T')); if(isNaN(d.getTime()))return '';
-  return d.getDate()+' de '+MESES_ES[d.getMonth()]+' de '+d.getFullYear();
+  return d.getUTCDate()+' de '+MESES_ES[d.getUTCMonth()]+' de '+d.getUTCFullYear();
 }
 
 // ─── WELCOME PACK / END PACK ──────────────────────────────────────────────
@@ -2507,7 +2527,7 @@ function hF(idx, key, lbl, p, ico, sub, cer, botonExtra){
     h+='<div class="fecha-edit">';
     h+='<span class="hval hf" id="fv-'+idx+'-'+key+'">📅 '+esc(fFH(v)||v)+'</span>';
     if(!cer){
-      h+='<input type="datetime-local" id="fi-'+idx+'-'+key+'" value="'+isoLocal(v)+'" onchange="saveFechaEdit('+idx+',\''+key+'\')" title="Editar fecha manualmente">';
+      h+='<input type="date" id="fi-'+idx+'-'+key+'" value="'+isoLocal(v)+'" onchange="saveFechaEdit('+idx+',\''+key+'\')" title="Editar fecha manualmente">';
     }
     h+='<button class="hbtn hb-done" disabled>✓ Listo</button>';
     if(!cer)h+='<button class="hbtn hb-del" onclick="borrarFecha('+idx+',\''+key+'\',\''+esc(lbl).replace(/\'/g,"\\\'")+'\',event)" title="Quitar fecha (deshacer, quedará pendiente)">✕</button>';
@@ -2517,7 +2537,7 @@ function hF(idx, key, lbl, p, ico, sub, cer, botonExtra){
   } else {
     // Modo registro: botón "ahora" + input manual
     h+='<div class="fecha-edit">';
-    h+='<input type="datetime-local" id="fi-'+idx+'-'+key+'" value="'+isoLocal(ahora())+'" title="Ajusta la fecha y hora si es necesario">';
+    h+='<input type="date" id="fi-'+idx+'-'+key+'" value="'+isoLocal(ahora())+'" title="Ajusta la fecha si es necesario">';
     h+='<button class="fe-ok" onclick="saveFechaEdit('+idx+',\''+key+'\')">Guardar</button>';
     h+='<button class="fe-auto" onclick="mkF('+idx+',\''+key+'\',event)">📌 Ahora</button>';
     h+='</div>';
@@ -2852,7 +2872,7 @@ function renderDash(){
     var fIngreso=p.f_v_validar||p.f_v_coord;
     if(!fIngreso)return;
     var d=new Date(String(fIngreso).replace(' ','T')); if(isNaN(d.getTime()))return;
-    var key=d.getFullYear()+'-'+d.getMonth();
+    var key=d.getUTCFullYear()+'-'+d.getUTCMonth();
     var m=meses.find(function(mm){return mm.key===key;});
     if(m)m.n++;
   });
@@ -3220,10 +3240,12 @@ function actualizarExportTRUltimaFecha(){
   var ultima = localStorage.getItem(LS_ULTIMA_EXPORT_TR);
   el.textContent = ultima ? ('(' + fFH(ultima) + ')') : '(nunca exportado en este equipo)';
 }
+// Compara por día calendario (UTC), consistente con que los hitos ya no guardan hora.
 function fechaEnRangoTs(v, desdeTs, hastaTs){
   if(!v) return false;
-  var t = new Date(String(v).replace(' ', 'T')).getTime();
-  if(isNaN(t)) return false;
+  var d = new Date(String(v).replace(' ', 'T'));
+  if(isNaN(d.getTime())) return false;
+  var t = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
   if(desdeTs !== null && t < desdeTs) return false;
   if(hastaTs !== null && t > hastaTs) return false;
   return true;
@@ -3233,12 +3255,12 @@ function exportarTanquesReguladores(){
   if(document.getElementById('expTrRango').checked){
     var dV = document.getElementById('expTrDesde').value, hV = document.getElementById('expTrHasta').value;
     if(!dV || !hV){ toast('⚠️ Completa el rango de fechas','warn'); return; }
-    desdeTs = new Date(dV + 'T00:00:00').getTime();
-    hastaTs = new Date(hV + 'T23:59:59').getTime();
+    desdeTs = new Date(fromDtLocal(dV)).getTime();
+    hastaTs = new Date(fromDtLocal(hV)).getTime();
     etiquetaPeriodo = 'Del ' + dV + ' al ' + hV;
   } else {
     var ultima = localStorage.getItem(LS_ULTIMA_EXPORT_TR);
-    desdeTs = ultima ? new Date(ultima.replace(' ','T')).getTime() : null;
+    desdeTs = ultima ? new Date(fromDtLocal(ultima)).getTime() : null;
     etiquetaPeriodo = ultima ? ('Desde la última exportación (' + fFH(ultima) + ')') : 'Todo el historial (sin exportación previa en este equipo)';
   }
 
@@ -3295,10 +3317,10 @@ function expCSV(){
   var rows=BD.map(function(p){
     return [p.item,p.codigo,p.cliente,p.nombre_proyecto,p.region,p.comuna,p.direccion,p.tipo,p.construccion,p.status,p.etapa,
       porcentajeProgreso(p),p.supervisor,p.ito,p.contratista,p.cert,p.jefe,p.vendedor,p.potencia,p.tanque,p.cant_tanque,p.costo,p.reguladores_cant,p.reguladores_modelo,p.medidores_cant,p.toneladas_estimadas,
-      p.f_v_validar,p.f_v_respondido,p.f_v_coord,p.f_rev_ant,p.f_visita,p.f_liberar,p.f_liberado,p.f_ut,p.f_pedir_grafo,p.num_grafo,p.f_oc,p.f_trabajos,p.f_despacho_tq,p.f_tc8,p.f_retiro_materiales,p.f_montaje,p.f_ampliacion,
-      p.f_c1,p.f_c2,p.f_c3,p.f_c4,p.f_c5,p.f_c6,p.f_c7,p.f_c8,p.f_c9,p.f_c10,
+      soloFecha(p.f_v_validar),soloFecha(p.f_v_respondido),soloFecha(p.f_v_coord),soloFecha(p.f_rev_ant),soloFecha(p.f_visita),soloFecha(p.f_liberar),soloFecha(p.f_liberado),soloFecha(p.f_ut),soloFecha(p.f_pedir_grafo),p.num_grafo,soloFecha(p.f_oc),soloFecha(p.f_trabajos),soloFecha(p.f_despacho_tq),soloFecha(p.f_tc8),soloFecha(p.f_retiro_materiales),soloFecha(p.f_montaje),soloFecha(p.f_ampliacion),
+      soloFecha(p.f_c1),soloFecha(p.f_c2),soloFecha(p.f_c3),soloFecha(p.f_c4),soloFecha(p.f_c5),soloFecha(p.f_c6),soloFecha(p.f_c7),soloFecha(p.f_c8),soloFecha(p.f_c9),soloFecha(p.f_c10),
       p.tc2,p.sello,p.tc6,p.ir,p.tc7,p.pago1,p.pago2,p.pago3,p.pago4,
-      p.f_termino_ejecucion,p.f_gestor,p.dev_ito,p.f_cierre,p.f_forzado,diasProy(p),p.obs];
+      soloFecha(p.f_termino_ejecucion),soloFecha(p.f_gestor),soloFecha(p.dev_ito),soloFecha(p.f_cierre),soloFecha(p.f_forzado),diasProy(p),p.obs];
   });
   var ws=XLSX.utils.aoa_to_sheet([HDR].concat(rows));
   var wb=XLSX.utils.book_new();
