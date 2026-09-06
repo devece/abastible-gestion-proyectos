@@ -2024,6 +2024,25 @@ var HITOS_DEF=[
 ];
 var HITO_BY_ID={};
 HITOS_DEF.forEach(function(hd){HITO_BY_ID[hd.id]=hd;});
+
+// ─── PROGRESO PONDERADO ────────────────────────────────────────────────────
+// Peso por etapa (deben sumar 100): Etapa 1 Anteproyecto=10, Etapa 2 Tareas Previas=15,
+// Etapa 3 En Ejecución=60 (repartido según hitos internos completados), Etapa 4=15.
+// Cierre de Proyecto y Cierre Forzado siempre marcan 100% — el proyecto ya terminó.
+var ETAPA_PESO=[10,15,60,15];
+function porcentajeProgreso(p){
+  if(p.status==='7. Cierre Proyecto'||p.status==='8. Cierre Forzado')return 100;
+  var total=[0,0,0,0], hecho=[0,0,0,0];
+  HITOS_DEF.forEach(function(hd){
+    total[hd.etapa]++;
+    if(hd.chk(p))hecho[hd.etapa]++;
+  });
+  var pct=0;
+  for(var e=0;e<ETAPA_PESO.length;e++){
+    if(total[e])pct+=ETAPA_PESO[e]*(hecho[e]/total[e]);
+  }
+  return Math.max(0,Math.min(100,Math.round(pct)));
+}
 function hitoActual(p){
   for(var i=HITOS_DEF.length-1;i>=0;i--){
     if(HITOS_DEF[i].chk(p))return HITOS_DEF[i].id;
@@ -2268,7 +2287,7 @@ function renderTabla(){
     html+='<td>'+esc(p.supervisor||'—')+'</td>';
     html+='<td style="color:#3D4A6B">'+esc(p.contratista||'—')+'</td>';
     html+='<td style="font-size:13.5px;color:#6B7A9E">'+tc+'</td>';
-    html+='<td><div class="dots">'+dots+'</div></td>';
+    html+='<td title="'+porcentajeProgreso(p)+'% de avance ponderado"><div class="dots">'+dots+'</div></td>';
     html+='<td>'+(p._d?mkDias(p._d):'—')+'</td>';
     html+='<td>'+(ven?'<span title="Requiere atención">⚠️</span>':'')+'</td>';
     html+='<td><button class="btn-del-row" title="Eliminar proyecto" onclick="event.stopPropagation();abrirDelProy(\''+esc(p._id)+'\')">🗑️</button></td>';
@@ -3228,7 +3247,7 @@ function expJSON(){
 }
 function expCSV(){
   var HDR=['Item','Código','Cliente','Nombre Proyecto','Región','Comuna','Dirección','Tipo','Construcción','Estado','Etapa',
-    'Supervisor','ITO','Contratista','Certificador','Jefe Instalaciones','Vendedor',
+    '% Progreso Ponderado','Supervisor','ITO','Contratista','Certificador','Jefe Instalaciones','Vendedor',
     'Potencia Mcal/h','Tanque','Cant. Tanques','Costo Inversión','Cant. Reguladores','Modelo(s) Regulador','Cant. Medidores','Toneladas Estimadas',
     'Envío para validar (fuera de Renova)','Validado - Cuadre - Respondido','Envío Ventas→Coord','Revisión Antecedentes','Primera Visita','Envío Liberar',
     'Proyecto Liberado','Crear UT','Pedir Liberar Grafo','N° Grafo','Envío O.C.','Inicio Trabajos','Despacho Tanque y Equipos','Envío TC8','Retiro de Materiales Generado','Montaje Tanque','Ampliar Cliente',
@@ -3238,7 +3257,7 @@ function expCSV(){
     'Término Ejecución','Gestor Documental','Devuelto ITO','Cierre de Proyecto','Cierre Forzado','Días Totales','Observaciones'];
   var rows=BD.map(function(p){
     return [p.item,p.codigo,p.cliente,p.nombre_proyecto,p.region,p.comuna,p.direccion,p.tipo,p.construccion,p.status,p.etapa,
-      p.supervisor,p.ito,p.contratista,p.cert,p.jefe,p.vendedor,p.potencia,p.tanque,p.cant_tanque,p.costo,p.reguladores_cant,p.reguladores_modelo,p.medidores_cant,p.toneladas_estimadas,
+      porcentajeProgreso(p),p.supervisor,p.ito,p.contratista,p.cert,p.jefe,p.vendedor,p.potencia,p.tanque,p.cant_tanque,p.costo,p.reguladores_cant,p.reguladores_modelo,p.medidores_cant,p.toneladas_estimadas,
       p.f_v_validar,p.f_v_respondido,p.f_v_coord,p.f_rev_ant,p.f_visita,p.f_liberar,p.f_liberado,p.f_ut,p.f_pedir_grafo,p.num_grafo,p.f_oc,p.f_trabajos,p.f_despacho_tq,p.f_tc8,p.f_retiro_materiales,p.f_montaje,p.f_ampliacion,
       p.f_c1,p.f_c2,p.f_c3,p.f_c4,p.f_c5,p.f_c6,p.f_c7,p.f_c8,p.f_c9,p.f_c10,
       p.tc2,p.sello,p.tc6,p.ir,p.tc7,p.pago1,p.pago2,p.pago3,p.pago4,
