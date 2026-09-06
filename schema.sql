@@ -194,8 +194,10 @@ alter table public.proyectos add column if not exists f_termino_ejecucion timest
 alter table public.proyectos add column if not exists f_ut timestamptz;
 
 -- ── Stage: Despacho de Tanques — ya no se cuenta por TC8, sino por envío del correo ──
--- Un tanque solo suma en el panel "Despacho Tanques" cuando el proyecto está en ejecución
--- (status no cerrado y con f_v_coord o f_liberado) Y además tiene f_despacho_tq cargado.
+-- Un tanque suma en el panel "Despacho Tanques" apenas tiene f_despacho_tq cargado,
+-- sin importar el estado que tome el proyecto después (igual que Despacho de Reguladores):
+-- este conteo alimenta el informe mensual para pedir la reposición, así que debe contar
+-- una sola vez, al momento del envío del correo, y no desaparecer cuando el proyecto cierra.
 alter table public.proyectos add column if not exists f_despacho_tq timestamptz;
 
 -- ── Stage: Despacho de Reguladores — suma también el hito de automatización de Retiro de Materiales ──

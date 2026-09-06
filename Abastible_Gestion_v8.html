@@ -1765,6 +1765,11 @@ function ahora(){
   var d=new Date(), z=function(n){return n<10?'0'+n:''+n;};
   return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())+' '+z(d.getHours())+':'+z(d.getMinutes())+':'+z(d.getSeconds());
 }
+// Instante actual en UTC real, para guardar en columnas timestamptz.
+// ahora() da la hora local en texto plano (para mostrar al usuario); si ese texto
+// se guarda tal cual en Supabase, Postgres lo interpreta como UTC y el dato queda
+// desplazado varias horas respecto al momento real. nowForDB() evita ese corrimiento.
+function nowForDB(){ return new Date().toISOString(); }
 function fFH(s){
   if(!s||s==='null'||s==='None'||s==='N/A')return null;
   var d=new Date(String(s).replace(' ','T')); if(isNaN(d.getTime()))return String(s);
@@ -1778,9 +1783,11 @@ function isoLocal(s){
   return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())+'T'+z(d.getHours())+':'+z(d.getMinutes());
 }
 function fromDtLocal(v){
-  // datetime-local a formato YYYY-MM-DD HH:MM:SS
+  // datetime-local (hora local del navegador) a instante UTC real para guardar en timestamptz
   if(!v)return null;
-  return v.replace('T',' ')+':00';
+  var d=new Date(v);
+  if(isNaN(d.getTime()))return null;
+  return d.toISOString();
 }
 function diasDesde(s){
   if(!s||s==='null'||s==='None')return null;
@@ -1861,7 +1868,7 @@ function abrirPedirGrafo(idx){
   });
   window.open('solicitud-liberar-grafo.html?'+qs.toString(),'_blank');
   if(!p.f_pedir_grafo){
-    p.f_pedir_grafo=ahora();
+    p.f_pedir_grafo=nowForDB();
     autoStatus(p);
     guardar(idx); filtrar();
     toast('🗺 Solicitud de Liberar Grafo generada','ok');
@@ -1909,7 +1916,7 @@ function abrirRetiroMateriales(idx){
   });
   window.open('solicitud-retiro-materiales.html?'+qs.toString(),'_blank');
   if(!p.f_retiro_materiales){
-    p.f_retiro_materiales=ahora();
+    p.f_retiro_materiales=nowForDB();
     guardar(idx); filtrar();
     if(document.getElementById('p-tanques')&&document.getElementById('p-tanques').classList.contains('on'))renderReguladores();
     setTimeout(function(){abrirDet(BD[idx]._id);},60);
@@ -2431,11 +2438,22 @@ function infE(idx,key,l,v,cer,tipo,opts){
   }
   return '<div class="inf inf-e"><label>'+l+'</label>'+field+'</div>';
 }
+// mismos mínimos que validarProyectoNuevo() al crear — editar no debía tener menos control que crear
+var MIN_CAMPO_NUM={costo:0,cant_tanque:1,reguladores_cant:0,medidores_cant:0};
 function saveCampoEdit(idx,key){
   var el=document.getElementById('fi-'+idx+'-'+key);
   if(!el||!BD[idx])return;
   var val=el.value;
-  BD[idx][key]=(val===''?null:(el.type==='number'?Number(val):val));
+  var nuevo=(val===''?null:(el.type==='number'?Number(val):val));
+  if(el.type==='number'&&val!==''){
+    if(isNaN(nuevo)){toast('⚠️ Valor numérico inválido — no se guardó','warn');el.value=BD[idx][key]===null||BD[idx][key]===undefined?'':BD[idx][key];return;}
+    if(MIN_CAMPO_NUM[key]!==undefined&&nuevo<MIN_CAMPO_NUM[key]){
+      toast('⚠️ '+key+' no puede ser menor que '+MIN_CAMPO_NUM[key]+' — no se guardó','warn');
+      el.value=BD[idx][key]===null||BD[idx][key]===undefined?'':BD[idx][key];
+      return;
+    }
+  }
+  BD[idx][key]=nuevo;
   guardar(idx);
   filtrar();
   toast('💾 '+key+' actualizado','ok');
@@ -2526,10 +2544,10 @@ function hDevITO(idx,p,cer){
 }
 
 // ─── ACCIONES HITOS ───────────────────────────────────────────────────────
-function mkF(idx,key,ev){ev.stopPropagation();var ts=ahora();BD[idx][key]=ts;autoStatus(BD[idx]);guardar(idx);filtrar();toast('📅 '+key+' · '+ts,'ok');setTimeout(function(){abrirDet(BD[idx]._id);},60);}
+function mkF(idx,key,ev){ev.stopPropagation();var ts=ahora();BD[idx][key]=nowForDB();autoStatus(BD[idx]);guardar(idx);filtrar();toast('📅 '+key+' · '+ts,'ok');setTimeout(function(){abrirDet(BD[idx]._id);},60);}
 function mkOK(idx,key,ev){ev.stopPropagation();BD[idx][key]='OK';guardar(idx);filtrar();toast('✅ '+key+' OK','ok');setTimeout(function(){abrirDet(BD[idx]._id);},60);}
 function mkPago(idx,key,ev){ev.stopPropagation();BD[idx][key]='OK';guardar(idx);filtrar();toast('💰 '+key+' registrado','ok');setTimeout(function(){abrirDet(BD[idx]._id);},60);}
-function mkCarga(idx,key,ev){ev.stopPropagation();var ts=ahora();BD[idx][key]=ts;autoStatus(BD[idx]);guardar(idx);filtrar();toast('⛽ Carga · '+ts,'ok');setTimeout(function(){abrirDet(BD[idx]._id);},60);}
+function mkCarga(idx,key,ev){ev.stopPropagation();var ts=ahora();BD[idx][key]=nowForDB();autoStatus(BD[idx]);guardar(idx);filtrar();toast('⛽ Carga · '+ts,'ok');setTimeout(function(){abrirDet(BD[idx]._id);},60);}
 function abrirDelCarga(idx,key,n,ev){ev.stopPropagation();DELCI=idx;DELCK=key;document.getElementById('delc-sub').textContent='Carga N°'+n+' · Acción permanente';document.getElementById('ov-delc').classList.add('open');}
 function okDelCarga(){
   if(DELCI===null||!BD[DELCI])return;
@@ -2567,12 +2585,22 @@ async function okDelProy(){
   }
   btn.textContent='🗑  Confirmar Eliminación';
 }
-function mkCierre(idx){BD[idx].status='7. Cierre Proyecto';BD[idx].etapa='Post Venta';guardar(idx);filtrar();closeOv('ov-det');toast('🏁 Proyecto cerrado','ok');}
+function mkCierre(idx){
+  // Nota: no existe una columna de fecha propia para este cierre (a diferencia de f_forzado
+  // y dev_ito). Mientras no se agregue esa columna en Supabase, la fecha queda registrada
+  // en Observaciones para no perder trazabilidad — ver hallazgo "Cierre de Proyecto sin fecha".
+  if(!BD[idx])return;
+  if(!confirm('¿Confirmas el Cierre de Proyecto?\nEsta acción es permanente y no puede revertirse desde la app.'))return;
+  var ts=ahora();
+  BD[idx].status='7. Cierre Proyecto';BD[idx].etapa='Post Venta';
+  BD[idx].obs=(BD[idx].obs||'')+'\n[CIERRE DE PROYECTO '+ts+']';
+  guardar(idx);filtrar();closeOv('ov-det');toast('🏁 Proyecto cerrado','ok');
+}
 function abrirCF(idx){CFI=idx;document.getElementById('mcf').value='';document.getElementById('ov-cf').classList.add('open');}
 function okForzado(){
   var m=(document.getElementById('mcf').value||'').trim();
   if(!m){toast('⚠️ Ingresa el motivo del cierre forzado','warn');return;}
-  var ts=ahora();BD[CFI].status='8. Cierre Forzado';BD[CFI].f_forzado=ts;
+  var ts=ahora();BD[CFI].status='8. Cierre Forzado';BD[CFI].f_forzado=nowForDB();
   BD[CFI].obs=(BD[CFI].obs||'')+'\n[CIERRE FORZADO '+ts+']: '+m;
   guardar(CFI);filtrar();closeOv('ov-cf');closeOv('ov-det');toast('⛔ Cierre forzado registrado','err');
 }
@@ -2582,7 +2610,7 @@ function abrirDevITO(idx){DITOI=idx;document.getElementById('mdito').value='';do
 function okDevITO(){
   var m=(document.getElementById('mdito').value||'').trim();
   if(!m){toast('⚠️ Ingresa el motivo de la devolución','warn');return;}
-  var ts=ahora();BD[DITOI].dev_ito=ts;
+  var ts=ahora();BD[DITOI].dev_ito=nowForDB();
   BD[DITOI].obs=(BD[DITOI].obs||'')+'\n[DEVUELTO A ITO '+ts+']: '+m;
   guardar(DITOI);filtrar();closeOv('ov-dito');
   toast('↩️ Devuelto a ITO registrado','warn');
@@ -2664,7 +2692,7 @@ async function crearProyecto(){
       item:maxItem+1,
       status:'2. Entregado a coordinador',
       etapa:'Validación',
-      f_v_coord:ts.replace(' ','T')
+      f_v_coord:nowForDB()
     });
     var res=await sb.from('proyectos').insert(nuevo).select().single();
     if(res.error) throw res.error;
@@ -3035,11 +3063,12 @@ function renderResumen(){
 function renderTanques(){
   var regFil=document.getElementById('dt-reg')?document.getElementById('dt-reg').value:'';
 
-  // Calcular tanques: solo proyectos en ejecución con correo de despacho de tanque enviado
+  // Cuenta todo proyecto con correo de despacho de tanque enviado, sin importar su estado
+  // posterior (igual que Despacho de Reguladores) — el tanque ya salió, cuenta una sola vez.
   var tanData={};
   var tiposTanque={};
   BD.forEach(function(p){
-    if(!enEjecucion(p)||!p.f_despacho_tq||!p.region||!p.tanque)return;
+    if(!p.f_despacho_tq||!p.region||!p.tanque)return;
     if(regFil&&p.region!==regFil)return;
     var r=p.region, t=p.tanque.trim();
     var c=parseInt(p.cant_tanque)||1;
@@ -3159,7 +3188,7 @@ function exportarTanquesReguladores(){
   var tanRows = [], tanTotal = 0;
   var regRows = [], regTotal = 0;
   BD.forEach(function(p){
-    if(enEjecucion(p) && p.f_despacho_tq && p.region && p.tanque && fechaEnRangoTs(p.f_despacho_tq, desdeTs, hastaTs)){
+    if(p.f_despacho_tq && p.region && p.tanque && fechaEnRangoTs(p.f_despacho_tq, desdeTs, hastaTs)){
       var cant = parseInt(p.cant_tanque) || 1;
       tanRows.push({ Item:p.item, Código:p.codigo, Cliente:p.cliente, Región:p.region, 'Modelo Tanque':p.tanque.trim(), Cantidad:cant, 'Despacho Enviado':fFH(p.f_despacho_tq) });
       tanTotal += cant;
@@ -3197,19 +3226,19 @@ function expJSON(){
   toast('📄 Respaldo JSON descargado','ok');
 }
 function expCSV(){
-  var HDR=['Item','Código','Cliente','Región','Comuna','Tipo','Construcción','Estado','Etapa',
+  var HDR=['Item','Código','Cliente','Nombre Proyecto','Región','Comuna','Dirección','Tipo','Construcción','Estado','Etapa',
     'Supervisor','ITO','Contratista','Certificador','Jefe Instalaciones','Vendedor',
-    'Potencia Mcal/h','Tanque','Cant. Tanques','Costo Inversión',
+    'Potencia Mcal/h','Tanque','Cant. Tanques','Costo Inversión','Cant. Reguladores','Modelo(s) Regulador','Cant. Medidores','Toneladas Estimadas',
     'Envío para validar (fuera de Renova)','Validado - Cuadre - Respondido','Envío Ventas→Coord','Revisión Antecedentes','Primera Visita','Envío Liberar',
-    'Proyecto Liberado','Crear UT','Pedir Liberar Grafo','N° Grafo','Envío O.C.','Inicio Trabajos','Envío TC8','Montaje Tanque',
+    'Proyecto Liberado','Crear UT','Pedir Liberar Grafo','N° Grafo','Envío O.C.','Inicio Trabajos','Despacho Tanque y Equipos','Envío TC8','Retiro de Materiales Generado','Montaje Tanque','Ampliar Cliente',
     'Carga N°1','Carga N°2','Carga N°3','Carga N°4','Carga N°5',
     'Carga N°6','Carga N°7','Carga N°8','Carga N°9','Carga N°10',
     'TC2','Sello Verde','TC6','IR','TC7','Pago 1','Pago 2','Pago 3','Pago 4',
     'Término Ejecución','Gestor Documental','Devuelto ITO','Cierre Forzado','Días Totales','Observaciones'];
   var rows=BD.map(function(p){
-    return [p.item,p.codigo,p.cliente,p.region,p.comuna,p.tipo,p.construccion,p.status,p.etapa,
-      p.supervisor,p.ito,p.contratista,p.cert,p.jefe,p.vendedor,p.potencia,p.tanque,p.cant_tanque,p.costo,
-      p.f_v_validar,p.f_v_respondido,p.f_v_coord,p.f_rev_ant,p.f_visita,p.f_liberar,p.f_liberado,p.f_ut,p.f_pedir_grafo,p.num_grafo,p.f_oc,p.f_trabajos,p.f_tc8,p.f_montaje,
+    return [p.item,p.codigo,p.cliente,p.nombre_proyecto,p.region,p.comuna,p.direccion,p.tipo,p.construccion,p.status,p.etapa,
+      p.supervisor,p.ito,p.contratista,p.cert,p.jefe,p.vendedor,p.potencia,p.tanque,p.cant_tanque,p.costo,p.reguladores_cant,p.reguladores_modelo,p.medidores_cant,p.toneladas_estimadas,
+      p.f_v_validar,p.f_v_respondido,p.f_v_coord,p.f_rev_ant,p.f_visita,p.f_liberar,p.f_liberado,p.f_ut,p.f_pedir_grafo,p.num_grafo,p.f_oc,p.f_trabajos,p.f_despacho_tq,p.f_tc8,p.f_retiro_materiales,p.f_montaje,p.f_ampliacion,
       p.f_c1,p.f_c2,p.f_c3,p.f_c4,p.f_c5,p.f_c6,p.f_c7,p.f_c8,p.f_c9,p.f_c10,
       p.tc2,p.sello,p.tc6,p.ir,p.tc7,p.pago1,p.pago2,p.pago3,p.pago4,
       p.f_termino_ejecucion,p.f_gestor,p.dev_ito,p.f_forzado,diasProy(p),p.obs];
