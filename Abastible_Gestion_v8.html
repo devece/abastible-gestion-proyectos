@@ -2076,6 +2076,21 @@ function validarOrdenFechas(p){
     ['f_tc8','f_montaje'],
     ['f_montaje','f_gestor']
   ];
+  // Cobertura ampliada de "En Ejecución" — solo para proyectos activos, para no generar
+  // alertas nuevas sobre historial ya cerrado que no se puede corregir.
+  var activo = p.status!=='7. Cierre Proyecto' && p.status!=='8. Cierre Forzado';
+  if(activo){
+    orden = orden.concat([
+      ['f_rev_ant','f_visita'],['f_visita','f_liberar'],
+      ['f_liberado','f_ut'],['f_ut','f_pedir_grafo'],
+      ['f_trabajos','f_despacho_tq'],['f_despacho_tq','f_tc8'],
+      ['f_tc8','f_retiro_materiales'],['f_retiro_materiales','f_montaje'],
+      ['f_montaje','f_ampliacion'],['f_ampliacion','f_c1'],
+      ['f_c1','f_c2'],['f_c2','f_c3'],['f_c3','f_c4'],['f_c4','f_c5'],['f_c5','f_c6'],
+      ['f_c6','f_c7'],['f_c7','f_c8'],['f_c8','f_c9'],['f_c9','f_c10'],
+      ['f_c10','f_gestor']
+    ]);
+  }
   var warnings=[];
   orden.forEach(function(pair){
     var a=pair[0], b=pair[1];
@@ -2418,7 +2433,8 @@ function abrirDet(id){
   h+='<div class="ehdr2">💰 Estados de Pago</div><div class="pgrid">';
   PK.forEach(function(k,i){
     var ok=p[k]==='OK';
-    h+='<div class="pcard'+(ok?' pok':'')+'"'+((!ok&&!cer)?' onclick="mkPago('+idx+',\''+k+'\',event)"':'')+' title="'+(ok?'Pago registrado':'Clic para registrar')+'">';
+    var click=cer?'':(ok?'borrarPago('+idx+',\''+k+'\',event)':'mkPago('+idx+',\''+k+'\',event)');
+    h+='<div class="pcard'+(ok?' pok':'')+'"'+(click?' onclick="'+click+'" style="cursor:pointer"':'')+' title="'+(cer?(ok?'Pago registrado':''):(ok?'Clic para deshacer':'Clic para registrar'))+'">';
     h+='<span class="pico">'+(ok?'✅':'○')+'</span><span class="plbl">Pago '+(i+1)+'</span></div>';
   });
   h+='</div><div style="padding:0 16px 12px;font-size:14.5px;color:var(--muted)"><strong style="color:var(--navy)">'+pagosOk+' de '+PK.length+'</strong> estados de pago registrados</div>';
@@ -2537,11 +2553,23 @@ function saveFechaEdit(idx, key){
 function hOK(idx,key,lbl,p,ico,cer){
   var ok=p[key]==='OK';
   var h='<div class="hito"><div class="hico">'+ico+'</div><div class="hlbl">'+lbl+'</div><div class="hright">';
-  if(ok)h+='<div class="hval hok">✅ Completo</div>';
+  if(ok){
+    h+='<div class="hval hok">✅ Completo</div>';
+    if(!cer)h+='<button class="hbtn hb-del" onclick="borrarOK('+idx+',\''+key+'\',\''+esc(lbl).replace(/\'/g,"\\\'")+'\',event)" title="Quitar marca (deshacer, quedará pendiente)">✕</button>';
+  }
   else if(cer)h+='<div class="hval" style="color:#BDC5DC">—</div>';
   else h+='<button class="hbtn hb-ok" onclick="mkOK('+idx+',\''+key+'\',event)">✓ Marcar OK</button>';
   h+='</div></div>';
   return h;
+}
+function borrarOK(idx,key,lbl,ev){
+  ev.stopPropagation();
+  if(!BD[idx])return;
+  if(!confirm('¿Quitar la marca de "'+lbl+'"?\nQuedará pendiente de nuevo.'))return;
+  BD[idx][key]='';
+  guardar(idx); filtrar();
+  toast('↩️ Marca eliminada — pendiente de nuevo','ok');
+  setTimeout(function(){abrirDet(BD[idx]._id);},60);
 }
 
 function hBotonAccion(icono,label,sub,botonHtml){
@@ -2567,6 +2595,15 @@ function hDevITO(idx,p,cer){
 function mkF(idx,key,ev){ev.stopPropagation();var ts=ahora();BD[idx][key]=nowForDB();autoStatus(BD[idx]);guardar(idx);filtrar();toast('📅 '+key+' · '+ts,'ok');setTimeout(function(){abrirDet(BD[idx]._id);},60);}
 function mkOK(idx,key,ev){ev.stopPropagation();BD[idx][key]='OK';guardar(idx);filtrar();toast('✅ '+key+' OK','ok');setTimeout(function(){abrirDet(BD[idx]._id);},60);}
 function mkPago(idx,key,ev){ev.stopPropagation();BD[idx][key]='OK';guardar(idx);filtrar();toast('💰 '+key+' registrado','ok');setTimeout(function(){abrirDet(BD[idx]._id);},60);}
+function borrarPago(idx,key,ev){
+  ev.stopPropagation();
+  if(!BD[idx])return;
+  if(!confirm('¿Quitar el registro de este pago?\nQuedará pendiente de nuevo.'))return;
+  BD[idx][key]='';
+  guardar(idx); filtrar();
+  toast('↩️ Pago revertido — pendiente de nuevo','ok');
+  setTimeout(function(){abrirDet(BD[idx]._id);},60);
+}
 function mkCarga(idx,key,ev){ev.stopPropagation();var ts=ahora();BD[idx][key]=nowForDB();autoStatus(BD[idx]);guardar(idx);filtrar();toast('⛽ Carga · '+ts,'ok');setTimeout(function(){abrirDet(BD[idx]._id);},60);}
 function abrirDelCarga(idx,key,n,ev){ev.stopPropagation();DELCI=idx;DELCK=key;document.getElementById('delc-sub').textContent='Carga N°'+n+' · Acción permanente';document.getElementById('ov-delc').classList.add('open');}
 function okDelCarga(){
