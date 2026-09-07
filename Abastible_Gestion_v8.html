@@ -151,6 +151,8 @@ tbody td:first-child{padding-left:20px}
 .al-b{background:var(--info-bg);border-color:#3B82F6;color:var(--info)}
 .al-g{background:var(--ok-bg);border-color:#22C55E;color:var(--ok)}
 .igrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:11px;margin-bottom:20px}
+.igrid .inf-full{grid-column:span 2}
+@media(max-width:520px){.igrid .inf-full{grid-column:1/-1}}
 .inf{display:flex;flex-direction:column;gap:3px}
 .inf label{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700}
 .inf span{font-size:15px;font-weight:700;color:var(--ink)}
@@ -613,7 +615,7 @@ tbody td:first-child{padding-left:20px}
           <div class="fg"><label>Cant. Reguladores</label><input id="nreg" type="number" placeholder="1" min="0"><div class="field-note">Cantidad estimada de reguladores.</div></div>
           <div class="fg"><label>Cant. Medidores</label><input id="nmed" type="number" placeholder="0" min="0"><div class="field-note">Cantidad estimada de medidores.</div></div>
           <div class="fg"><label>Toneladas Estimadas</label><input id="nton" type="number" step="0.00001" placeholder="0.00047"><div class="field-note">Se calcula desde Kgs/año/instal. del Detalle Comercial.</div></div>
-          <div class="fg"><label>RUT Cliente</label><input id="nrut" placeholder="Ej: 12345678-9"><div class="field-note">Se prellena solo si se carga la Planilla de Datos; también editable a mano.</div></div>
+          <div class="fg"><label>RUT Cliente</label><input id="nrut" placeholder="Ej: 11111111-1"><div class="field-note">Se valida el dígito verificador. Se prellena solo si se carga la Planilla de Datos; también editable a mano.</div></div>
           <div class="fg"><label>Correo Cliente</label><input id="ncoe" type="email" placeholder="cliente@correo.cl"><div class="field-note">Usado para el Welcome Pack / End Pack.</div></div>
           <div class="fg"><label>Teléfono Cliente</label><input id="ntel" placeholder="Ej: +56 9 1234 5678"><div class="field-note">Usado para el Welcome Pack / End Pack.</div></div>
           <div class="fg full"><label>Observaciones</label><textarea id="no" placeholder="Notas, contexto, condiciones especiales..."></textarea><div class="field-note">Aquí va cualquier detalle relevante para coordinación, cliente o obra.</div></div>
@@ -2139,6 +2141,26 @@ function validarOrdenFechas(p){
   });
   return warnings;
 }
+// ─── RUT CHILENO (validación con dígito verificador, módulo 11) ───────────
+function limpiarRut(v){ return String(v||'').replace(/[.\s]/g,'').replace(/-/g,'').toUpperCase(); }
+function dvRut(cuerpo){
+  var suma=0, multiplo=2;
+  for(var i=cuerpo.length-1;i>=0;i--){
+    suma += parseInt(cuerpo.charAt(i),10)*multiplo;
+    multiplo = multiplo===7?2:multiplo+1;
+  }
+  var resto = 11 - (suma % 11);
+  return resto===11?'0':resto===10?'K':String(resto);
+}
+function validarRut(v){
+  var limpio=limpiarRut(v);
+  if(!/^\d{6,8}[0-9K]$/.test(limpio))return false;
+  return dvRut(limpio.slice(0,-1))===limpio.slice(-1);
+}
+function formatearRut(v){
+  var limpio=limpiarRut(v);
+  return limpio.length<2?limpio:limpio.slice(0,-1)+'-'+limpio.slice(-1);
+}
 function normalizarNuevoProyecto(raw){
   var r=Object.assign({}, raw||{});
   r.cliente=(r.cliente||'').trim();
@@ -2156,6 +2178,8 @@ function normalizarNuevoProyecto(raw){
   r.reguladores_cant=r.reguladores_cant!==undefined&&r.reguladores_cant!==null&&r.reguladores_cant!==''?Number(r.reguladores_cant):null;
   r.medidores_cant=r.medidores_cant!==undefined&&r.medidores_cant!==null&&r.medidores_cant!==''?Number(r.medidores_cant):null;
   r.toneladas_estimadas=r.toneladas_estimadas!==undefined&&r.toneladas_estimadas!==null&&r.toneladas_estimadas!==''?Number(r.toneladas_estimadas):null;
+  r.rut_cliente=(r.rut_cliente||'').trim();
+  if(r.rut_cliente&&validarRut(r.rut_cliente))r.rut_cliente=formatearRut(r.rut_cliente);
   return r;
 }
 function validarProyectoNuevo(raw){
@@ -2173,6 +2197,7 @@ function validarProyectoNuevo(raw){
   if(p.cant_tanque!==null&&p.cant_tanque<1)errores.push('La cantidad de tanques debe ser 1 o más.');
   if(p.reguladores_cant!==null&&p.reguladores_cant<0)errores.push('Los reguladores no pueden ser negativos.');
   if(p.medidores_cant!==null&&p.medidores_cant<0)errores.push('Los medidores no pueden ser negativos.');
+  if(p.rut_cliente&&!validarRut(p.rut_cliente))errores.push('El RUT del cliente no es válido (revisa el dígito verificador).');
   return {ok:errores.length===0, errores:errores, limpio:p};
 }
 
@@ -2493,7 +2518,11 @@ function abrirDet(id){
   document.getElementById('ov-det').classList.add('open');
 }
 
-function inf(l,v){var nd=!v||v==='null'||v==='None'||v==='N/A';return '<div class="inf"><label>'+l+'</label><span'+(nd?' class="nd"':'')+'>'+( nd?'Sin datos':esc(v))+'</span></div>';}
+function inf(l,v,full){var nd=!v||v==='null'||v==='None'||v==='N/A';return '<div class="inf'+(full?' inf-full':'')+'"><label>'+l+'</label><span'+(nd?' class="nd"':'')+'>'+( nd?'Sin datos':esc(v))+'</span></div>';}
+
+// Campos con texto que suele ser largo (razón social, dirección, correo, nombres de
+// contratista/certificador) — ocupan doble ancho en la ficha para que se vean completos.
+var CAMPO_ANCHO_DOBLE={cliente:1,nombre_proyecto:1,contratista:1,cert:1,direccion:1,correo_cliente:1,reguladores_modelo:1};
 
 // ─── CAMPO INFO EDITABLE (datos ingresados al inicio del proyecto) ────────
 var SEL_REGION=['IV Coquimbo','V Valparaíso','RM Metropolitana','VI Ohiggins','VII Maule','XVI Ñuble','VIII Biobío','IX Araucanía','XIV Los Ríos','X Los Lagos'];
@@ -2501,14 +2530,15 @@ var SEL_TIPO=['P01 Habitacional','P11 Comercial','P15 Conexion de Medidor a Cent
 var SEL_CONSTRUCCION=['Inmediata','Tardía'];
 var SEL_SUPERVISOR=['Oscar Bravo','Fernando Martinez','Daniel Villalobos'];
 function infE(idx,key,l,v,cer,tipo,opts){
-  if(cer)return inf(l,v);
+  var full=!!CAMPO_ANCHO_DOBLE[key];
+  if(cer)return inf(l,v,full);
   var id='fi-'+idx+'-'+key, field;
   if(tipo==='select'){
     field='<select id="'+id+'" onchange="saveCampoEdit('+idx+',\''+key+'\')"><option value=""'+(!v?' selected':'')+'>—</option>'+opts.map(function(o){return '<option'+(o===v?' selected':'')+'>'+esc(o)+'</option>';}).join('')+'</select>';
   } else {
     field='<input id="'+id+'" type="'+(tipo||'text')+'" value="'+esc(v===null||v===undefined?'':v)+'" onchange="saveCampoEdit('+idx+',\''+key+'\')">';
   }
-  return '<div class="inf inf-e"><label>'+l+'</label>'+field+'</div>';
+  return '<div class="inf inf-e'+(full?' inf-full':'')+'"><label>'+l+'</label>'+field+'</div>';
 }
 // mismos mínimos que validarProyectoNuevo() al crear — editar no debía tener menos control que crear
 var MIN_CAMPO_NUM={costo:0,cant_tanque:1,reguladores_cant:0,medidores_cant:0};
@@ -2517,13 +2547,23 @@ function saveCampoEdit(idx,key){
   if(!el||!BD[idx])return;
   var val=el.value;
   var nuevo=(val===''?null:(el.type==='number'?Number(val):val));
+  var valorPrevio=BD[idx][key]===null||BD[idx][key]===undefined?'':BD[idx][key];
   if(el.type==='number'&&val!==''){
-    if(isNaN(nuevo)){toast('⚠️ Valor numérico inválido — no se guardó','warn');el.value=BD[idx][key]===null||BD[idx][key]===undefined?'':BD[idx][key];return;}
+    if(isNaN(nuevo)){toast('⚠️ Valor numérico inválido — no se guardó','warn');el.value=valorPrevio;return;}
     if(MIN_CAMPO_NUM[key]!==undefined&&nuevo<MIN_CAMPO_NUM[key]){
       toast('⚠️ '+key+' no puede ser menor que '+MIN_CAMPO_NUM[key]+' — no se guardó','warn');
-      el.value=BD[idx][key]===null||BD[idx][key]===undefined?'':BD[idx][key];
+      el.value=valorPrevio;
       return;
     }
+  }
+  if(key==='rut_cliente'&&val!==''){
+    if(!validarRut(val)){
+      toast('⚠️ RUT inválido (revisa el dígito verificador) — no se guardó','warn');
+      el.value=valorPrevio;
+      return;
+    }
+    nuevo=formatearRut(val);
+    el.value=nuevo;
   }
   BD[idx][key]=nuevo;
   guardar(idx);
