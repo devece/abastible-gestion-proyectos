@@ -215,3 +215,11 @@ alter table public.proyectos add column if not exists reguladores_modelo text;
 -- propia columna, así que este cierre quedaba sin fecha estructurada para poder medir
 -- tiempo real de cierre, tasa de cierre forzado, etc. Se completa en mkCierre().
 alter table public.proyectos add column if not exists f_cierre timestamptz;
+
+-- ── Stage: teléfono del cliente editable ──
+-- rut_cliente y correo_cliente ya existían (prellenar Welcome/End Pack) pero no había
+-- columna de teléfono genérica ni las tres se usaban como editables: la ficha solo
+-- mostraba texto plano derivado de hab_*/const_*/com_* según pd_tipo_instalacion, sin
+-- ningún campo al que escribir. datosClientePD() ahora prioriza estas 3 columnas
+-- genéricas y usa lo derivado solo como respaldo si están vacías.
+alter table public.proyectos add column if not exists telefono_cliente text;

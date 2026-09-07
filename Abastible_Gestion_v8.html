@@ -613,6 +613,9 @@ tbody td:first-child{padding-left:20px}
           <div class="fg"><label>Cant. Reguladores</label><input id="nreg" type="number" placeholder="1" min="0"><div class="field-note">Cantidad estimada de reguladores.</div></div>
           <div class="fg"><label>Cant. Medidores</label><input id="nmed" type="number" placeholder="0" min="0"><div class="field-note">Cantidad estimada de medidores.</div></div>
           <div class="fg"><label>Toneladas Estimadas</label><input id="nton" type="number" step="0.00001" placeholder="0.00047"><div class="field-note">Se calcula desde Kgs/año/instal. del Detalle Comercial.</div></div>
+          <div class="fg"><label>RUT Cliente</label><input id="nrut" placeholder="Ej: 12345678-9"><div class="field-note">Se prellena solo si se carga la Planilla de Datos; también editable a mano.</div></div>
+          <div class="fg"><label>Correo Cliente</label><input id="ncoe" type="email" placeholder="cliente@correo.cl"><div class="field-note">Usado para el Welcome Pack / End Pack.</div></div>
+          <div class="fg"><label>Teléfono Cliente</label><input id="ntel" placeholder="Ej: +56 9 1234 5678"><div class="field-note">Usado para el Welcome Pack / End Pack.</div></div>
           <div class="fg full"><label>Observaciones</label><textarea id="no" placeholder="Notas, contexto, condiciones especiales..."></textarea><div class="field-note">Aquí va cualquier detalle relevante para coordinación, cliente o obra.</div></div>
         </div>
       </div>
@@ -1545,6 +1548,12 @@ async function manejarPdfNuevoProyecto(){
       if(tieneOpcion){ selR.value = PD_EXTRAIDO.region; sugerirCertificador(); }
     }
     if(PD_EXTRAIDO.comuna) document.getElementById('nco').value = PD_EXTRAIDO.comuna;
+    var rutExt = PD_EXTRAIDO.hab_rut || PD_EXTRAIDO.const_rut_empresa || PD_EXTRAIDO.com_rut_empresa || '';
+    var correoExt = PD_EXTRAIDO.hab_correo || PD_EXTRAIDO.const_rep_legal_correo || PD_EXTRAIDO.const_contacto_obra_correo || PD_EXTRAIDO.com_rep_legal_correo || PD_EXTRAIDO.com_contacto_correo || '';
+    var telExt = PD_EXTRAIDO.hab_telefono || PD_EXTRAIDO.const_rep_legal_telefono || PD_EXTRAIDO.const_contacto_obra_telefono || PD_EXTRAIDO.com_contacto_telefono || '';
+    if(rutExt) document.getElementById('nrut').value = rutExt;
+    if(correoExt) document.getElementById('ncoe').value = correoExt;
+    if(telExt) document.getElementById('ntel').value = telExt;
     prog.style.display='none';
     resumen.style.display='block';
     resumen.textContent = '✅ '+r.encontrados+' campos extraídos automáticamente desde la Planilla de Datos. Revisa Cliente/Región/Comuna antes de crear el proyecto.';
@@ -1828,18 +1837,25 @@ function fechaLarga(s){
 }
 
 // ─── WELCOME PACK / END PACK ──────────────────────────────────────────────
-// Datos del cliente según lo cargado en Planilla de Datos (varían de campo según la rama)
+// RUT/Correo/Teléfono Cliente: rut_cliente/correo_cliente/telefono_cliente son los campos
+// editables directos (ficha y Nuevo Proyecto). Si están vacíos, se usa como respaldo lo
+// cargado por la Planilla de Datos (varía de columna según pd_tipo_instalacion) — así no
+// se pierde un dato ya extraído automáticamente, pero editarlo siempre escribe a la
+// columna genérica, sin ambigüedad sobre a cuál de las columnas por tipo corresponde.
 function datosClientePD(p){
+  var d = {rut:null, correo:null, telefono:null};
   if(p.pd_tipo_instalacion==='habitacional'){
-    return {rut:p.hab_rut, correo:p.hab_correo, telefono:p.hab_telefono};
+    d = {rut:p.hab_rut, correo:p.hab_correo, telefono:p.hab_telefono};
+  } else if(p.pd_tipo_instalacion==='constructora'){
+    d = {rut:p.const_rut_empresa, correo:p.const_rep_legal_correo||p.const_contacto_obra_correo, telefono:p.const_rep_legal_telefono||p.const_contacto_obra_telefono};
+  } else if(p.pd_tipo_instalacion==='comercial'){
+    d = {rut:p.com_rut_empresa, correo:p.com_rep_legal_correo||p.com_contacto_correo, telefono:p.com_contacto_telefono};
   }
-  if(p.pd_tipo_instalacion==='constructora'){
-    return {rut:p.const_rut_empresa, correo:p.const_rep_legal_correo||p.const_contacto_obra_correo, telefono:p.const_rep_legal_telefono||p.const_contacto_obra_telefono};
-  }
-  if(p.pd_tipo_instalacion==='comercial'){
-    return {rut:p.com_rut_empresa, correo:p.com_rep_legal_correo||p.com_contacto_correo, telefono:p.com_contacto_telefono};
-  }
-  return {rut:null, correo:null, telefono:null};
+  return {
+    rut: p.rut_cliente || d.rut,
+    correo: p.correo_cliente || d.correo,
+    telefono: p.telefono_cliente || d.telefono
+  };
 }
 
 function abrirWPEP(idx,tipo){
@@ -2384,7 +2400,7 @@ function abrirDet(id){
   h+=infE(idx,'costo','Costo Inversión ($)',p.costo,cer,'number');
   h+=infE(idx,'reguladores_cant','Reguladores',p.reguladores_cant,cer,'number')+infE(idx,'reguladores_modelo','Modelo(s) Regulador',p.reguladores_modelo,cer)+infE(idx,'medidores_cant','Medidores',p.medidores_cant,cer,'number')+infE(idx,'toneladas_estimadas','Toneladas Estimadas',p.toneladas_estimadas,cer,'number');
   var dcInfo=datosClientePD(p);
-  h+=infE(idx,'direccion','Dirección',p.direccion,cer)+inf('RUT Cliente',dcInfo.rut)+inf('Correo Cliente',dcInfo.correo)+inf('Teléfono Cliente',dcInfo.telefono);
+  h+=infE(idx,'direccion','Dirección',p.direccion,cer)+infE(idx,'rut_cliente','RUT Cliente',dcInfo.rut,cer)+infE(idx,'correo_cliente','Correo Cliente',dcInfo.correo,cer)+infE(idx,'telefono_cliente','Teléfono Cliente',dcInfo.telefono,cer);
   h+='</div>';
   if(!cer){
     h+='<div class="alerta al-b" style="margin-top:-6px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">';
@@ -2754,7 +2770,10 @@ async function crearProyecto(){
     obs:document.getElementById('no').value,
     reguladores_cant:document.getElementById('nreg').value||null,
     medidores_cant:document.getElementById('nmed').value||null,
-    toneladas_estimadas:document.getElementById('nton').value||null
+    toneladas_estimadas:document.getElementById('nton').value||null,
+    rut_cliente:(document.getElementById('nrut').value||'').trim(),
+    correo_cliente:(document.getElementById('ncoe').value||'').trim(),
+    telefono_cliente:(document.getElementById('ntel').value||'').trim()
   };
   var valid=validarProyectoNuevo(raw);
   if(!valid.ok){toast('⚠️ '+valid.errores[0],'warn');return;}
@@ -2773,7 +2792,7 @@ async function crearProyecto(){
     if(res.error) throw res.error;
     var creado=res.data; creado._id=String(creado.id);
     BD.push(creado);
-    ['nc','ncl','nnp','nco','ni','nct','nj','nv','nce','np','nta','nca','ncs','nreg','nmed','nton','no'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
+    ['nc','ncl','nnp','nco','ni','nct','nj','nv','nce','np','nta','nca','ncs','nreg','nmed','nton','nrut','ncoe','ntel','no'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
     document.getElementById('nr').value='RM Metropolitana';
     document.getElementById('ntp').value='P01 Habitacional';
     document.getElementById('ncon').value='Inmediata';
