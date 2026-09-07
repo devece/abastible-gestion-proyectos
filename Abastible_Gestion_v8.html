@@ -2083,10 +2083,16 @@ function porcentajeProgreso(p){
   }
   return Math.max(0,Math.min(100,Math.round(pct)));
 }
-// Degradado rojo (0%) -> ámbar -> verde (100%), mismo criterio de color en toda la fila.
+// Degradado rojo (0%) -> amarillo (50%) -> verde (100%). Interpolación directa entre
+// 3 colores fijos (no HSL puro) para que el amarillo del medio no salga apagado/ámbar.
+var PROGRESO_ROJO=[220,38,38], PROGRESO_AMARILLO=[202,138,4], PROGRESO_VERDE=[22,163,74];
 function colorProgreso(pct){
-  var hue=Math.max(0,Math.min(100,pct))*1.2; // 0=rojo, 60=ámbar, 120=verde
-  return 'hsl('+hue+',72%,42%)';
+  pct=Math.max(0,Math.min(100,pct));
+  var a,b,t;
+  if(pct<=50){a=PROGRESO_ROJO;b=PROGRESO_AMARILLO;t=pct/50;}
+  else{a=PROGRESO_AMARILLO;b=PROGRESO_VERDE;t=(pct-50)/50;}
+  var r=Math.round(a[0]+(b[0]-a[0])*t), g=Math.round(a[1]+(b[1]-a[1])*t), bl=Math.round(a[2]+(b[2]-a[2])*t);
+  return 'rgb('+r+','+g+','+bl+')';
 }
 function hitoActual(p){
   for(var i=HITOS_DEF.length-1;i>=0;i--){
