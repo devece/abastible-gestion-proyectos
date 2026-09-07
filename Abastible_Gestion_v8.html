@@ -2358,7 +2358,7 @@ function renderTabla(){
   slice.forEach(function(p){
     var ven=vencido(p);
     var keys=[p.f_v_validar,p.f_v_respondido,p.f_v_coord,p.f_rev_ant,p.f_liberado,p.f_ut,p.f_oc,p.f_trabajos,p.f_tc8,p.f_montaje,p.f_c1,p.tc2,p.f_gestor];
-    var pctProg=porcentajeProgreso(p), colorProg=colorProgreso(pctProg);
+    var pctProg=porcentajeProgreso(p), colorProg=p.status==='8. Cierre Forzado'?'var(--muted)':colorProgreso(pctProg);
     var dots=keys.map(function(v){var lleno=v&&v!=='null';return '<span class="dot"'+(lleno?' style="background:'+colorProg+';border-color:'+colorProg+'"':'')+'></span>';}).join('');
     var tc=esc(p.tipo||'')||'—';
     html+='<tr class="'+(ven?'ven':'')+'" onclick="abrirDet(\''+esc(p._id)+'\')">';
