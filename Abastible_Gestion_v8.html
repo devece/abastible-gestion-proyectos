@@ -1570,32 +1570,64 @@ async function manejarPdfNuevoProyecto(){
 
 // ─── RECARGAR PLANILLA / DC EN UN PROYECTO YA EXISTENTE ────────────────────
 // Solo completa campos que están vacíos — nunca pisa un dato ya cargado o editado a mano.
+// Si un campo ya tiene un valor DISTINTO al recién leído, se reporta como conflicto en vez
+// de descartarse en silencio, para que quien recarga sepa que hay algo para revisar a mano.
+var ETIQUETAS_CAMPO_RECARGA={
+  cliente:'Cliente', region:'Región', comuna:'Comuna', direccion:'Dirección',
+  pd_tipo_instalacion:'Tipo de Instalación', codigo:'Código', nombre_proyecto:'Nombre Proyecto',
+  hab_nombre_cliente:'Nombre Cliente', hab_rut:'RUT', hab_correo:'Correo', hab_telefono:'Teléfono',
+  hab_contacto_obra_nombre:'Nombre Contacto en Obra', hab_contacto_obra_telefono:'Teléfono Contacto en Obra',
+  const_razon_social:'Razón Social', const_rut_empresa:'RUT Empresa',
+  const_rep_legal_nombre:'Nombre Representante Legal', const_rep_legal_rut:'RUT Representante Legal',
+  const_rep_legal_telefono:'Teléfono Representante', const_rep_legal_correo:'Correo Representante',
+  const_contacto_obra_nombre:'Nombre Contacto en Obra', const_contacto_obra_telefono:'Teléfono Contacto',
+  const_contacto_obra_correo:'Correo Contacto', const_correo_facturacion:'Correo Facturación',
+  com_razon_social:'Razón Social', com_rut_empresa:'RUT Empresa', com_rubro_sii:'Giro/Rubro SII',
+  com_rep_legal_nombre:'Nombre Representante Legal', com_rep_legal_rut:'RUT Representante Legal',
+  com_rep_legal_correo:'Correo Representante', com_correo_facturacion:'Correo Facturación',
+  com_contacto_nombre:'Nombre Contacto', com_contacto_telefono:'Teléfono Contacto', com_contacto_correo:'Correo Contacto',
+  costo:'Costo Inversión', tanque:'Tanque', cant_tanque:'Cant. Tanques',
+  reguladores_cant:'Reguladores', potencia:'Potencia', toneladas_estimadas:'Toneladas Estimadas'
+};
+function etiquetaCampoRecarga(k){ return ETIQUETAS_CAMPO_RECARGA[k] || k; }
+
 function camposVacios(p, candidatos){
-  var out = {}, n = 0;
+  var out = {}, n = 0, conflictos = [];
   Object.keys(candidatos).forEach(function(k){
+    var nuevo = candidatos[k];
+    if(nuevo===undefined || nuevo===null || nuevo==='') return;
     var actual = p[k];
     var vacio = actual===null || actual===undefined || actual==='' || actual==='null' || actual==='None';
-    if(vacio && candidatos[k]!==undefined && candidatos[k]!==null && candidatos[k]!==''){
-      out[k] = candidatos[k];
+    if(vacio){
+      out[k] = nuevo;
       n++;
+    } else if(String(actual).trim() !== String(nuevo).trim()){
+      conflictos.push(k);
     }
   });
-  return {campos:out, n:n};
+  return {campos:out, n:n, conflictos:conflictos};
 }
 
 async function aplicarRecarga(idx, candidatos, origen){
   var p = BD[idx];
   if(!p)return;
   var r = camposVacios(p, candidatos);
-  if(r.n===0){
-    toast('ℹ️ No había campos vacíos que completar desde '+origen+' — el proyecto ya tenía esos datos.','info');
-    return;
+  if(r.n>0){
+    Object.assign(p, r.campos);
+    await guardar(idx);
   }
-  Object.assign(p, r.campos);
-  await guardar(idx);
-  toast('✅ '+r.n+' campo'+(r.n===1?'':'s')+' completado'+(r.n===1?'':'s')+' desde '+origen+'.','ok');
-  if(document.getElementById('ov-det').classList.contains('open')) abrirDet(p._id);
-  filtrar();
+  var partes = [];
+  if(r.n>0) partes.push('✅ '+r.n+' campo'+(r.n===1?'':'s')+' completado'+(r.n===1?'':'s')+' desde '+origen+'.');
+  if(r.conflictos.length){
+    var nombres = r.conflictos.map(etiquetaCampoRecarga).join(', ');
+    partes.push('⚠️ '+r.conflictos.length+' campo'+(r.conflictos.length===1?'':'s')+' con un dato distinto al que ya tenía el proyecto — no se sobrescribió, revísalo a mano: '+nombres+'.');
+  }
+  if(!partes.length) partes.push('ℹ️ No había campos vacíos que completar desde '+origen+' — el proyecto ya tenía esos datos.');
+  toast(partes.join(' '), r.conflictos.length ? 'warn' : (r.n>0 ? 'ok' : 'info'));
+  if(r.n>0){
+    if(document.getElementById('ov-det').classList.contains('open')) abrirDet(p._id);
+    filtrar();
+  }
 }
 
 function abrirRecargaPlanilla(idx){
