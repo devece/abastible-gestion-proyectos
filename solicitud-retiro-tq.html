@@ -201,8 +201,8 @@
         </div>
         <div class="field auto">
           <label for="region">Región / Comuna</label>
-          <input type="text" id="region" value="Región VII - Talca / Comuna LINARES" oninput="render()">
-          <div class="hint">campos <code>region</code> / <code>comuna</code> de tabla proyectos</div>
+          <input type="text" id="region" value="Región VII - Talca / Comuna LINARES" oninput="onRegionChange()">
+          <div class="hint">campos <code>region</code> / <code>comuna</code> de tabla proyectos — la comuna se usa para elegir el bodeguero cuando la región tiene más de uno (ej. X Los Lagos)</div>
         </div>
         <div class="field auto">
           <label for="regionCodigo">Región (código)</label>
@@ -428,20 +428,32 @@ function fechaHoyDDMMYYYY(){
 }
 
 // Destinatarios del correo de Despacho de Tanque por región (bodeguero/coordinador de retiro)
+// region: valor real del campo `region` de tabla proyectos (enumeración fija del sistema).
+// comuna: solo se define cuando una misma región tiene más de un bodeguero, para
+// desambiguar según la comuna indicada en el campo "Región / Comuna" (ej. X Los Lagos).
 const BODEGUEROS_TQ = [
   { region: 'VII Maule', destNombre: 'Luis', destPara: 'luis.munozh@abastible.cl;transportes_lpc@hotmail.com', coordinaRetiro: 'Luis Puentes' },
   { region: 'XIV Los Ríos', destNombre: 'Waldemar', destPara: 'waldemar.munoz@abastible.cl;carlos.herrera@serviciosch.cl', coordinaRetiro: 'Carlos Herrera', ccExtra: 'servicioschspa@gmail.com' },
-  { region: 'X Osorno', destNombre: 'Jose', destPara: 'Jose.Gutierrez@abastible.cl;newingchile@gmail.com', coordinaRetiro: 'Juan Sepulveda' },
-  { region: 'X Puerto Montt', destNombre: 'Darlene', destPara: 'Darlene.Huenante@abastible.cl', coordinaRetiro: '' },
+  { region: 'X Los Lagos', comuna: 'Osorno', destNombre: 'Jose', destPara: 'Jose.Gutierrez@abastible.cl;newingchile@gmail.com', coordinaRetiro: 'Juan Sepulveda' },
+  { region: 'X Los Lagos', comuna: 'Puerto Montt', destNombre: 'Darlene', destPara: 'Darlene.Huenante@abastible.cl', coordinaRetiro: '' },
   { region: 'XI Coyhaique', destNombre: 'Edgar', destPara: 'Edgar.Fuentes@abastible.cl', coordinaRetiro: 'Edgar Fuentes Sanchez' },
 ];
 let EXTRA_CC_TQ = '';
 
-function buscarBodegueroTQ(region){
+function extraeComuna(textoRegionComuna){
+  const m = /comuna\s*[:\-]?\s*(.+)$/i.exec(textoRegionComuna || '');
+  return m ? m[1].trim() : '';
+}
+
+function buscarBodegueroTQ(region, comuna){
   const n = normaliza(region);
   if(!n) return null;
-  return BODEGUEROS_TQ.find(b => normaliza(b.region) === n)
-      || BODEGUEROS_TQ.find(b => normaliza(b.region).includes(n) || n.includes(normaliza(b.region)));
+  const exactos = BODEGUEROS_TQ.filter(b => normaliza(b.region) === n);
+  const candidatos = exactos.length ? exactos : BODEGUEROS_TQ.filter(b => normaliza(b.region).includes(n) || n.includes(normaliza(b.region)));
+  if(candidatos.length <= 1) return candidatos[0] || null;
+  const nc = normaliza(comuna);
+  if(!nc) return null;
+  return candidatos.find(b => b.comuna && (normaliza(b.comuna).includes(nc) || nc.includes(normaliza(b.comuna)))) || null;
 }
 
 function onRegionChange(){
@@ -458,7 +470,9 @@ function onRegionChange(){
     hint.style.color = 'var(--ambar)';
     if(!g('fechaSolicitud')) document.getElementById('fechaSolicitud').value = fechaHoyDDMMYYYY();
   } else {
-    const match = buscarBodegueroTQ(g('regionCodigo'));
+    const n = normaliza(g('regionCodigo'));
+    const ambiguo = BODEGUEROS_TQ.filter(b => normaliza(b.region) === n).length > 1;
+    const match = buscarBodegueroTQ(g('regionCodigo'), extraeComuna(g('region')));
     EXTRA_CC_TQ = match && match.ccExtra ? match.ccExtra : '';
     if(match){
       document.getElementById('destNombre').value = match.destNombre;
@@ -466,6 +480,9 @@ function onRegionChange(){
       document.getElementById('coordinaRetiro').value = match.coordinaRetiro;
       hint.textContent = `destinatario encontrado para esta región`;
       hint.style.color = 'var(--verde)';
+    } else if(ambiguo){
+      hint.textContent = 'esta región tiene más de un bodeguero — indica la comuna en "Región / Comuna" para identificar cuál corresponde';
+      hint.style.color = 'var(--ambar)';
     } else {
       hint.textContent = 'sin destinatario registrado para esta región — completa manualmente';
       hint.style.color = 'var(--ambar)';
