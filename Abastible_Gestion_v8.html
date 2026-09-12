@@ -595,6 +595,7 @@ tbody td:first-child{padding-left:20px}
               <option>XIV Los Ríos</option><option>X Los Lagos</option>
             </select><div class="field-note">Cambia el certificador sugerido según la región.</div></div>
           <div class="fg"><label>Comuna</label><input id="nco" placeholder="Ej: Temuco"><div class="field-note">Opcional, pero ayuda mucho al control operativo.</div></div>
+          <div class="fg full"><label>Dirección</label><input id="nd" placeholder="Ej: Calle Los Aromos 123"><div class="field-note">Se prellena al cargar el Detalle Comercial o la Planilla de Datos; también editable a mano.</div></div>
           <div class="fg"><label>Tipo Proyecto</label>
             <select id="ntp"><option>P01 Habitacional</option><option>P11 Comercial</option>
               <option>P15 Conexion de Medidor a Central Existente</option>
@@ -1509,6 +1510,8 @@ async function manejarPdfDetalleComercial(){
     }
     document.getElementById('nco').value = campos.comuna || '';
     if(campos.comuna) llenados++;
+    document.getElementById('nd').value = campos.direccion || '';
+    if(campos.direccion) llenados++;
     if(campos.tipo_codigo){
       var tipoMatch = mapearTipoDC(campos.tipo_codigo, campos.tipo_desc);
       if(tipoMatch){ document.getElementById('ntp').value = tipoMatch; llenados++; }
@@ -1569,6 +1572,7 @@ async function manejarPdfNuevoProyecto(){
       if(tieneOpcion){ selR.value = PD_EXTRAIDO.region; sugerirCertificador(); }
     }
     if(PD_EXTRAIDO.comuna) document.getElementById('nco').value = PD_EXTRAIDO.comuna;
+    if(PD_EXTRAIDO.direccion) document.getElementById('nd').value = PD_EXTRAIDO.direccion;
     var rutExt = PD_EXTRAIDO.hab_rut || PD_EXTRAIDO.const_rut_empresa || PD_EXTRAIDO.com_rut_empresa || '';
     var correoExt = PD_EXTRAIDO.hab_correo || PD_EXTRAIDO.const_rep_legal_correo || PD_EXTRAIDO.const_contacto_obra_correo || PD_EXTRAIDO.com_rep_legal_correo || PD_EXTRAIDO.com_contacto_correo || '';
     var telExt = PD_EXTRAIDO.hab_telefono || PD_EXTRAIDO.const_rep_legal_telefono || PD_EXTRAIDO.const_contacto_obra_telefono || PD_EXTRAIDO.com_contacto_telefono || '';
@@ -2864,6 +2868,7 @@ async function crearProyecto(){
     nombre_proyecto:(document.getElementById('nnp').value||'').trim(),
     region:document.getElementById('nr').value||'',
     comuna:document.getElementById('nco').value,
+    direccion:(document.getElementById('nd').value||'').trim(),
     tipo:document.getElementById('ntp').value,
     construccion:document.getElementById('ncon').value,
     supervisor:'Daniel Villalobos',
@@ -2901,7 +2906,7 @@ async function crearProyecto(){
     if(res.error) throw res.error;
     var creado=res.data; creado._id=String(creado.id);
     BD.push(creado);
-    ['nc','ncl','nnp','nco','ni','nct','nj','nv','nce','np','nta','nca','ncs','nreg','nmed','nton','nrut','ncoe','ntel','no'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
+    ['nc','ncl','nnp','nco','nd','ni','nct','nj','nv','nce','np','nta','nca','ncs','nreg','nmed','nton','nrut','ncoe','ntel','no'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
     document.getElementById('nr').value='RM Metropolitana';
     document.getElementById('ntp').value='P01 Habitacional';
     document.getElementById('ncon').value='Inmediata';
