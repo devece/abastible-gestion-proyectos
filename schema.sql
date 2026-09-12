@@ -223,3 +223,9 @@ alter table public.proyectos add column if not exists f_cierre timestamptz;
 -- ningún campo al que escribir. datosClientePD() ahora prioriza estas 3 columnas
 -- genéricas y usa lo derivado solo como respaldo si están vacías.
 alter table public.proyectos add column if not exists telefono_cliente text;
+
+-- ── Stage: coordenadas GPS del proyecto ──
+-- Texto libre (ej. "-35.4264, -71.6554") en vez de dos numeric separados: se completa
+-- a mano o pegando un enlace/coordenada de Google Maps, no viene de ningún PDF de
+-- captura automática (Detalle Comercial / Planilla de Datos no traen esta info).
+alter table public.proyectos add column if not exists coordenadas text;

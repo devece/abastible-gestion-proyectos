@@ -596,6 +596,7 @@ tbody td:first-child{padding-left:20px}
             </select><div class="field-note">Cambia el certificador sugerido según la región.</div></div>
           <div class="fg"><label>Comuna</label><input id="nco" placeholder="Ej: Temuco"><div class="field-note">Opcional, pero ayuda mucho al control operativo.</div></div>
           <div class="fg full"><label>Dirección</label><input id="nd" placeholder="Ej: Calle Los Aromos 123"><div class="field-note">Se prellena al cargar el Detalle Comercial o la Planilla de Datos; también editable a mano.</div></div>
+          <div class="fg"><label>Coordenadas</label><input id="ncoord" placeholder="Ej: -35.4264, -71.6554"><div class="field-note">Opcional. Latitud, longitud (o pega el enlace de Google Maps).</div></div>
           <div class="fg"><label>Tipo Proyecto</label>
             <select id="ntp"><option>P01 Habitacional</option><option>P11 Comercial</option>
               <option>P15 Conexion de Medidor a Central Existente</option>
@@ -2498,7 +2499,7 @@ function abrirDet(id){
   h+=infE(idx,'costo','Costo Inversión ($)',p.costo,cer,'number');
   h+=infE(idx,'reguladores_cant','Reguladores',p.reguladores_cant,cer,'number')+infE(idx,'reguladores_modelo','Modelo(s) Regulador',p.reguladores_modelo,cer)+infE(idx,'medidores_cant','Medidores',p.medidores_cant,cer,'number')+infE(idx,'toneladas_estimadas','Toneladas Estimadas',p.toneladas_estimadas,cer,'number');
   var dcInfo=datosClientePD(p);
-  h+=infE(idx,'direccion','Dirección',p.direccion,cer)+infE(idx,'rut_cliente','RUT Cliente',dcInfo.rut,cer)+infE(idx,'correo_cliente','Correo Cliente',dcInfo.correo,cer)+infE(idx,'telefono_cliente','Teléfono Cliente',dcInfo.telefono,cer);
+  h+=infE(idx,'direccion','Dirección',p.direccion,cer)+infE(idx,'coordenadas','Coordenadas',p.coordenadas,cer)+infE(idx,'rut_cliente','RUT Cliente',dcInfo.rut,cer)+infE(idx,'correo_cliente','Correo Cliente',dcInfo.correo,cer)+infE(idx,'telefono_cliente','Teléfono Cliente',dcInfo.telefono,cer);
   h+='</div>';
   if(!cer){
     h+='<div class="alerta al-b" style="margin-top:-6px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">';
@@ -2869,6 +2870,7 @@ async function crearProyecto(){
     region:document.getElementById('nr').value||'',
     comuna:document.getElementById('nco').value,
     direccion:(document.getElementById('nd').value||'').trim(),
+    coordenadas:(document.getElementById('ncoord').value||'').trim(),
     tipo:document.getElementById('ntp').value,
     construccion:document.getElementById('ncon').value,
     supervisor:'Daniel Villalobos',
@@ -2906,7 +2908,7 @@ async function crearProyecto(){
     if(res.error) throw res.error;
     var creado=res.data; creado._id=String(creado.id);
     BD.push(creado);
-    ['nc','ncl','nnp','nco','nd','ni','nct','nj','nv','nce','np','nta','nca','ncs','nreg','nmed','nton','nrut','ncoe','ntel','no'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
+    ['nc','ncl','nnp','nco','nd','ncoord','ni','nct','nj','nv','nce','np','nta','nca','ncs','nreg','nmed','nton','nrut','ncoe','ntel','no'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
     document.getElementById('nr').value='RM Metropolitana';
     document.getElementById('ntp').value='P01 Habitacional';
     document.getElementById('ncon').value='Inmediata';
