@@ -69,6 +69,7 @@
     align-items: start;
   }
   .form-col { position: sticky; top: 1.25rem; }
+  .preview-col { display: flex; flex-direction: column; gap: 1.25rem; }
   .panel { background: var(--blanco); border-radius: var(--radius); border: 1px solid var(--gris-borde); box-shadow: var(--sombra); overflow: hidden; }
   .panel-header {
     padding: 0.85rem 1.25rem; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
@@ -215,17 +216,42 @@ Grafo: 114529"></textarea>
       <button class="btn-secondary" id="copyBtn" onclick="copiarHTML()">📋 Copiar HTML</button>
     </div>
     <div class="missing-flag" id="missingFlag"></div>
+
+    <div class="static-box" style="margin:1.25rem 0;">
+      <b>Para:</b> grupo IMPOVAR (Outlook) — escribe "IMPOVAR" en el campo Para, se resuelve desde tus contactos<br>
+      <b>De:</b> quien envíe el correo (no se define aquí)
+    </div>
+
+    <div class="btnbar">
+      <button class="btn-primary" id="outlookBtnImpovar" onclick="abrirEnOutlookImpovar()">📨 Abrir en Outlook (Impovar)</button>
+      <button class="btn-secondary" id="copyBtnImpovar" onclick="copiarHTMLImpovar()">📋 Copiar HTML (Impovar)</button>
+    </div>
   </div>
 
-  <div class="panel" id="panelPreviewCorreo">
-    <div class="panel-header preview">👁️ Vista previa del correo</div>
-    <div class="preview-meta">
-      <div><b>Para:</b> <span id="metaPara">—</span></div>
-      <div><b>Asunto:</b> <span id="metaAsunto">—</span></div>
+  <div class="preview-col">
+    <div class="panel" id="panelPreviewCorreo">
+      <div class="panel-header preview">👁️ Vista previa del correo — Contratista</div>
+      <div class="preview-meta">
+        <div><b>Para:</b> <span id="metaPara">—</span></div>
+        <div><b>Asunto:</b> <span id="metaAsunto">—</span></div>
+      </div>
+      <div class="preview-stage">
+        <div class="email-shell">
+          <div id="emailContent"></div>
+        </div>
+      </div>
     </div>
-    <div class="preview-stage">
-      <div class="email-shell">
-        <div id="emailContent"></div>
+
+    <div class="panel" id="panelPreviewImpovar">
+      <div class="panel-header preview">👁️ Vista previa del correo — Impovar</div>
+      <div class="preview-meta">
+        <div><b>Para:</b> Grupo IMPOVAR (Outlook)</div>
+        <div><b>Asunto:</b> <span id="metaAsuntoImpovar">—</span></div>
+      </div>
+      <div class="preview-stage">
+        <div class="email-shell">
+          <div id="emailContentImpovar"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -315,6 +341,14 @@ function bloqueOC(texto){
   </table>`;
 }
 
+// Mismo bloque pegado desde la OC, quitando la línea de DIRECCIÓN (correo a Impovar no la lleva)
+function quitarLineaDireccion(texto){
+  return String(texto || '')
+    .split('\n')
+    .filter(l => !normaliza(l).startsWith('direccion'))
+    .join('\n');
+}
+
 function templateCorreo(d){
   const parrafo = (texto, padBottom) => `<tr><td style="padding:0 0 ${padBottom} 0;font-family:${UB};font-size:14px;line-height:150%;mso-line-height-rule:exactly;">${texto}</td></tr>`;
 
@@ -347,6 +381,24 @@ function templateCorreo(d){
   `;
 }
 
+function templateCorreoImpovar(d){
+  const parrafo = (texto, padBottom) => `<tr><td style="padding:0 0 ${padBottom} 0;font-family:${UB};font-size:14px;line-height:150%;mso-line-height-rule:exactly;">${texto}</td></tr>`;
+
+  return `
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+    ${parrafo('Estimados (a)', '14px')}
+    ${parrafo('Adjunto OC correspondiente a proyecto', '10px')}
+  </table>
+
+  ${bloqueOC(quitarLineaDireccion(d.datosOC))}
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+    ${parrafo('A la brevedad se indicará cantidad y lugar de entrega de cañerías', '14px')}
+    ${parrafo('Atentamente', '0')}
+  </table>
+  `;
+}
+
 function render(){
   const d = {
     cliente: g('cliente'),
@@ -365,6 +417,9 @@ function render(){
     ? `${d.contratista} <${d.correoContratista}>`
     : `${d.contratista || '—'} (falta correo)`;
 
+  document.getElementById('emailContentImpovar').innerHTML = templateCorreoImpovar(d);
+  document.getElementById('metaAsuntoImpovar').textContent = `OC ${proyectoRef}`;
+
   const faltantes = [];
   if(!d.cliente) faltantes.push('Cliente / Proyecto');
   if(!d.correoContratista) faltantes.push('Correo del contratista (sin coincidencia en el listado)');
@@ -379,21 +434,22 @@ function render(){
   }
 }
 
-function outerHtmlCorreo(){
-  const el = document.getElementById('emailContent');
+function outerHtmlDe(elId){
+  const el = document.getElementById(elId);
   return `<table role="presentation" width="650" cellpadding="0" cellspacing="0" border="0" style="width:650px;font-family:${UB};font-size:14px;color:#000000;"><tr><td>${el.innerHTML}</td></tr></table>`;
 }
 
-function copiarHTML(){
-  const el = document.getElementById('emailContent');
-  const btn = document.getElementById('copyBtn');
-  const outerHtml = outerHtmlCorreo();
+function copiarHTMLDe(elId, btnId){
+  const el = document.getElementById(elId);
+  const btn = document.getElementById(btnId);
+  const outerHtml = outerHtmlDe(elId);
+  const textoOriginal = btn.textContent;
 
   const blob = new Blob([outerHtml], { type: 'text/html' });
   navigator.clipboard.write([new ClipboardItem({ 'text/html': blob })]).then(() => {
     btn.textContent = '✅ ¡Copiado! Pega en Outlook';
     btn.classList.add('success');
-    setTimeout(() => { btn.textContent = '📋 Copiar HTML'; btn.classList.remove('success'); }, 2500);
+    setTimeout(() => { btn.textContent = textoOriginal; btn.classList.remove('success'); }, 2500);
   }).catch(() => {
     const range = document.createRange();
     range.selectNode(el);
@@ -403,27 +459,33 @@ function copiarHTML(){
     window.getSelection().removeAllRanges();
     btn.textContent = '✅ Copiado — Ctrl+V en Outlook';
     btn.classList.add('success');
-    setTimeout(() => { btn.textContent = '📋 Copiar HTML'; btn.classList.remove('success'); }, 2500);
+    setTimeout(() => { btn.textContent = textoOriginal; btn.classList.remove('success'); }, 2500);
   });
 }
 
-function abrirEnOutlook(){
-  const btn = document.getElementById('outlookBtn');
-  const outerHtml = outerHtmlCorreo();
+function abrirEnOutlookDe(elId, btnId, para, mensajeExito){
+  const btn = document.getElementById(btnId);
+  const outerHtml = outerHtmlDe(elId);
   const blob = new Blob([outerHtml], { type: 'text/html' });
+  const textoOriginal = btn.textContent;
 
   navigator.clipboard.write([new ClipboardItem({ 'text/html': blob })]).catch(() => {}).then(() => {
-    const para = g('correoContratista');
-    const asunto = document.getElementById('metaAsunto').textContent.trim();
+    const asunto = document.getElementById(elId === 'emailContent' ? 'metaAsunto' : 'metaAsuntoImpovar').textContent.trim();
 
     const mailtoUrl = `mailto:${encodeURIComponent(para)}?subject=${encodeURIComponent(asunto)}`;
     window.location.href = mailtoUrl;
 
-    btn.textContent = '✅ ¡Outlook abierto! Pega el cuerpo (Ctrl+V)';
+    btn.textContent = mensajeExito;
     btn.classList.add('success');
-    setTimeout(() => { btn.textContent = '📨 Abrir en Outlook'; btn.classList.remove('success'); }, 4000);
+    setTimeout(() => { btn.textContent = textoOriginal; btn.classList.remove('success'); }, 5000);
   });
 }
+
+function copiarHTML(){ copiarHTMLDe('emailContent', 'copyBtn'); }
+function abrirEnOutlook(){ abrirEnOutlookDe('emailContent', 'outlookBtn', g('correoContratista'), '✅ ¡Outlook abierto! Pega el cuerpo (Ctrl+V)'); }
+
+function copiarHTMLImpovar(){ copiarHTMLDe('emailContentImpovar', 'copyBtnImpovar'); }
+function abrirEnOutlookImpovar(){ abrirEnOutlookDe('emailContentImpovar', 'outlookBtnImpovar', '', '✅ ¡Outlook abierto! Escribe "IMPOVAR" en Para y pega el cuerpo (Ctrl+V)'); }
 
 poblarDatalist();
 
