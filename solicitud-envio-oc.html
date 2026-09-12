@@ -190,6 +190,21 @@
       </div>
     </div>
 
+    <div class="panel">
+      <div class="panel-header manual">🟡 Copiar desde la OC</div>
+      <div class="panel-body">
+        <div class="field manual">
+          <label for="datosOC">Bloque de datos del proyecto</label>
+          <textarea id="datosOC" rows="6" oninput="render()" placeholder="PROYECTO RENOVA: 19588199
+CLIENTE: HERNAN OMAR ZUNIGA RODRIGUEZ
+DIRECCIÓN: Región VI - Rancagua, Comuna QUINTA DE TILCOCO, Calle ARGOMEDO, N° 24
+ITO: Daniel Villalobos Carrizo
+Grafo: 114529"></textarea>
+          <div class="hint">pega tal cual las líneas de PROYECTO RENOVA / CLIENTE / DIRECCIÓN / ITO / Grafo desde la OC — se muestran destacadas en el correo, una por línea</div>
+        </div>
+      </div>
+    </div>
+
     <div class="static-box" style="margin:1.25rem 0;">
       <b>Para:</b> correo del contratista (campo de arriba)<br>
       <b>De:</b> quien envíe el correo (no se define aquí)
@@ -269,6 +284,7 @@ const NARANJA_TEXTO = '#9A3E00';
 const AMARILLO_SUAVE = '#FFF6D9';
 const AMARILLO_SUAVE_ZEBRA = '#FFFCF0';
 const AMARILLO_BORDE = '#F3E3A8';
+const AMARILLO_DESTACADO = '#FFFF00';
 const AZUL_NOTA = '#DDEBFA';
 const AZUL_NOTA_ZEBRA = '#EAF3FC';
 const AZUL_NOTA_BORDE = '#C6DDF2';
@@ -281,20 +297,35 @@ function filaDatoOC(label, nota, zebra){
   const bgNota = zebra ? AZUL_NOTA_ZEBRA : AZUL_NOTA;
   return `<tr>
     <td width="30%" style="background:${NARANJA_SUAVE};border:1px solid ${NARANJA_SUAVE_BORDE};padding:11px 12px;font-family:${UB};font-size:13px;line-height:1.4;font-weight:700;color:${NARANJA_TEXTO};">${label}</td>
-    <td width="22%" style="background:${bgVacio};border:1px solid ${AMARILLO_BORDE};padding:11px 12px;">&nbsp;</td>
+    <td width="38%" style="background:${bgVacio};border:1px solid ${AMARILLO_BORDE};padding:11px 12px;">&nbsp;</td>
     <td style="background:${bgNota};border:1px solid ${AZUL_NOTA_BORDE};padding:11px 12px;font-family:${UB};font-size:12.5px;line-height:1.4;color:${AZUL_NOTA_TEXTO};">${nota}</td>
   </tr>`;
 }
 
-function templateCorreo(d){
-  const proyectoRef = d.numeroProyecto ? `${d.cliente || '[PROYECTO]'} - N° ${d.numeroProyecto}` : (d.cliente || '[PROYECTO]');
+function escapeHtml(s){
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
 
+// Bloque pegado desde la OC: se muestra tal cual, línea por línea, destacado en amarillo
+function bloqueOC(texto){
+  const lineas = String(texto || '').split('\n').map(l => l.trim()).filter(Boolean);
+  if(!lineas.length) return '';
+  const filas = lineas.map(l => `<tr><td style="padding:1px 0;font-family:${UB};font-size:14px;line-height:150%;"><span style="background:${AMARILLO_DESTACADO};">${escapeHtml(l)}</span></td></tr>`).join('');
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin-bottom:14px;">${filas}</table>`;
+}
+
+function templateCorreo(d){
   const parrafo = (texto, padBottom) => `<tr><td style="padding:0 0 ${padBottom} 0;font-family:${UB};font-size:14px;line-height:150%;mso-line-height-rule:exactly;">${texto}</td></tr>`;
 
   return `
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
     ${parrafo(`Estimado(a) ${d.contactoContratista || ''}`.trim(), '14px')}
-    ${parrafo(`Adjunto OC correspondiente a Proyecto <span style="color:${NARANJA_ABASTIBLE};font-weight:bold;">${proyectoRef}</span>.`, '10px')}
+    ${parrafo('Adjunto OC correspondiente', '10px')}
+  </table>
+
+  ${bloqueOC(d.datosOC)}
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
     ${parrafo('Favor completar/confirmar los siguientes datos:', '10px')}
   </table>
 
@@ -323,6 +354,7 @@ function render(){
     correoContratista: g('correoContratista'),
     contactoContratista: g('contactoContratista'),
     direccion: g('direccion'),
+    datosOC: g('datosOC'),
   };
 
   document.getElementById('emailContent').innerHTML = templateCorreo(d);
@@ -335,6 +367,7 @@ function render(){
   const faltantes = [];
   if(!d.cliente) faltantes.push('Cliente / Proyecto');
   if(!d.correoContratista) faltantes.push('Correo del contratista (sin coincidencia en el listado)');
+  if(!d.datosOC) faltantes.push('Bloque de datos del proyecto (copiar desde la OC)');
 
   const flag = document.getElementById('missingFlag');
   if(faltantes.length){
