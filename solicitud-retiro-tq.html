@@ -332,7 +332,7 @@
           </div>
           <div class="field manual">
             <label for="destPara">Para (correos separados por ;)</label>
-            <input type="text" id="destPara" value="luis.munozh@abastible.cl;transportes_lpc@hotmail.com" oninput="render()">
+            <input type="text" id="destPara" value="luis.munozh@abastible.cl;Luis Puentes <transportes_lpc@hotmail.com>" oninput="render()">
             <div class="hint">bodeguero/coordinador de retiro de la región — verifica antes de enviar</div>
           </div>
           <div class="field manual">
@@ -432,7 +432,7 @@ function fechaHoyDDMMYYYY(){
 // comuna: solo se define cuando una misma región tiene más de un bodeguero, para
 // desambiguar según la comuna indicada en el campo "Región / Comuna" (ej. X Los Lagos).
 const BODEGUEROS_TQ = [
-  { region: 'VII Maule', destNombre: 'Luis', destPara: 'luis.munozh@abastible.cl;transportes_lpc@hotmail.com', coordinaRetiro: 'Luis Puentes' },
+  { region: 'VII Maule', destNombre: 'Luis', destPara: 'luis.munozh@abastible.cl;Luis Puentes <transportes_lpc@hotmail.com>', coordinaRetiro: 'Luis Puentes' },
   { region: 'XIV Los Ríos', destNombre: 'Waldemar', destPara: 'waldemar.munoz@abastible.cl;carlos.herrera@serviciosch.cl', coordinaRetiro: 'Carlos Herrera', ccExtra: 'servicioschspa@gmail.com' },
   { region: 'X Los Lagos', comuna: 'Osorno', destNombre: 'Jose', destPara: 'Jose.Gutierrez@abastible.cl;Juan Sepulveda <newingchile@gmail.com>', coordinaRetiro: 'Juan Sepulveda' },
   { region: 'X Los Lagos', comuna: 'Puerto Montt', destNombre: 'Darlene', destPara: 'Darlene.Huenante@abastible.cl', coordinaRetiro: '' },
