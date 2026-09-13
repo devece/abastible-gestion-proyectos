@@ -20,8 +20,25 @@
     --blanco:     #FFFFFF;
     --radius:     8px;
     --sombra:     0 2px 12px rgba(0,20,137,0.10);
+    --color-valor-sugerido: #8A93A6;
+    --bg-valor-sugerido:    #F3F5FA;
+    --border-valor-sugerido:#C7CEE0;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  /* ─── Convención visual: "valor sugerido" vs. dato real confirmado ───────
+     .valor-sugerido marca un campo cuyo contenido es una propuesta de la app
+     (ej. la fecha de hoy), no un dato ya confirmado por el usuario. */
+  .valor-sugerido {
+    color: var(--color-valor-sugerido) !important;
+    font-style: italic;
+    background-color: var(--bg-valor-sugerido) !important;
+    border-color: var(--border-valor-sugerido) !important;
+  }
+  input::placeholder, textarea::placeholder {
+    color: var(--color-valor-sugerido);
+    font-style: italic;
+    opacity: 1;
+  }
   body {
     font-family: 'Ubuntu Sans', 'Ubuntu', Arial, sans-serif;
     background: var(--gris-bg);
@@ -600,7 +617,7 @@ const IMG_EP_FOOTER = "data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUN
         </div>
         <div class="field">
           <label>Medio de Contacto</label>
-          <select id="medioContacto">
+          <select id="medioContacto" class="valor-sugerido">
             <option value="WhatsApp" selected>WhatsApp</option>
             <option value="Teléfono">Teléfono</option>
             <option value="Correo electrónico">Correo electrónico</option>
@@ -726,6 +743,18 @@ const IMG_EP_FOOTER = "data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUN
 
 <script>
 function g(id) { return document.getElementById(id).value.trim(); }
+
+// ─── Convención visual "valor sugerido" ────────────────────────────────────
+// Un campo con .valor-sugerido muestra una propuesta de la app (ej. la fecha
+// de hoy), no un dato confirmado. Se retira sola en cuanto el usuario
+// interactúa con ese campo.
+function quitarMarcaSugerido(e) {
+  if (e.target && e.target.classList && e.target.classList.contains('valor-sugerido')) {
+    e.target.classList.remove('valor-sugerido');
+  }
+}
+document.addEventListener('input', quitarMarcaSugerido, true);
+document.addEventListener('change', quitarMarcaSugerido, true);
 
 // ─── VALIDACIÓN ANTIFANTASMA (evita enviar el proyecto de ejemplo "StarTrek") ──
 // Campos obligatorios del formulario (los marcados con * en la UI). fechaFin no
@@ -1042,6 +1071,8 @@ window.addEventListener('DOMContentLoaded', () => {
     const now = new Date();
     const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
     document.getElementById('fecha').value = `${now.getDate()} de ${meses[now.getMonth()]} de ${now.getFullYear()}`;
+    // Es una sugerencia (hoy), no un dato confirmado — se marca y se quita sola al editar.
+    document.getElementById('fecha').classList.add('valor-sugerido');
   }
 
   if (huboPrefill) {

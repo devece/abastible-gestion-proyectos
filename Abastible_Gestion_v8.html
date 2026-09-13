@@ -21,6 +21,22 @@
   --r:8px;--r2:12px;
   --sh:0 1px 4px rgba(0,20,137,.06),0 4px 16px rgba(0,20,137,.06);
   --sh-lg:0 8px 36px rgba(0,20,137,.14);
+  --color-valor-sugerido:#8A93A6;--bg-valor-sugerido:#F3F5FA;--border-valor-sugerido:#C7CEE0;
+}
+/* ─── Convención visual: "valor sugerido" vs. dato real confirmado ───────
+   .valor-sugerido marca un campo cuyo contenido es una propuesta de la app
+   (ej. "hoy" para una fecha aún no registrada), no un dato ya guardado.
+   Se agrega/quita por JS — ver quitarMarcaSugerido() más abajo. */
+.valor-sugerido{
+  color:var(--color-valor-sugerido) !important;
+  font-style:italic;
+  background-color:var(--bg-valor-sugerido) !important;
+  border-color:var(--border-valor-sugerido) !important;
+}
+input::placeholder,textarea::placeholder{
+  color:var(--color-valor-sugerido);
+  font-style:italic;
+  opacity:1;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
@@ -739,6 +755,18 @@ var SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 var sb=supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 var BD=[], FLT=[], PAG=1, PPP=50, SC='item', SA=true, CFI=null, DELCI=null, DELCK='', DELPI=null, DET_IDX=null;
 var CERT_POR_REGION={}, certManual=false;
+
+// ─── Convención visual "valor sugerido" ────────────────────────────────────
+// Cualquier campo con la clase .valor-sugerido muestra una propuesta de la app
+// (no un dato real confirmado). En cuanto el usuario interactúa con ese campo
+// (lo edita o lo cambia), se retira la marca automáticamente.
+function quitarMarcaSugerido(e){
+  if(e.target&&e.target.classList&&e.target.classList.contains('valor-sugerido')){
+    e.target.classList.remove('valor-sugerido');
+  }
+}
+document.addEventListener('input', quitarMarcaSugerido, true);
+document.addEventListener('change', quitarMarcaSugerido, true);
 
 // ─── LECTURA AUTOMÁTICA DE PLANILLA DE DATOS (PDF/OCR) ─────────────────────
 pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
@@ -2705,8 +2733,11 @@ function hF(idx, key, lbl, p, ico, sub, cer, botonExtra){
     h+='<div class="hval" style="color:#BDC5DC">—</div>';
   } else {
     // Modo registro: botón "ahora" + input manual
+    // La fecha de hoy se muestra como SUGERENCIA (.valor-sugerido), no como dato
+    // guardado: nada llega a Supabase hasta que el usuario confirme con "Guardar"
+    // o "📌 Ahora". Al recargar sin confirmar, isoLocal(ahora()) vuelve a ser hoy.
     h+='<div class="fecha-edit">';
-    h+='<input type="date" id="fi-'+idx+'-'+key+'" value="'+isoLocal(ahora())+'" title="Ajusta la fecha si es necesario">';
+    h+='<input type="date" class="valor-sugerido" id="fi-'+idx+'-'+key+'" value="'+isoLocal(ahora())+'" title="Sugerencia: hoy. Ajusta la fecha o confirma con Guardar / 📌 Ahora">';
     h+='<button class="fe-ok" onclick="saveFechaEdit('+idx+',\''+key+'\')">Guardar</button>';
     h+='<button class="fe-auto" onclick="mkF('+idx+',\''+key+'\',event)">📌 Ahora</button>';
     h+='</div>';
@@ -2888,9 +2919,15 @@ function abrirNuevo(){
     ns:'Daniel Villalobos',
     ni:'Daniel Villalobos'
   };
+  // nr/ntp/ncon son sugerencias editables (se marcan .valor-sugerido); ns/ni
+  // son el campo Supervisor/ITO fijo (readonly, problema de multiusuario aparte).
+  // Nota: ntp/ncon no tienen opción vacía neutra, así que su .value NUNCA es ''
+  // (el navegador ya preselecciona la primera opción) — por eso la marca se
+  // decide comparando contra el valor por defecto, no contra "vacío".
   Object.keys(defaults).forEach(function(id){
     var el=document.getElementById(id);
     if(el && !el.value) el.value=defaults[id];
+    if(el && id!=='ns' && id!=='ni' && el.value===defaults[id]) el.classList.add('valor-sugerido');
   });
   actualizarResumenNuevoProyecto();
   document.getElementById('nPdfInput').value='';
@@ -2948,6 +2985,7 @@ async function crearProyecto(){
     var creado=res.data; creado._id=String(creado.id);
     BD.push(creado);
     ['nc','ncl','nnp','nco','nd','ncoord','ni','nct','nj','nv','nce','np','nta','nca','ncs','nreg','nmed','nton','nrut','ncoe','ntel','no'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
+    ['nr','ntp','ncon'].forEach(function(id){ document.getElementById(id).classList.add('valor-sugerido'); });
     document.getElementById('nr').value='RM Metropolitana';
     document.getElementById('ntp').value='P01 Habitacional';
     document.getElementById('ncon').value='Inmediata';
