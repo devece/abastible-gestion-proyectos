@@ -51,7 +51,7 @@ footer{max-width:880px;margin:30px auto 0;padding:0 5vw;color:var(--muted);font-
 
 <header>
   <h1>Manual · Sistema de Gestión de Proyectos GLP</h1>
-  <p>Guía práctica de las tres herramientas y de todo lo que se agregó en 2026. Pensada para que cualquiera pueda usarlas sin depender de que otra persona explique cada función.</p>
+  <p>Guía práctica de las herramientas del sistema y de todo lo que se agregó en 2026. Pensada para que cualquiera pueda usarlas sin depender de que otra persona explique cada función.</p>
 </header>
 
 <nav class="toc">
@@ -60,6 +60,7 @@ footer{max-width:880px;margin:30px auto 0;padding:0 5vw;color:var(--muted);font-
   <a href="#nuevo">Crear un proyecto</a>
   <a href="#hitos">Marcar hitos</a>
   <a href="#wpep">Welcome Pack / End Pack</a>
+  <a href="#envio-oc">Solicitud de Envío de OC</a>
   <a href="#planilla-datos">Planilla de Datos (con lectura automática)</a>
   <a href="#dashboard">Dashboard</a>
   <a href="#tecnico">Notas técnicas</a>
@@ -69,15 +70,17 @@ footer{max-width:880px;margin:30px auto 0;padding:0 5vw;color:var(--muted);font-
 
 <section id="panorama">
   <h2>🗺️ Panorama general</h2>
-  <p class="sub">Son tres páginas separadas que comparten la misma base de datos.</p>
+  <p class="sub">La Planilla Maestra y la Planilla de Datos comparten la misma base de datos. Las demás son herramientas satélite que arman correos ya redactados a partir de los datos de un proyecto.</p>
   <table>
     <tr><th>Herramienta</th><th>Para qué sirve</th></tr>
     <tr><td><span class="badge">Abastible_Gestion_v8.html</span></td><td>La planilla maestra: lista de todos los proyectos, hitos, dashboard, alertas.</td></tr>
     <tr><td><span class="badge">planilla-datos.html</span></td><td>Formulario de antecedentes del cliente. Se puede llenar a mano o cargar el PDF que llega de comercial y se autocompleta.</td></tr>
     <tr><td><span class="badge">panel-wp-ep.html</span></td><td>Genera el correo de Welcome Pack (inicio) y End Pack (cierre), ya redactado y listo para pegar en Outlook.</td></tr>
+    <tr><td><span class="badge">solicitud-envio-oc.html</span></td><td>Genera el correo de envío de la Orden de Compra al contratista y a Impovar. Se puede subir la OC en PDF para autocompletar los datos del proyecto en vez de tipearlos.</td></tr>
   </table>
   <div class="tip"><strong>Todo se guarda en la misma base de datos (Supabase).</strong> Si dos personas abren la Planilla Maestra en computadores distintos, ambas ven los mismos proyectos — no hace falta enviarse archivos.</div>
-  <p>Desde dentro de la Planilla Maestra, arriba a la derecha del menú, hay accesos directos a las otras dos páginas y a este manual.</p>
+  <div class="tip"><strong>Convención de colores en los formularios:</strong> un campo con fondo celeste es un <em>valor sugerido</em> (viene de un dato de referencia, todavía sin confirmar); un campo con fondo durazno y un punto naranjo es un <em>valor real</em>, ya confirmado porque lo escribiste a mano o lo trajo una lectura automática (PDF, Listado de Contratistas, etc.). Ambos se pueden editar libremente.</div>
+  <p>Desde dentro de la Planilla Maestra, arriba a la derecha del menú, hay accesos directos a las otras páginas y a este manual.</p>
 </section>
 
 <section id="gestion">
@@ -88,6 +91,7 @@ footer{max-width:880px;margin:30px auto 0;padding:0 5vw;color:var(--muted);font-
     <li>El cuadro de búsqueda busca por código, cliente, región, contratista, ITO, supervisor, vendedor, comuna, tipo y <strong>jefe de instalaciones</strong>.</li>
     <li>Los desplegables filtran por Estado, Región, Supervisor y Tipo. Los chips de colores debajo del buscador son un atajo para filtrar por estado con un clic.</li>
     <li>La columna <strong>⚠</strong> marca en rojo los proyectos con la revisión de antecedentes vencida (más de 4 días sin validar).</li>
+    <li>La columna <strong>Próximo Hito</strong> muestra cuál es, en orden, el siguiente hito pendiente del proyecto (ej. "5/17 · Visita Previa") o <strong>✅ Completo</strong> si ya no queda ninguno. Salta automáticamente los hitos marcados <strong>"No aplica"</strong> — ver la sección "Marcar hitos". El filtro "Próximo Hito — todos" permite ver, por ejemplo, todos los proyectos que están esperando un hito puntual.</li>
   </ul>
   <h3>Colores de estado</h3>
   <p>Cada estado tiene un color de badge fijo (igual que en el Excel anterior) para reconocer de un vistazo en qué etapa va cada proyecto.</p>
@@ -112,6 +116,19 @@ footer{max-width:880px;margin:30px auto 0;padding:0 5vw;color:var(--muted);font-
     <li>Arriba del detalle hay dos indicadores: <strong>Tiempo total del proyecto</strong> y <strong>Días en liberación</strong> (desde que se asigna al coordinador hasta que se libera).</li>
     <li><strong>Cierre Forzado</strong> siempre pide escribir el motivo — queda guardado en las Observaciones del proyecto.</li>
   </ul>
+  <h3>Orden de los hitos</h3>
+  <p>Los 17 hitos principales del proyecto (desde Ingreso hasta Envío a Gestor Documental) tienen un orden lógico. Si intentas cargar una fecha fuera de ese orden:</p>
+  <ul>
+    <li>En los casos más críticos, el sistema <strong>bloquea el guardado</strong> y muestra por qué.</li>
+    <li>En casos más leves, pide <strong>confirmar</strong> antes de guardar igual (por si de verdad ocurrió así).</li>
+  </ul>
+  <h3>Hitos que no aplican al proyecto</h3>
+  <p>Cuando un hito de la cadena no corresponde a un proyecto en particular (por ejemplo, no necesita Revisión de Antecedentes), puedes marcarlo como <strong>"🚫 No aplica"</strong> en vez de dejarlo vacío para siempre.</p>
+  <ul>
+    <li>Un hito marcado "No aplica" queda excluido del orden: el sistema salta directo al siguiente hito real de la cadena al validar la secuencia, y no cuenta como pendiente.</li>
+    <li>Solo se puede marcar "No aplica" un hito que todavía no tiene fecha — si te equivocaste, primero borra la fecha.</li>
+    <li>Se puede desmarcar en cualquier momento ("quitar N/A"); el hito vuelve a quedar pendiente y a exigir su predecesor real, igual que antes de marcarlo.</li>
+  </ul>
   <div class="warn"><strong>No hay botón para eliminar proyectos ni hitos desde la app</strong> (a propósito, para evitar que un clic accidental borre datos reales). Si de verdad hay que borrar algo, hay que hacerlo desde el panel de Supabase.</div>
 </section>
 
@@ -122,6 +139,22 @@ footer{max-width:880px;margin:30px auto 0;padding:0 5vw;color:var(--muted);font-
   <div class="step"><div class="step-n">2</div><div>Revisa y completa lo que falte (el panel no tiene forma de saber, por ejemplo, el RUT del cliente si nunca se cargó en el proyecto).</div></div>
   <div class="step"><div class="step-n">3</div><div>Presiona <strong>"Copiar HTML"</strong> o <strong>"Abrir en Outlook"</strong> — este último copia el correo al portapapeles y abre Outlook con el destinatario y asunto ya puestos. Solo falta pegar (Ctrl+V) el cuerpo del correo.</div></div>
   <p>También se puede abrir directo (sin pasar por un proyecto) desde el acceso del menú principal, y llenar todo a mano — funciona igual que antes.</p>
+</section>
+
+<section id="envio-oc">
+  <h2>📨 Solicitud de Envío de OC</h2>
+  <p class="sub">Arma el correo de envío de la Orden de Compra (OC) al contratista y, por separado, a Impovar.</p>
+  <h3>Subir la OC (PDF) en vez de tipear los datos</h3>
+  <div class="step"><div class="step-n">1</div><div>Descarga la OC desde SAP en PDF (como se hace siempre) y súbela con el botón <strong>"📄 Subir OC (PDF)"</strong>, en el panel "Copiar desde la OC".</div></div>
+  <div class="step"><div class="step-n">2</div><div>El sistema lee la sección <strong>OBSERVACIONES</strong> de la OC (Proyecto Renova, Cliente, Dirección, ITO, Grafo) y el nombre del proveedor del encabezado, y autocompleta esos campos — incluyendo el <strong>Contratista</strong>, que además dispara la búsqueda de su correo en el Listado de Contratistas, igual que si lo hubieras tipeado a mano.</div></div>
+  <div class="step"><div class="step-n">3</div><div><strong>Revisa siempre antes de enviar</strong> — el aviso debajo del botón indica qué datos encontró y cuáles no; todos los campos quedan editables por si hay que corregir algo.</div></div>
+  <div class="tip">Si el PDF no tiene el formato esperado, o es una imagen escaneada sin texto, el formulario queda igual que si no hubieras subido nada — se puede completar a mano sin problema.</div>
+  <h3>Enviar los correos</h3>
+  <ul>
+    <li><strong>"📨 Abrir en Outlook"</strong> (contratista) y <strong>"📨 Abrir en Outlook (Impovar)"</strong> copian el cuerpo del correo y abren Outlook con el destinatario y asunto ya puestos — el destinatario de Impovar es fijo (Yaxelis Vargas), ya no hace falta escribir "IMPOVAR" a mano.</li>
+    <li>Solo falta pegar el cuerpo (Ctrl+V) en Outlook.</li>
+  </ul>
+  <div class="warn"><strong>El PDF de la OC se sigue adjuntando a mano en Outlook.</strong> Un enlace de correo (mailto) nunca puede llevar archivos adjuntos — es una restricción del navegador, no del sistema. El aviso de éxito te recuerda el nombre del archivo que subiste, para que no te olvides de adjuntarlo.</div>
 </section>
 
 <section id="planilla-datos">
@@ -149,6 +182,7 @@ footer{max-width:880px;margin:30px auto 0;padding:0 5vw;color:var(--muted);font-
     <li>Distribución por Tipo, Región y Estado (estos últimos con los mismos colores que las badges de la tabla).</li>
     <li>Proyectos por Supervisor, en un gráfico de dona.</li>
     <li><strong>Toneladas Gestionadas</strong> — suma de las toneladas estimadas de todos los proyectos (requiere que ese dato se haya cargado al crear el proyecto).</li>
+    <li><strong>🧭 Próximo Hito</strong> — cuántos proyectos están esperando cada uno de los 17 hitos, más una barra de "Completo". Sirve para ver de un vistazo dónde se concentran los proyectos en este momento.</li>
   </ul>
 </section>
 
@@ -159,12 +193,12 @@ footer{max-width:880px;margin:30px auto 0;padding:0 5vw;color:var(--muted);font-
   <h3>Respaldo</h3>
   <p>El botón "Exportar" (arriba a la derecha en Gestión de Proyectos) descarga un CSV o un respaldo completo en JSON. Sirve como copia de seguridad manual, aunque los datos ya viven en una base de datos real (Supabase), no en el navegador.</p>
   <h3>Si algo no carga</h3>
-  <p>Las tres páginas necesitan internet (se conectan a la base de datos en Supabase). Si aparece un aviso de "No se pudo conectar a la base de datos", revisa la conexión y recarga la página.</p>
+  <p>Todas estas páginas necesitan internet (para conectarse a la base de datos en Supabase, o para cargar las librerías de lectura de PDF). Si aparece un aviso de "No se pudo conectar a la base de datos", revisa la conexión y recarga la página.</p>
 </section>
 
 </main>
 
-<footer>Manual escrito en agosto de 2026 · Sistema de Gestión de Proyectos GLP · Abastible</footer>
+<footer>Manual escrito en agosto de 2026 · última actualización septiembre de 2026 · Sistema de Gestión de Proyectos GLP · Abastible</footer>
 
 </body>
 </html>
