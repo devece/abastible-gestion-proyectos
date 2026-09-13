@@ -183,6 +183,11 @@ tbody td:first-child{padding-left:20px}
 .hright{display:flex;align-items:center;gap:8px;flex-shrink:0}
 .hval{font-size:14px;white-space:nowrap;font-family:var(--mono)}
 .hval.hf{color:var(--navy);font-weight:700}.hval.hok{color:#059669;font-weight:800;font-size:15px;font-family:var(--sans)}
+/* N/A · No aplica: distinto tanto de "con fecha" (navy/verde) como de "vacío"
+   (gris claro "—") — gris-azulado medio, sin cursiva (es un estado deliberado,
+   no una sugerencia sin confirmar como .valor-sugerido). */
+.hval.hna{color:#6B7A9E;font-weight:700;font-size:13.5px;font-family:var(--sans)}
+.hito.hito-na{opacity:.82}
 
 /* FECHA EDITABLE */
 .fecha-edit{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
@@ -198,6 +203,8 @@ tbody td:first-child{padding-left:20px}
 .hb-ok{background:#059669;color:#fff}.hb-ok:hover{background:#047857}
 .hb-del{background:transparent;color:#C0304A;border:1px solid #F1C6CE;padding:6px 9px}.hb-del:hover{background:#FDEAEE}
 .hb-done{background:#EEF0F8;color:#9AAABE;cursor:default;font-size:13.5px}
+.hb-na{background:transparent;color:#6B7A9E;border:1.5px solid #C8D0E8;border-radius:6px;padding:5px 10px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:var(--sans)}
+.hb-na:hover{background:#EEF1FA}
 
 .pgrid{display:flex;gap:10px;padding:12px 16px;flex-wrap:wrap}
 .pcard{flex:1;min-width:88px;border:2px solid var(--line);border-radius:var(--r);padding:11px 8px;text-align:center;cursor:pointer;transition:all .15s;background:var(--panel)}
@@ -376,6 +383,27 @@ tbody td:first-child{padding-left:20px}
     <select class="fi" id="fi-cont" onchange="filtrar()">
       <option value="">Contratista — todos</option>
     </select>
+    <select class="fi" id="fi-prox" onchange="filtrar()">
+      <option value="">Próximo Hito — todos</option>
+      <option value="f_v_validar">1/17 · Ingreso</option>
+      <option value="f_v_respondido">2/17 · Validación</option>
+      <option value="f_v_coord">3/17 · Asignación</option>
+      <option value="f_rev_ant">4/17 · Revisión</option>
+      <option value="f_visita">5/17 · Visita Previa</option>
+      <option value="f_liberar">6/17 · Envío a Liberar</option>
+      <option value="f_liberado">7/17 · Liberado</option>
+      <option value="f_ut">8/17 · Crear UT</option>
+      <option value="f_pedir_grafo">9/17 · Pedir Liberar Grafo</option>
+      <option value="f_oc">10/17 · Envío OC</option>
+      <option value="f_trabajos">11/17 · Inicio Trabajos</option>
+      <option value="f_despacho_tq">12/17 · Despacho Tanque y Equipos</option>
+      <option value="f_tc8">13/17 · Envío TC8</option>
+      <option value="f_montaje">14/17 · Montaje TK</option>
+      <option value="f_ampliacion">15/17 · Ampliar Cliente</option>
+      <option value="f_termino_ejecucion">16/17 · Término Trabajos</option>
+      <option value="f_gestor">17/17 · Envío a Gestor Documental</option>
+      <option value="COMPLETO">✅ Completo</option>
+    </select>
     <button class="btn-clear" onclick="limpiar()">✕ Limpiar</button>
     <span class="fi-count" id="fi-count">—</span>
   </div>
@@ -394,6 +422,7 @@ tbody td:first-child{padding-left:20px}
         <th onclick="ord('contratista')">Contratista <span class="si">↕</span></th>
         <th>Tipo</th>
         <th title="Progreso hitos">Progreso</th>
+        <th onclick="ord('proximo_hito')" title="Primer hito de la secuencia (CADENA_HITOS) posterior al último con fecha cargada, salteando los marcados N/A">Próximo Hito <span class="si">↕</span></th>
         <th onclick="ord('_d')">Días <span class="si">↕</span></th>
         <th>⚠</th>
       </tr></thead>
@@ -427,6 +456,10 @@ tbody td:first-child{padding-left:20px}
     <div class="card-panel dash-full">
       <div class="section-title">📈 Proyectos ingresados por mes &nbsp;<span style="font-weight:500;color:var(--muted);font-size:13px;text-transform:none;letter-spacing:0">(últimos 12 meses, según fecha de ingreso)</span></div>
       <div id="chart-tendencia" class="trend-wrap"></div>
+    </div>
+    <div class="card-panel dash-full">
+      <div class="section-title">🧭 Próximo Hito &nbsp;<span style="font-weight:500;color:var(--muted);font-size:13px;text-transform:none;letter-spacing:0">(CADENA_HITOS, en orden — cuántos proyectos tienen cada uno como próximo paso)</span></div>
+      <div id="chart-proximo-hito"></div>
     </div>
     <div class="dash-2col">
       <div class="card-panel">
@@ -2368,7 +2401,8 @@ function paramsFiltroActual(){
     p_etapa: (!hitoSel && etapaSel!=='') ? Number(etapaSel) : null,
     p_hito: hitoSel||null,
     p_orden_col: SC,
-    p_orden_asc: SA
+    p_orden_asc: SA,
+    p_proximo_hito: document.getElementById('fi-prox').value||null
   };
 }
 // Búsqueda de texto con debounce (evita una consulta por tecla); el resto de
@@ -2476,7 +2510,7 @@ function setHitoChip(el){
   filtrar();
 }
 function limpiar(){
-  ['fi-q','fi-etapa','fi-hito','fi-reg','fi-sup','fi-tip','fi-cont'].forEach(function(id){document.getElementById(id).value='';});
+  ['fi-q','fi-etapa','fi-hito','fi-reg','fi-sup','fi-tip','fi-cont','fi-prox'].forEach(function(id){document.getElementById(id).value='';});
   document.querySelectorAll('#etapa-chips .chip').forEach(function(c){c.classList.remove('on');});
   document.querySelector('#etapa-chips .chip[data-e=""]').classList.add('on');
   poblarHitoChips('');
@@ -2494,6 +2528,10 @@ function renderTabla(){
     var pctProg=porcentajeProgreso(p), colorProg=p.status==='8. Cierre Forzado'?'var(--muted)':colorProgreso(pctProg);
     var dots=keys.map(function(v){var lleno=v&&v!=='null';return '<span class="dot"'+(lleno?' style="background:'+colorProg+';border-color:'+colorProg+'"':'')+'></span>';}).join('');
     var tc=esc(p.tipo||'')||'—';
+    // Próximo Hito viene calculado por el RPC (CADENA_HITOS + N/A, PR de "No aplica")
+    // — sistema distinto de porcentajeProgreso()/HITOS_DEF de arriba, que no se toca.
+    var proxCompleto=p.proximo_hito_pos===null||p.proximo_hito_pos===undefined;
+    var proxLbl=proxCompleto?'Completo':((p.proximo_hito_pos+1)+'/'+CADENA_HITOS.length+' · '+(CADENA_HITOS[p.proximo_hito_pos]?CADENA_HITOS[p.proximo_hito_pos].label:p.proximo_hito_key));
     html+='<tr class="'+(ven?'ven':'')+'" onclick="abrirDet(\''+esc(p._id)+'\')">';
     html+='<td class="td-n">'+p.item+'</td>';
     html+='<td class="td-cod">'+esc(p.codigo||'—')+'</td>';
@@ -2505,6 +2543,7 @@ function renderTabla(){
     html+='<td style="color:#3D4A6B">'+esc(p.contratista||'—')+'</td>';
     html+='<td style="font-size:13.5px;color:#6B7A9E">'+tc+'</td>';
     html+='<td title="'+pctProg+'% de avance ponderado"><div class="progreso-cell"><div class="dots">'+dots+'</div><span class="progreso-pct" style="color:'+colorProg+'">'+pctProg+'%</span></div></td>';
+    html+='<td style="font-size:13px;white-space:nowrap;'+(proxCompleto?'color:#059669;font-weight:700':'color:#3D4A6B')+'">'+esc(proxLbl)+'</td>';
     html+='<td>'+(p._d?mkDias(p._d):'—')+'</td>';
     html+='<td>'+(ven?'<span title="Requiere atención">⚠️</span>':'')+'</td>';
     html+='</tr>';
@@ -2752,11 +2791,19 @@ function saveCampoEdit(idx,key){
 // ─── HITO FECHA EDITABLE ──────────────────────────────────────────────────
 function hF(idx, key, lbl, p, ico, sub, cer, botonExtra){
   var v=p[key], ok=v&&v!=='null'&&v!=='None'&&v!=='N/A';
-  var h='<div class="hito"><div class="hico">'+ico+'</div>';
+  // esCadena: solo los hitos de CADENA_HITOS (PR #73) tienen estado N/A — otros
+  // hF() como f_retiro_materiales (se marca solo, no es parte de la secuencia
+  // validada) no ofrecen esta opción.
+  var esCadena=CADENA_POS[key]!==undefined;
+  var na=esCadena&&esHitoNA(p,key);
+  var h='<div class="hito'+(na?' hito-na':'')+'"><div class="hico">'+ico+'</div>';
   h+='<div class="hlbl">'+lbl+(sub?'<small>'+sub+'</small>':'')+'</div>';
   h+='<div class="hright">';
-  if(botonExtra&&!cer)h+=botonExtra;
-  if(ok){
+  if(botonExtra&&!cer&&!na)h+=botonExtra;
+  if(na){
+    h+='<div class="hval hna" title="Este hito no aplica a este proyecto">🚫 N/A · No aplica</div>';
+    if(!cer)h+='<button class="hbtn hb-del" onclick="desmarcarHitoNA('+idx+',\''+key+'\')" title="Quitar la marca N/A (vuelve a quedar pendiente)">✕</button>';
+  } else if(ok){
     // Muestra fecha + input editable + botón guardar
     // fueraSec: el usuario ya confirmó guardar esto pese a una advertencia blanda
     // (hito anterior vacío, o excepción Inicio Trabajos/Envío OC) — se reutiliza
@@ -2784,6 +2831,7 @@ function hF(idx, key, lbl, p, ico, sub, cer, botonExtra){
     h+='<input type="date" id="fi-'+idx+'-'+key+'" title="Sin fecha registrada — ajusta manualmente o confirma con 📌 Ahora">';
     h+='<button class="fe-ok" onclick="saveFechaEdit('+idx+',\''+key+'\')">Guardar</button>';
     h+='<button class="fe-auto" onclick="mkF('+idx+',\''+key+'\',event)">📌 Ahora</button>';
+    if(esCadena)h+='<button class="hb-na" onclick="marcarHitoNA('+idx+',\''+key+'\')" title="Este proyecto no pasa por este hito">🚫 No aplica</button>';
     h+='</div>';
   }
   h+='</div></div>';
@@ -2895,6 +2943,29 @@ var CADENA_HITOS=[
 var CADENA_POS={};
 CADENA_HITOS.forEach(function(h,i){CADENA_POS[h.key]=i;});
 
+// ─── Estado "N/A · No aplica" por hito (por proyecto) ──────────────────────
+// p.hitos_na es un array de keys de CADENA_HITOS que NO aplican a este proyecto
+// en particular (ver columna hitos_na, jsonb). Un hito N/A nunca tiene fecha a
+// la vez (se bloquea en ambos sentidos, ver más abajo), así que para el resto
+// del motor de validación un hito N/A se trata como si no formara parte de la
+// secuencia de ESTE proyecto: se salta al buscar el vecino anterior/siguiente
+// aplicable, en vez de tratarlo como "vacío/pendiente".
+function esHitoNA(p, key){
+  return !!(p && Array.isArray(p.hitos_na) && p.hitos_na.indexOf(key)>=0);
+}
+function nodoPrevAplicable(p, pos){
+  for(var i=pos-1;i>=0;i--){
+    if(!esHitoNA(p, CADENA_HITOS[i].key))return CADENA_HITOS[i];
+  }
+  return null;
+}
+function nodoNextAplicable(p, pos){
+  for(var i=pos+1;i<CADENA_HITOS.length;i++){
+    if(!esHitoNA(p, CADENA_HITOS[i].key))return CADENA_HITOS[i];
+  }
+  return null;
+}
+
 // Evalúa guardar key=fechaISO (string ISO, el mismo formato que ya usan
 // nowForDB()/fromDtLocal()) sobre el proyecto p. No muta nada — solo devuelve
 // el veredicto para que quien llama decida si bloquea, pide confirmación o
@@ -2903,10 +2974,15 @@ function validarSecuenciaHito(p, key, fechaISO){
   var pos=CADENA_POS[key];
   var fv=fechaISO?new Date(String(fechaISO).replace(' ','T')):null;
   if(pos===undefined||!fv||isNaN(fv.getTime()))return {tipo:'ok'};
+  if(esHitoNA(p,key)){
+    return {tipo:'dura', mensaje:'🚫 No se puede guardar: este hito está marcado "N/A · No aplica".\nQuita esa marca antes de cargarle una fecha.'};
+  }
   var nodo=CADENA_HITOS[pos];
   // sinPredecesor: este nodo no valida contra el anterior (relación sacada
-  // a pedido del usuario para un par puntual — ver CADENA_HITOS).
-  var prev=nodo.sinPredecesor?null:CADENA_HITOS[pos-1];
+  // a pedido del usuario para un par puntual — ver CADENA_HITOS). Cuando sí
+  // valida, lo hace contra el vecino aplicable (salteando los marcados N/A
+  // para este proyecto), no necesariamente el inmediato en CADENA_HITOS.
+  var prev=nodo.sinPredecesor?null:nodoPrevAplicable(p,pos);
   if(prev){
     var vPrev=p[prev.key];
     if(tieneFecha(vPrev)){
@@ -2921,10 +2997,10 @@ function validarSecuenciaHito(p, key, fechaISO){
       return {tipo:'blanda', mensaje:'⚠️ Vas a registrar "'+nodo.label+'", pero el hito anterior de la secuencia, "'+prev.label+'", todavía no tiene fecha.\n\n¿Confirmas que quieres guardarlo igual? (por ejemplo, porque el registro administrativo se atrasó respecto al trabajo real)'};
     }
   }
-  // Igual que arriba pero mirando hacia adelante: si el vecino siguiente no
-  // valida contra su anterior (sinPredecesor), tampoco hay nada que chequear
-  // en esta dirección — es la misma relación, sacada por completo.
-  var next=CADENA_HITOS[pos+1];
+  // Igual que arriba pero mirando hacia adelante: si el vecino aplicable
+  // siguiente no valida contra su anterior (sinPredecesor), tampoco hay nada
+  // que chequear en esta dirección — es la misma relación, sacada por completo.
+  var next=nodoNextAplicable(p,pos);
   if(next&&next.sinPredecesor)next=null;
   if(next){
     var vNext=p[next.key];
@@ -2942,21 +3018,51 @@ function validarSecuenciaHito(p, key, fechaISO){
 }
 
 // Para pintar (no para bloquear): true si el hito YA guardado quedó fuera de la
-// secuencia esperada — su vecino anterior sigue vacío, o la excepción blanda de
-// Inicio Trabajos/Envío OC quedó cruzada. Se recalcula en cada render: si el
-// hito salteado se completa después, la marca desaparece sola.
+// secuencia esperada — su vecino anterior aplicable sigue vacío, o la excepción
+// blanda de Inicio Trabajos/Envío OC quedó cruzada. Se recalcula en cada render:
+// si el hito salteado se completa después, la marca desaparece sola. Un hito
+// marcado N/A nunca puede estar "fuera de secuencia" (no tiene fecha).
 function hitoFueraDeSecuencia(p, key){
   var pos=CADENA_POS[key];
   if(pos===undefined)return false;
   var v=p[key];
   if(!tieneFecha(v))return false;
   var nodo=CADENA_HITOS[pos];
-  var prev=nodo.sinPredecesor?null:CADENA_HITOS[pos-1];
+  var prev=nodo.sinPredecesor?null:nodoPrevAplicable(p,pos);
   if(!prev)return false;
   var vPrev=p[prev.key];
   if(!tieneFecha(vPrev))return true;
   var fv=new Date(String(v).replace(' ','T')), fPrev=new Date(String(vPrev).replace(' ','T'));
   return fv<fPrev && !!CADENA_HITOS[pos].excepcionBlanda;
+}
+
+// Marca/desmarca un hito de CADENA_HITOS como "N/A · No aplica" para este
+// proyecto. Simétrico al bloqueo de validarSecuenciaHito(): no se puede marcar
+// N/A un hito que ya tiene una fecha real cargada (hay que borrarla primero).
+function marcarHitoNA(idx,key){
+  var p=BD[idx];
+  if(!p)return;
+  if(tieneFecha(p[key])){
+    toast('⚠️ Este hito ya tiene una fecha cargada — bórrala antes de marcarlo "No aplica".','warn');
+    return;
+  }
+  var actuales=Array.isArray(p.hitos_na)?p.hitos_na.slice():[];
+  if(actuales.indexOf(key)<0)actuales.push(key);
+  p.hitos_na=actuales;
+  guardar(idx).then(filtrar);
+  toast('🚫 Marcado como "No aplica"','ok');
+  setTimeout(function(){abrirDet(p._id);},60);
+}
+function desmarcarHitoNA(idx,key){
+  var p=BD[idx];
+  if(!p)return;
+  var actuales=Array.isArray(p.hitos_na)?p.hitos_na.slice():[];
+  var i=actuales.indexOf(key);
+  if(i>=0)actuales.splice(i,1);
+  p.hitos_na=actuales;
+  guardar(idx).then(filtrar);
+  toast('↩️ Se quitó la marca "No aplica" — pendiente de nuevo','ok');
+  setTimeout(function(){abrirDet(p._id);},60);
 }
 
 // Mismo criterio que hitoFueraDeSecuencia pero para los Estados de Pago
@@ -2966,6 +3072,32 @@ function pagoFueraDeSecuencia(p, key){
   var i=PK.indexOf(key);
   if(i<=0)return false;
   return p[key]==='OK' && p[PK[i-1]]!=='OK';
+}
+
+// ─── PRÓXIMO HITO ───────────────────────────────────────────────────────────
+// Definición (acordada, no una entre varias alternativas): recorre CADENA_HITOS
+// y ubica la posición MÁS ALTA con fecha cargada ("último hito con fecha" — no
+// necesariamente el primero vacío, si algún hito se cargó fuera de orden). El
+// "próximo hito" es el primer hito aplicable (no N/A) posterior a esa posición.
+// Si ningún hito tiene fecha, el próximo es el primer hito aplicable de toda la
+// cadena. Si no queda ningún hito aplicable después del último cargado (o la
+// cadena entera ya está completa), no hay próximo — el proyecto está "Completo".
+// Devuelve la POSICIÓN (0..16) del próximo hito, o null si está completo.
+function proximoHitoPos(p){
+  var lastPos=-1;
+  for(var i=0;i<CADENA_HITOS.length;i++){
+    if(tieneFecha(p[CADENA_HITOS[i].key]))lastPos=i;
+  }
+  for(var j=lastPos+1;j<CADENA_HITOS.length;j++){
+    if(!esHitoNA(p,CADENA_HITOS[j].key))return j;
+  }
+  return null;
+}
+// Etiqueta lista para mostrar: "n/17 · Nombre del Hito" o "Completo".
+function proximoHitoLabel(p){
+  var pos=proximoHitoPos(p);
+  if(pos===null)return 'Completo';
+  return (pos+1)+'/'+CADENA_HITOS.length+' · '+CADENA_HITOS[pos].label;
 }
 
 // ─── ACCIONES HITOS ───────────────────────────────────────────────────────
@@ -3213,6 +3345,22 @@ function renderDash(){
   BD.forEach(function(p){if(p.region)regs[p.region]=(regs[p.region]||0)+1;});
   var regArr=Object.entries(regs).sort(function(a,b){return b[1]-a[1];});
   barChart('chart-regiones',regArr,regArr.length?regArr[0][1]:1,function(){return 'var(--brand)';});
+
+  // Próximo Hito — CADENA_HITOS + N/A (este PR), sistema DISTINTO de HITOS_DEF/
+  // porcentajeProgreso de más arriba. En orden de secuencia (no por conteo, a
+  // diferencia de los otros gráficos de esta pantalla), para que se lea como
+  // un embudo: "Completo" siempre al final.
+  var proxCounts=CADENA_HITOS.map(function(){return 0;});
+  var proxCompletoCount=0;
+  BD.forEach(function(p){
+    var pos=proximoHitoPos(p);
+    if(pos===null)proxCompletoCount++;
+    else proxCounts[pos]++;
+  });
+  var proxArr=CADENA_HITOS.map(function(h,i){return [h.key,proxCounts[i],(i+1)+'/'+CADENA_HITOS.length+' · '+h.label];});
+  proxArr.push(['completo',proxCompletoCount,'✅ Completo']);
+  var proxMax=Math.max.apply(null,proxArr.map(function(e){return e[1];}))||1;
+  barChart('chart-proximo-hito',proxArr,proxMax,function(e){return e[0]==='completo'?'#059669':'#0891B2';});
 
   // Estados — SMAP_COLOR definido arriba junto a SMAP
   var ests={};
