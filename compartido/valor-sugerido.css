@@ -26,3 +26,47 @@ input::placeholder,textarea::placeholder{
   font-style:italic;
   opacity:1;
 }
+
+/* ─── Convención visual "valor real / confirmado" ───────────────────────────
+   Contraparte de .valor-sugerido: marca un campo cuyo contenido es un dato
+   real ya cargado/confirmado (desde Supabase o ingresado y guardado por la
+   persona), a diferencia de .valor-sugerido (propuesta sin confirmar) y del
+   estilo normal sin marcar (vacío/pendiente). El texto queda con la
+   tipografía normal (no cursiva) porque el dato es serio, no una sugerencia.
+   Un campo nunca debería tener .valor-real y .valor-sugerido a la vez.
+   No se usa en: campos que ya tienen su propio lenguaje visual de "completo"
+   (el ✅ verde de hOK()/.pcard.pok en Abastible_Gestion_v8.html, y el panel
+   verde "auto" — datos de la ficha — de las páginas solicitud-*.html), para
+   no competir con esos colores; ni en la tabla principal (saturaría casi
+   todas las celdas, ver detalle en el PR). */
+.valor-real{
+  background:#FDF2E9 !important;
+  border-color:#F0CBA0 !important;
+  border-radius:6px;
+}
+/* Los <span> de solo lectura (fichas/detalle) no tienen padding propio — se lo
+   suma acá para que el fondo no quede pegado al texto y haya lugar para el
+   punto de acento. Los <input>/<select> no se tocan: ya traen su propio
+   padding y no hace falta cambiarlo. */
+span.valor-real{display:inline-block;padding:3px 22px 3px 8px}
+/* Envoltorio position:relative para el punto de acento — necesario porque los
+   ::after no se dibujan de forma confiable dentro de <input>/<select>, así que
+   ahí se envuelve el campo en un <div class="campo-real"> aparte; en los <span>
+   (que sí soportan ::after) .valor-real y .campo-real van en el mismo elemento.
+   panel-wp-ep.html marca/desmarca el campo de forma reactiva (mientras la
+   persona escribe) y ahí el punto es un <span class="campo-real-dot"> real,
+   agregado/quitado por JS junto con .valor-real — así no hace falta que el
+   navegador soporte :has() para saber si el campo adentro está marcado. */
+.campo-real{position:relative}
+.campo-real::after{content:''}
+.campo-real::after,.campo-real-dot{
+  position:absolute;
+  top:50%;
+  right:6px;
+  transform:translateY(-50%);
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:#E77C22;
+  pointer-events:none;
+}
