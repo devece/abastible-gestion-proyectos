@@ -177,8 +177,6 @@ tbody td:first-child{padding-left:20px}
 .inf span.nd{color:#BDC5DC;font-weight:400;font-style:italic;font-size:14px}
 .inf-e input,.inf-e select{border:1.5px solid var(--line2);border-radius:6px;padding:5px 8px;font-size:14.5px;font-weight:600;font-family:var(--sans);color:var(--ink);outline:none;width:100%;box-sizing:border-box;transition:border-color .15s}
 .inf-e input:focus,.inf-e select:focus{border-color:var(--navy)}
-.btn-del-row{background:transparent;border:none;cursor:pointer;font-size:16px;padding:5px 8px;border-radius:6px;line-height:1;transition:background .15s}
-.btn-del-row:hover{background:#FEE2E2}
 .etapas{display:flex;flex-direction:column;gap:12px}
 .etapa{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:0 1px 3px rgba(0,20,137,.04)}
 .ehdr{padding:9px 16px;display:flex;align-items:center;gap:9px;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--line)}
@@ -408,7 +406,6 @@ tbody td:first-child{padding-left:20px}
         <th title="Progreso hitos">Progreso</th>
         <th onclick="ord('_d')">Días <span class="si">↕</span></th>
         <th>⚠</th>
-        <th>Acciones</th>
       </tr></thead>
       <tbody id="tbody"></tbody>
     </table>
@@ -667,24 +664,6 @@ tbody td:first-child{padding-left:20px}
   </div>
 </div>
 
-<!-- MODAL ELIMINAR PROYECTO -->
-<div class="ov" id="ov-delp">
-  <div class="modal modal-sm">
-    <div class="mhdr mhdr-red">
-      <div><h2>🗑 Eliminar Proyecto</h2><div class="msub" id="delp-sub">Acción permanente</div></div>
-      <button class="mx" onclick="closeOv('ov-delp')">✕</button>
-    </div>
-    <div class="mbody">
-      <div class="alerta al-r" style="margin-bottom:14px">⚠️ &nbsp;Se eliminará el proyecto completo de la base de datos, junto con todos sus hitos y cargas registradas. Esta acción NO se puede deshacer.</div>
-      <div class="fg"><label>Escribe el código del proyecto para confirmar</label><input id="delp-input" placeholder="Código del proyecto" autocomplete="off"></div>
-    </div>
-    <div class="mfoot">
-      <button class="btn btn-ghost" onclick="closeOv('ov-delp')">Cancelar</button>
-      <button class="btn btn-red" id="btn-delp" disabled>🗑 &nbsp;Confirmar Eliminación</button>
-    </div>
-  </div>
-</div>
-
 <!-- MODAL CIERRE FORZADO -->
 <div class="ov" id="ov-cf">
   <div class="modal modal-sm">
@@ -753,7 +732,7 @@ tbody td:first-child{padding-left:20px}
 var SUPABASE_URL='https://aocbetucqvgxxjopjbjm.supabase.co';
 var SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvY2JldHVjcXZneHhqb3BqYmptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxMzI1ODEsImV4cCI6MjEwMTcwODU4MX0.QfsInd_7iyeUHInGEMMSzLUh_FILaG4QPVn9pC8RByI';
 var sb=supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-var BD=[], FLT=[], PAG=1, PPP=50, SC='item', SA=true, CFI=null, DELCI=null, DELCK='', DELPI=null, DET_IDX=null;
+var BD=[], FLT=[], PAG=1, PPP=50, SC='item', SA=true, CFI=null, DELCI=null, DELCK='', DET_IDX=null;
 var CERT_POR_REGION={}, certManual=false;
 
 // ─── Convención visual "valor sugerido" ────────────────────────────────────
@@ -1748,11 +1727,6 @@ document.addEventListener('DOMContentLoaded', async function() {
   document.getElementById('btn-crear').addEventListener('click', crearProyecto);
   document.getElementById('btn-cf').addEventListener('click', okForzado);
   document.getElementById('btn-delc').addEventListener('click', okDelCarga);
-  document.getElementById('btn-delp').addEventListener('click', okDelProy);
-  document.getElementById('delp-input').addEventListener('input', function(){
-    var ok=DELPI!==null&&BD[DELPI]&&this.value.trim()===String(BD[DELPI].codigo||'').trim();
-    document.getElementById('btn-delp').disabled=!ok;
-  });
   document.getElementById('btn-dito').addEventListener('click', okDevITO);
   document.getElementById('nr').addEventListener('change', function(){ sugerirCertificador(); sugerirJefeInstalaciones(); actualizarResumenNuevoProyecto(); });
   document.getElementById('nct').addEventListener('input', sugerirCertificador);
@@ -2491,7 +2465,6 @@ function renderTabla(){
     html+='<td title="'+pctProg+'% de avance ponderado"><div class="progreso-cell"><div class="dots">'+dots+'</div><span class="progreso-pct" style="color:'+colorProg+'">'+pctProg+'%</span></div></td>';
     html+='<td>'+(p._d?mkDias(p._d):'—')+'</td>';
     html+='<td>'+(ven?'<span title="Requiere atención">⚠️</span>':'')+'</td>';
-    html+='<td><button class="btn-del-row" title="Eliminar proyecto" onclick="event.stopPropagation();abrirDelProy(\''+esc(p._id)+'\')">🗑️</button></td>';
     html+='</tr>';
   });
   document.getElementById('tbody').innerHTML=html;
@@ -2831,37 +2804,16 @@ function okDelCarga(){
   BD[DELCI][DELCK]=null;autoStatus(BD[DELCI]);guardar(DELCI);filtrar();closeOv('ov-delc');toast('🗑 Carga eliminada','ok');
   setTimeout(function(){abrirDet(BD[DELCI]._id);},60);
 }
-function abrirDelProy(id){
-  var idx=BD.findIndex(function(p){return p._id===id;});
-  if(idx<0)return;
-  DELPI=idx;
-  var p=BD[idx];
-  document.getElementById('delp-sub').textContent=(p.codigo||'—')+' · '+(p.cliente||'—')+' · Acción permanente';
-  var inp=document.getElementById('delp-input');
-  inp.value='';
-  document.getElementById('btn-delp').disabled=true;
-  document.getElementById('ov-delp').classList.add('open');
-  setTimeout(function(){inp.focus();},50);
-}
-async function okDelProy(){
-  if(DELPI===null||!BD[DELPI])return;
-  var p=BD[DELPI], btn=document.getElementById('btn-delp');
-  btn.disabled=true; btn.textContent='Eliminando...';
-  try{
-    var res=await sb.from('proyectos').delete().eq('id', p.id);
-    if(res.error) throw res.error;
-    BD=BD.filter(function(x){return x.id!==p.id;});
-    DELPI=null;
-    closeOv('ov-delp'); closeOv('ov-det');
-    filtrar();
-    toast('🗑 Proyecto eliminado','ok');
-  }catch(e){
-    console.error('Error eliminando proyecto', e);
-    toast('⚠️ No se pudo eliminar el proyecto: '+(e.message||e),'err');
-    btn.disabled=false;
-  }
-  btn.textContent='🗑  Confirmar Eliminación';
-}
+// NOTA (auditoría): existió un botón "Eliminar Proyecto" (abrirDelProy/okDelProy)
+// que llamaba a sb.from('proyectos').delete(). La tabla proyectos tiene RLS
+// habilitado sin ninguna policy de DELETE (a propósito, ver schema.sql) — se
+// confirmó que ese DELETE no borraba ninguna fila (PostgREST no devuelve error
+// cuando RLS filtra 0 filas), pero la UI igual mostraba "🗑 Proyecto eliminado"
+// como si hubiera funcionado. Se quitó el botón en vez de "arreglar" el mensaje,
+// porque el esquema documenta que la ausencia de DELETE es intencional: así un
+// click accidental no puede destruir datos reales sin posibilidad de deshacerlo.
+// Para dar de baja un proyecto real, usar "Cierre Forzado" (mkCierre/abrirCF),
+// que sí es un estado terminal soportado.
 function mkCierre(idx){
   if(!BD[idx])return;
   if(!confirm('¿Confirmas el Cierre de Proyecto?\nEsta acción es permanente y no puede revertirse desde la app.'))return;
