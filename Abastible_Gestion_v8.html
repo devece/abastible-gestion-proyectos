@@ -326,6 +326,7 @@ tbody td:first-child{padding-left:20px}
 .exp-json{background:var(--bg);color:var(--ink2);border:1.5px solid var(--line2)!important}
 .exp-json:hover{border-color:var(--navy)!important;color:var(--navy)}
 .exp-note{font-size:13px;color:#B0BAD0;line-height:1.6;margin-top:8px;margin-bottom:0}
+.exp-count{font-weight:400;opacity:.85;font-size:13px}
 
 /* TOAST */
 #toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(14px);background:var(--ink);color:#fff;padding:11px 20px;border-radius:10px;font-size:15.5px;font-weight:600;font-family:var(--sans);z-index:9999;opacity:0;transition:opacity .24s,transform .24s;pointer-events:none;display:flex;align-items:center;gap:9px;box-shadow:0 6px 28px rgba(0,0,0,.2)}
@@ -711,15 +712,15 @@ tbody td:first-child{padding-left:20px}
     <button class="exp-x" onclick="toggleExp()">✕</button>
   </div>
   <p>Los cambios se guardan automáticamente en la <strong>base de datos compartida</strong> (Supabase) — cualquiera con este link ve lo mismo, en cualquier equipo. El export sigue sirviendo como respaldo manual.</p>
-  <button class="exp-btn exp-csv" onclick="expCSV()">
+  <button class="exp-btn exp-csv" onclick="expCSV()" title="Exporta exactamente los proyectos que ves en pantalla con los filtros activos">
     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-    Exportar a Excel
+    Exportar a Excel <span id="exp-csv-count" class="exp-count"></span>
   </button>
-  <button class="exp-btn exp-json" onclick="expJSON()">
+  <button class="exp-btn exp-json" onclick="expJSON()" title="Respaldo completo — siempre incluye los 120 proyectos, sin importar los filtros activos">
     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
     Respaldo completo JSON
   </button>
-  <p class="exp-note">💡 El Excel (.xlsx) incluye todas las columnas, fechas y estados. El JSON permite restaurar datos en otro equipo.</p>
+  <p class="exp-note">💡 El Excel (.xlsx) respeta los filtros activos de la tabla (región, supervisor, búsqueda, etc.) e incluye todas sus columnas, fechas y estados. El JSON de respaldo siempre trae todos los proyectos, sin filtrar, para restaurar datos en otro equipo.</p>
 </div>
 
 <div id="toast"></div>
@@ -2383,7 +2384,15 @@ function filtrar(){
     return SA?(va<vb?-1:va>vb?1:0):(va>vb?-1:va<vb?1:0);
   });
   document.getElementById('fi-count').textContent=FLT.length+' de '+BD.length+' proyectos';
+  actualizarContadorExport();
   PAG=1; renderTabla(); renderPag();
+}
+// El Excel exportado (expCSV) usa FLT, no BD — este contador deja explícito
+// junto al botón cuántos proyectos trae según el filtro activo en pantalla.
+function actualizarContadorExport(){
+  var el=document.getElementById('exp-csv-count');
+  if(!el)return;
+  el.textContent = (FLT.length===BD.length) ? '('+BD.length+')' : '('+FLT.length+' de '+BD.length+')';
 }
 
 // ─── Filtro Etapa → Hito ────────────────────────────────────────────────
@@ -3480,7 +3489,9 @@ function expCSV(){
     'Carga N°6','Carga N°7','Carga N°8','Carga N°9','Carga N°10',
     'TC2','Sello Verde','TC6','IR','TC7','Pago 1','Pago 2','Pago 3','Pago 4',
     'Término Ejecución','Gestor Documental','Devuelto ITO','Cierre de Proyecto','Cierre Forzado','Días Totales','Observaciones'];
-  var rows=BD.map(function(p){
+  // FLT (no BD): el Excel debe traer exactamente los proyectos filtrados que
+  // se ven en pantalla, igual que el contador "X de Y proyectos" de arriba.
+  var rows=FLT.map(function(p){
     return [p.item,p.codigo,p.cliente,p.nombre_proyecto,p.region,p.comuna,p.direccion,p.tipo,p.construccion,p.status,p.etapa,
       porcentajeProgreso(p),p.supervisor,p.ito,p.contratista,p.cert,p.jefe,p.vendedor,p.potencia,p.tanque,p.cant_tanque,p.costo,p.reguladores_cant,p.reguladores_modelo,p.medidores_cant,p.toneladas_estimadas,
       soloFecha(p.f_v_validar),soloFecha(p.f_v_respondido),soloFecha(p.f_v_coord),soloFecha(p.f_rev_ant),soloFecha(p.f_visita),soloFecha(p.f_liberar),soloFecha(p.f_liberado),soloFecha(p.f_ut),soloFecha(p.f_pedir_grafo),p.num_grafo,soloFecha(p.f_oc),soloFecha(p.f_trabajos),soloFecha(p.f_despacho_tq),soloFecha(p.f_tc8),soloFecha(p.f_retiro_materiales),soloFecha(p.f_montaje),soloFecha(p.f_ampliacion),
@@ -3492,7 +3503,7 @@ function expCSV(){
   var wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Proyectos');
   XLSX.writeFile(wb, 'Abastible_Proyectos_'+ahora().slice(0,10)+'.xlsx');
-  toast('📗 Excel descargado','ok');
+  toast('📗 Excel descargado — '+FLT.length+' proyecto'+(FLT.length===1?'':'s')+(FLT.length!==BD.length?' (filtro activo)':''),'ok');
 }
 
 function closeOv(id){document.getElementById(id).classList.remove('open');}
