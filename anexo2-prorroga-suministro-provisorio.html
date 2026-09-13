@@ -72,7 +72,7 @@ label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.07e
     <span class="sec-lbl">Datos del cliente</span>
     <div class="grid">
       <div class="fg full"><label>Empresa</label><input type="text" id="empresa" placeholder="Razón social de la empresa"></div>
-      <div class="fg"><label>R.U.T.</label><input type="text" placeholder="Ej.: 76.000.000-0"></div>
+      <div class="fg"><label>R.U.T.</label><input type="text" id="rutEmpresa" placeholder="Ej.: 76.000.000-0" oninput="this.value=formatearRutCL(this.value)"></div>
       <div class="fg"><label>Fecha</label><input type="text" id="fecha2" placeholder="dd/mm/aaaa"></div>
       <div class="fg full"><label>Representante legal</label><input type="text" id="rep" placeholder="Nombre completo del representante"></div>
       <div class="fg"><label>Cédula de identidad</label><input type="text" placeholder="RUT / CI del representante"></div>
@@ -126,6 +126,12 @@ label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.07e
 
 </div>
 <script>
+function formatearRutCL(v){
+  var limpio = String(v||'').replace(/[^0-9kK]/g,'').toUpperCase();
+  if(limpio.length < 2) return limpio;
+  var cuerpo = limpio.slice(0,-1).replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+  return cuerpo + '-' + limpio.slice(-1);
+}
 function _hoy(){ var d=new Date(); return d.toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric'}); }
 document.getElementById('fecha2').value=_hoy();
 document.getElementById('rep').addEventListener('input',function(){document.getElementById('rep2').value=this.value});
