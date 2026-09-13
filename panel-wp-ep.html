@@ -741,6 +741,49 @@ function quitarMarcaSugerido(e) {
 document.addEventListener('input', quitarMarcaSugerido, true);
 document.addEventListener('change', quitarMarcaSugerido, true);
 
+// ─── Convención visual "valor real / confirmado" ───────────────────────────
+// Contraparte de .valor-sugerido: un campo con dato real (prellenado desde la
+// Planilla Maestra al abrir esta página, o completado a mano por la persona)
+// se marca .valor-real — nunca a la vez que .valor-sugerido. A diferencia de
+// Abastible_Gestion_v8.html (que arma el HTML de una sola vez y puede envolver
+// el campo al generarlo), acá el <input>/<select> ya existe en la página, así
+// que se lo envuelve en un <span class="campo-real"> propio (no el <div
+// class="field"> completo, que también incluye el <label> — eso correría mal
+// el punto de acento) la primera vez que hace falta, y se reusa después.
+function marcarCampoReal(el) {
+  if (!el || el.classList.contains('valor-sugerido')) return;
+  el.classList.add('valor-real');
+  var wrap = el.parentNode.classList.contains('campo-real') ? el.parentNode : null;
+  if (!wrap) {
+    wrap = document.createElement('span');
+    wrap.className = 'campo-real';
+    wrap.style.display = 'block';
+    el.parentNode.insertBefore(wrap, el);
+    wrap.appendChild(el);
+  }
+  if (!wrap.querySelector(':scope > .campo-real-dot')) {
+    var dot = document.createElement('span');
+    dot.className = 'campo-real-dot';
+    wrap.appendChild(dot);
+  }
+}
+function desmarcarCampoReal(el) {
+  if (!el) return;
+  el.classList.remove('valor-real');
+  var wrap = el.parentNode;
+  if (wrap.classList.contains('campo-real')) {
+    var dot = wrap.querySelector(':scope > .campo-real-dot');
+    if (dot) dot.remove();
+  }
+}
+function actualizarValorReal(e) {
+  var el = e.target;
+  if (!el || !el.id || (el.tagName !== 'INPUT' && el.tagName !== 'SELECT' && el.tagName !== 'TEXTAREA')) return;
+  if (el.value && el.value.trim()) marcarCampoReal(el); else desmarcarCampoReal(el);
+}
+document.addEventListener('input', actualizarValorReal, true);
+document.addEventListener('change', actualizarValorReal, true);
+
 // ─── VALIDACIÓN ANTIFANTASMA (evita enviar el proyecto de ejemplo "StarTrek") ──
 // Campos obligatorios del formulario (los marcados con * en la UI). fechaFin no
 // entra aquí porque su exigencia depende del tipo (solo End Pack, ver más abajo).
@@ -1032,7 +1075,7 @@ window.addEventListener('DOMContentLoaded', () => {
   params.forEach((val, key) => {
     if (key === 'tipo' || !val) return;
     const el = document.getElementById(key);
-    if (el) { el.value = val; huboPrefill = true; }
+    if (el) { el.value = val; huboPrefill = true; marcarCampoReal(el); }
   });
 
   if (!document.getElementById('fecha').value) {

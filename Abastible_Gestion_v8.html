@@ -2672,7 +2672,7 @@ function abrirDet(id){
   document.getElementById('ov-det').classList.add('open');
 }
 
-function inf(l,v,full){var nd=!v||v==='null'||v==='None'||v==='N/A';return '<div class="inf'+(full?' inf-full':'')+'"><label>'+l+'</label><span'+(nd?' class="nd"':'')+'>'+( nd?'Sin datos':esc(v))+'</span></div>';}
+function inf(l,v,full){var nd=!v||v==='null'||v==='None'||v==='N/A';return '<div class="inf'+(full?' inf-full':'')+'"><label>'+l+'</label><span'+(nd?' class="nd"':' class="valor-real campo-real"')+'>'+( nd?'Sin datos':esc(v))+'</span></div>';}
 
 // Campos con texto que suele ser largo (razón social, dirección, correo, nombres de
 // contratista/certificador) — ocupan doble ancho en la ficha para que se vean completos.
@@ -2687,13 +2687,21 @@ function infE(idx,key,l,v,cer,tipo,opts){
   var full=!!CAMPO_ANCHO_DOBLE[key];
   if(cer)return inf(l,v,full);
   var id='fi-'+idx+'-'+key, field;
+  // tieneValor: mismo criterio de "hay dato" que ya usa hF()/hOK() en esta ficha —
+  // marca el campo como .valor-real (dato real ya cargado/guardado, PR de auditoría).
+  var tieneValor=v&&v!=='null'&&v!=='None'&&v!=='N/A';
+  var claseReal=tieneValor?' valor-real':'';
   if(tipo==='select'){
-    field='<select id="'+id+'" onchange="saveCampoEdit('+idx+',\''+key+'\')"><option value=""'+(!v?' selected':'')+'>—</option>'+opts.map(function(o){return '<option'+(o===v?' selected':'')+'>'+esc(o)+'</option>';}).join('')+'</select>';
+    field='<select id="'+id+'" class="'+claseReal.trim()+'" onchange="saveCampoEdit('+idx+',\''+key+'\')"><option value=""'+(!v?' selected':'')+'>—</option>'+opts.map(function(o){return '<option'+(o===v?' selected':'')+'>'+esc(o)+'</option>';}).join('')+'</select>';
   } else if(tipo==='money'){
-    field='<input id="'+id+'" type="text" inputmode="numeric" value="'+esc(formatearMonedaCL(String(v===null||v===undefined?'':v)))+'" oninput="this.value=formatearMonedaCL(this.value)" onchange="saveCampoEdit('+idx+',\''+key+'\')">';
+    field='<input id="'+id+'" type="text" inputmode="numeric" class="'+claseReal.trim()+'" value="'+esc(formatearMonedaCL(String(v===null||v===undefined?'':v)))+'" oninput="this.value=formatearMonedaCL(this.value)" onchange="saveCampoEdit('+idx+',\''+key+'\')">';
   } else {
-    field='<input id="'+id+'" type="'+(tipo||'text')+'" value="'+esc(v===null||v===undefined?'':v)+'" onchange="saveCampoEdit('+idx+',\''+key+'\')">';
+    field='<input id="'+id+'" type="'+(tipo||'text')+'" class="'+claseReal.trim()+'" value="'+esc(v===null||v===undefined?'':v)+'" onchange="saveCampoEdit('+idx+',\''+key+'\')">';
   }
+  // El punto de acento va en un <div> propio alrededor del campo (no del label):
+  // ::after no se dibuja de forma confiable dentro de <input>/<select>, y además
+  // así queda centrado sobre el campo, no sobre todo el bloque label+campo.
+  if(tieneValor)field='<div class="campo-real">'+field+'</div>';
   return '<div class="inf inf-e'+(full?' inf-full':'')+'"><label>'+l+'</label>'+field+'</div>';
 }
 // mismos mínimos que validarProyectoNuevo() al crear — editar no debía tener menos control que crear
@@ -2756,7 +2764,7 @@ function hF(idx, key, lbl, p, ico, sub, cer, botonExtra){
     // se recalcula en cada render, así que desaparece solo si se corrige después.
     var fueraSec=hitoFueraDeSecuencia(p,key);
     h+='<div class="fecha-edit">';
-    h+='<span class="hval hf'+(fueraSec?' valor-sugerido':'')+'" id="fv-'+idx+'-'+key+'" title="'+(fueraSec?'Fuera de secuencia: el hito anterior no está registrado (o quedó después de este)':'')+'">📅 '+esc(fFH(v)||v)+'</span>';
+    h+='<span class="hval hf'+(fueraSec?' valor-sugerido':' valor-real campo-real')+'" id="fv-'+idx+'-'+key+'" title="'+(fueraSec?'Fuera de secuencia: el hito anterior no está registrado (o quedó después de este)':'Fecha confirmada')+'">📅 '+esc(fFH(v)||v)+'</span>';
     if(!cer){
       h+='<input type="date" id="fi-'+idx+'-'+key+'"'+(fueraSec?' class="valor-sugerido"':'')+' value="'+isoLocal(v)+'" onchange="saveFechaEdit('+idx+',\''+key+'\')" title="Editar fecha manualmente">';
     }
