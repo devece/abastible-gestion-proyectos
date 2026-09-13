@@ -2706,11 +2706,13 @@ function hF(idx, key, lbl, p, ico, sub, cer, botonExtra){
     h+='<div class="hval" style="color:#BDC5DC">—</div>';
   } else {
     // Modo registro: botón "ahora" + input manual
-    // La fecha de hoy se muestra como SUGERENCIA (.valor-sugerido), no como dato
-    // guardado: nada llega a Supabase hasta que el usuario confirme con "Guardar"
-    // o "📌 Ahora". Al recargar sin confirmar, isoLocal(ahora()) vuelve a ser hoy.
+    // El campo real en BD (p[key]) es null/vacío, así que el input arranca
+    // vacío (sin value) — antes se prellenaba con isoLocal(ahora()), mostrando
+    // la fecha de hoy como si ya estuviera guardada. Nada llega a Supabase
+    // hasta que el usuario confirme con "Guardar" (eligiendo una fecha) o
+    // con "📌 Ahora", que sigue siendo la única forma de insertar hoy con un clic.
     h+='<div class="fecha-edit">';
-    h+='<input type="date" class="valor-sugerido" id="fi-'+idx+'-'+key+'" value="'+isoLocal(ahora())+'" title="Sugerencia: hoy. Ajusta la fecha o confirma con Guardar / 📌 Ahora">';
+    h+='<input type="date" id="fi-'+idx+'-'+key+'" title="Sin fecha registrada — ajusta manualmente o confirma con 📌 Ahora">';
     h+='<button class="fe-ok" onclick="saveFechaEdit('+idx+',\''+key+'\')">Guardar</button>';
     h+='<button class="fe-auto" onclick="mkF('+idx+',\''+key+'\',event)">📌 Ahora</button>';
     h+='</div>';
