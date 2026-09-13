@@ -68,13 +68,18 @@
       <div class="panel-header manual">🟡 Copiar desde la OC</div>
       <div class="panel-body">
         <div class="field manual">
+          <label for="ocFile">📄 Subir OC (PDF)</label>
+          <input type="file" id="ocFile" accept="application/pdf" onchange="cargarOC(this.files[0])">
+          <div class="hint" id="ocHint">lee la sección OBSERVACIONES de la OC y autocompleta el bloque de abajo</div>
+        </div>
+        <div class="field manual" style="margin-top:14px;">
           <label for="datosOC">Bloque de datos del proyecto</label>
           <textarea id="datosOC" rows="6" oninput="render()" placeholder="PROYECTO RENOVA: 19588199
 CLIENTE: HERNAN OMAR ZUNIGA RODRIGUEZ
 DIRECCIÓN: Región VI - Rancagua, Comuna QUINTA DE TILCOCO, Calle ARGOMEDO, N° 24
 ITO: Daniel Villalobos Carrizo
 Grafo: 114529"></textarea>
-          <div class="hint">pega tal cual las líneas de PROYECTO RENOVA / CLIENTE / DIRECCIÓN / ITO / Grafo desde la OC — se muestran en el correo una por línea, con interlineado 1.5</div>
+          <div class="hint">se autocompleta al subir la OC (PDF) arriba, o pega tal cual las líneas de PROYECTO RENOVA / CLIENTE / DIRECCIÓN / ITO / Grafo desde la OC — se muestran en el correo una por línea, con interlineado 1.5</div>
         </div>
       </div>
     </div>
@@ -91,7 +96,7 @@ Grafo: 114529"></textarea>
     <div class="missing-flag" id="missingFlag"></div>
 
     <div class="static-box" style="margin:1.25rem 0;">
-      <b>Para:</b> grupo IMPOVAR (Outlook) — escribe "IMPOVAR" en el campo Para, se resuelve desde tus contactos<br>
+      <b>Para:</b> Yaxelis Vargas &lt;yvargas@impovar.cl&gt;<br>
       <b>De:</b> quien envíe el correo (no se define aquí)
     </div>
 
@@ -118,7 +123,7 @@ Grafo: 114529"></textarea>
     <div class="panel" id="panelPreviewImpovar">
       <div class="panel-header preview">👁️ Vista previa del correo — Impovar</div>
       <div class="preview-meta">
-        <div><b>Para:</b> Grupo IMPOVAR (Outlook)</div>
+        <div><b>Para:</b> Yaxelis Vargas &lt;yvargas@impovar.cl&gt;</div>
         <div><b>Asunto:</b> <span id="metaAsuntoImpovar">—</span></div>
       </div>
       <div class="preview-stage">
@@ -131,7 +136,12 @@ Grafo: 114529"></textarea>
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <script>
+if(typeof pdfjsLib !== 'undefined'){
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+}
+
 const UB = "'Ubuntu Sans', 'Ubuntu', Arial, sans-serif";
 
 // ─── Convención visual "valor sugerido" ────────────────────────────────────
@@ -194,6 +204,143 @@ function onContratistaChange(){
 }
 
 function g(id){ return document.getElementById(id).value.trim(); }
+
+/* ── Autocompletar desde la OC (PDF) — lee la sección OBSERVACIONES ── */
+
+// Mismo criterio que solicitud-retiro-materiales.html: content.items entrega en
+// orden de lectura real; no reordenamos por geometría (coordenadas rotadas o
+// desalineadas rompen esa agrupación en algunos PDF).
+async function extraerTextoPDF(file){
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({data:buf}).promise;
+  const paginas = [];
+  for(let n=1; n<=pdf.numPages; n++){
+    const page = await pdf.getPage(n);
+    const content = await page.getTextContent();
+    paginas.push(content.items.map(it => it.str).join(' ').replace(/\s+/g,' ').trim());
+  }
+  return paginas.join('\n');
+}
+
+// Etiquetas de la sección OBSERVACIONES de la OC — cada una se busca de forma
+// independiente, tolerante a espacios extra alrededor de ":"; si falta una no
+// afecta la extracción de las demás.
+const ETIQUETAS_OC = [
+  { campo: 'numeroProyecto', re: /PROYECTO\s+RENOVA/i, label: 'PROYECTO RENOVA' },
+  { campo: 'cliente',        re: /CLIENTE/i,            label: 'CLIENTE' },
+  { campo: 'direccion',      re: /DIRECCI[OÓ]N/i,       label: 'DIRECCIÓN' },
+  { campo: 'ito',            re: /\bITO\b/i,            label: 'ITO' },
+  { campo: 'grafo',          re: /\bGrafo\b/i,          label: 'Grafo' },
+];
+
+// La sección "OBSERVACIONES" puede caer en cualquier página según el largo de
+// la OC — la ubicamos por su propia etiqueta (no por número de página fijo) y
+// nos quedamos con el resto de esa misma página (las páginas se unen con \n).
+function extraerBloqueObservaciones(textoCompleto){
+  const m = /OBSERVACIONES\s*:?/i.exec(textoCompleto);
+  if(!m) return '';
+  const desde = textoCompleto.slice(m.index + m[0].length);
+  const finPagina = desde.indexOf('\n');
+  return (finPagina === -1 ? desde : desde.slice(0, finPagina)).trim();
+}
+
+// Valor de una etiqueta dentro del bloque: corta en la próxima etiqueta
+// conocida que aparezca después (o al final del bloque si es la última).
+function extraerValorEtiqueta(bloque, etiqueta){
+  const m = etiqueta.re.exec(bloque);
+  if(!m) return null;
+  const resto = bloque.slice(m.index + m[0].length);
+  const dp = /^\s*:\s*/.exec(resto);
+  if(!dp) return null;
+  const valor = resto.slice(dp[0].length);
+  let corte = valor.length;
+  ETIQUETAS_OC.forEach(otra => {
+    if(otra === etiqueta) return;
+    const om = otra.re.exec(valor);
+    if(om && om.index < corte) corte = om.index;
+  });
+  return valor.slice(0, corte).trim();
+}
+
+function parsearDatosOC(textoCompleto){
+  const bloque = extraerBloqueObservaciones(textoCompleto);
+  if(!bloque) return null;
+  const datos = {};
+  ETIQUETAS_OC.forEach(etiqueta => {
+    const valor = extraerValorEtiqueta(bloque, etiqueta);
+    if(valor) datos[etiqueta.campo] = valor;
+  });
+  // Grafo y N° Proyecto son siempre numéricos — nos quedamos solo con los
+  // dígitos, para no arrastrar texto de otra sección si el corte no dio
+  // justo con el próximo límite.
+  if(datos.grafo) datos.grafo = (datos.grafo.match(/\d+/) || [])[0] || '';
+  if(datos.numeroProyecto) datos.numeroProyecto = (datos.numeroProyecto.match(/\d+/) || [])[0] || '';
+  return Object.keys(datos).length ? datos : null;
+}
+
+let ocFileName = '';
+
+function mensajeExitoConArchivo(base){
+  return ocFileName ? `${base} y adjuntá el archivo "${ocFileName}" que subiste.` : base;
+}
+
+async function cargarOC(file){
+  const hint = document.getElementById('ocHint');
+  ocFileName = '';
+  if(!file){
+    hint.textContent = 'lee la sección OBSERVACIONES de la OC y autocompleta el bloque de abajo';
+    hint.style.color = 'var(--texto-suave)';
+    return;
+  }
+  if(typeof pdfjsLib === 'undefined'){
+    hint.textContent = 'No se pudo cargar el lector de PDF (sin conexión al CDN) — completa los campos manualmente.';
+    hint.style.color = 'var(--ambar)';
+    return;
+  }
+  hint.textContent = 'Leyendo PDF...';
+  hint.style.color = 'var(--texto-suave)';
+  try{
+    const texto = await extraerTextoPDF(file);
+    const datos = parsearDatosOC(texto);
+
+    if(!datos){
+      hint.textContent = `No se encontró la sección OBSERVACIONES en "${file.name}" — completa los campos manualmente.`;
+      hint.style.color = 'var(--ambar)';
+      return;
+    }
+
+    if(datos.numeroProyecto){
+      document.getElementById('numeroProyecto').value = datos.numeroProyecto;
+      document.getElementById('numeroProyecto').classList.remove('valor-sugerido');
+    }
+    if(datos.cliente){
+      document.getElementById('cliente').value = datos.cliente;
+      document.getElementById('cliente').classList.remove('valor-sugerido');
+    }
+    if(datos.direccion){
+      document.getElementById('direccion').value = datos.direccion;
+    }
+
+    const lineas = [];
+    if(datos.numeroProyecto) lineas.push(`PROYECTO RENOVA: ${datos.numeroProyecto}`);
+    if(datos.cliente)        lineas.push(`CLIENTE: ${datos.cliente}`);
+    if(datos.direccion)      lineas.push(`DIRECCIÓN: ${datos.direccion}`);
+    if(datos.ito)            lineas.push(`ITO: ${datos.ito}`);
+    if(datos.grafo)          lineas.push(`Grafo: ${datos.grafo}`);
+    document.getElementById('datosOC').value = lineas.join('\n');
+
+    ocFileName = file.name;
+    const faltantes = ETIQUETAS_OC.filter(e => !datos[e.campo]).map(e => e.label);
+    hint.textContent = faltantes.length
+      ? `✅ "${file.name}" leído — no se encontró: ${faltantes.join(', ')}. Revisa/completa antes de enviar.`
+      : `✅ "${file.name}" leído — 5/5 datos encontrados. Revisa antes de enviar.`;
+    hint.style.color = faltantes.length ? 'var(--ambar)' : 'var(--verde)';
+    render();
+  } catch(e){
+    hint.textContent = `No se pudo leer "${file.name}" (¿es una imagen escaneada sin texto seleccionable?) — completa los campos manualmente.`;
+    hint.style.color = 'var(--ambar)';
+  }
+}
 
 const NARANJA_ABASTIBLE = '#FE5100';
 const NARANJA_SUAVE = '#FFD9BC';
@@ -374,10 +521,10 @@ function abrirEnOutlookDe(elId, btnId, para, mensajeExito){
 }
 
 function copiarHTML(){ copiarHTMLDe('emailContent', 'copyBtn'); }
-function abrirEnOutlook(){ abrirEnOutlookDe('emailContent', 'outlookBtn', g('correoContratista'), '✅ ¡Outlook abierto! Pega el cuerpo (Ctrl+V)'); }
+function abrirEnOutlook(){ abrirEnOutlookDe('emailContent', 'outlookBtn', g('correoContratista'), mensajeExitoConArchivo('✅ ¡Outlook abierto! Pega el cuerpo (Ctrl+V)')); }
 
 function copiarHTMLImpovar(){ copiarHTMLDe('emailContentImpovar', 'copyBtnImpovar'); }
-function abrirEnOutlookImpovar(){ abrirEnOutlookDe('emailContentImpovar', 'outlookBtnImpovar', '', '✅ ¡Outlook abierto! Escribe "IMPOVAR" en Para y pega el cuerpo (Ctrl+V)'); }
+function abrirEnOutlookImpovar(){ abrirEnOutlookDe('emailContentImpovar', 'outlookBtnImpovar', 'Yaxelis Vargas <yvargas@impovar.cl>', mensajeExitoConArchivo('✅ ¡Outlook abierto! Pega el cuerpo (Ctrl+V)')); }
 
 poblarDatalist();
 
