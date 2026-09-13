@@ -539,19 +539,19 @@ const IMG_EP_FOOTER = "data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUN
         <div class="section-label">Proyecto</div>
         <div class="field">
           <label>Nombre Proyecto <span class="req">*</span></label>
-          <input type="text" id="nombreProyecto" placeholder="StarTrek" value="StarTrek">
+          <input type="text" id="nombreProyecto" placeholder="StarTrek">
         </div>
         <div class="field">
           <label>N° Renova <span class="req">*</span></label>
-          <input type="text" id="numeroProyecto" placeholder="12345633" value="12345633">
+          <input type="text" id="numeroProyecto" placeholder="12345633">
         </div>
         <div class="field">
           <label>Dirección Proyecto <span class="req">*</span></label>
-          <input type="text" id="direccionProyecto" placeholder="Entreprise 122, módulo 3A" value="Entreprise 122, módulo 3A">
+          <input type="text" id="direccionProyecto" placeholder="Entreprise 122, módulo 3A">
         </div>
         <div class="field">
           <label>Ciudad <span class="req">*</span></label>
-          <input type="text" id="ciudad" placeholder="Viña del Mar" value="Viña del Mar">
+          <input type="text" id="ciudad" placeholder="Viña del Mar">
         </div>
         <div class="field">
           <label>Fecha <span class="req">*</span></label>
@@ -561,15 +561,15 @@ const IMG_EP_FOOTER = "data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUN
         <div class="section-label">Cliente</div>
         <div class="field">
           <label>Nombre Cliente <span class="req">*</span></label>
-          <input type="text" id="nombreCliente" placeholder="Jean Luc Picard" value="Jean Luc Picard">
+          <input type="text" id="nombreCliente" placeholder="Jean Luc Picard">
         </div>
         <div class="field">
           <label>RUT <span class="req">*</span></label>
-          <input type="text" id="rut" placeholder="14.567.890-k" value="14.567.890-k" oninput="this.value=formatearRutCL(this.value)">
+          <input type="text" id="rut" placeholder="14.567.890-k" oninput="this.value=formatearRutCL(this.value)">
         </div>
         <div class="field">
           <label>Correo Cliente <span class="req">*</span></label>
-          <input type="email" id="correoCliente" placeholder="cliente@correo.com" value="jeanlucpicard@entreprise.org">
+          <input type="email" id="correoCliente" placeholder="cliente@correo.com">
         </div>
 
       </div>
@@ -588,15 +588,15 @@ const IMG_EP_FOOTER = "data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUN
         <div class="section-label">Supervisor / ITO</div>
         <div class="field">
           <label>Nombre ITO <span class="req">*</span></label>
-          <input type="text" id="nombreITO" placeholder="Señor Spock" value="Señor Spock">
+          <input type="text" id="nombreITO" placeholder="Señor Spock">
         </div>
         <div class="field">
           <label>Correo ITO <span class="req">*</span></label>
-          <input type="email" id="correoITO" placeholder="spock@abastible.cl" value="spock@abastible.cl">
+          <input type="email" id="correoITO" placeholder="spock@abastible.cl">
         </div>
         <div class="field">
           <label>Teléfono ITO <span class="req">*</span></label>
-          <input type="text" id="telefonoITO" placeholder="+56 9 5889 7906" value="+56 9 5889 7906" oninput="this.value=formatearTelefonoCL(this.value)">
+          <input type="text" id="telefonoITO" placeholder="+56 9 5889 7906" oninput="this.value=formatearTelefonoCL(this.value)">
         </div>
         <div class="field">
           <label>Medio de Contacto</label>
@@ -610,19 +610,19 @@ const IMG_EP_FOOTER = "data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUN
         <div class="section-label">Ejecución</div>
         <div class="field">
           <label>Socio Instalador <span class="req">*</span></label>
-          <input type="text" id="socioInstalador" placeholder="Inprogas" value="Inprogas">
+          <input type="text" id="socioInstalador" placeholder="Inprogas">
         </div>
         <div class="field">
           <label>Trabajos a Desarrollar <span class="req">*</span></label>
-          <textarea id="trabajos" rows="2" placeholder="Excavaciones, bases, redes...">Excavaciones, bases, redes de media y baja presión, conexión artefactos y más</textarea>
+          <textarea id="trabajos" rows="2" placeholder="Excavaciones, bases, redes..."></textarea>
         </div>
         <div class="field">
           <label>Fecha Inicio <span class="req">*</span></label>
-          <input type="text" id="fechaInicio" placeholder="25 de enero de 2026" value="25 de enero de 2026">
+          <input type="text" id="fechaInicio" placeholder="25 de enero de 2026">
         </div>
         <div class="field">
           <label>Plazo (días) <span class="req">*</span></label>
-          <input type="text" id="plazo" placeholder="35" value="35">
+          <input type="text" id="plazo" placeholder="35">
         </div>
         <div class="field">
           <label>Fecha Término <span style="color:var(--gris);font-size:10px;">(solo End Pack)</span></label>
@@ -630,7 +630,7 @@ const IMG_EP_FOOTER = "data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUN
         </div>
         <div class="field">
           <label>Apoyo requerido del Cliente</label>
-          <textarea id="apoyoCliente" rows="2" placeholder="Celosías, suministro artefactos...">Celosías, suministro artefactos</textarea>
+          <textarea id="apoyoCliente" rows="2" placeholder="Celosías, suministro artefactos..."></textarea>
         </div>
 
         <div class="btn-group">
@@ -727,6 +727,47 @@ const IMG_EP_FOOTER = "data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUN
 <script>
 function g(id) { return document.getElementById(id).value.trim(); }
 
+// ─── VALIDACIÓN ANTIFANTASMA (evita enviar el proyecto de ejemplo "StarTrek") ──
+// Campos obligatorios del formulario (los marcados con * en la UI). fechaFin no
+// entra aquí porque su exigencia depende del tipo (solo End Pack, ver más abajo).
+const CAMPOS_REQUERIDOS = [
+  ['nombreProyecto','Nombre Proyecto'], ['numeroProyecto','N° Renova'],
+  ['direccionProyecto','Dirección Proyecto'], ['ciudad','Ciudad'], ['fecha','Fecha'],
+  ['nombreCliente','Nombre Cliente'], ['rut','RUT'], ['correoCliente','Correo Cliente'],
+  ['nombreITO','Nombre ITO'], ['correoITO','Correo ITO'], ['telefonoITO','Teléfono ITO'],
+  ['socioInstalador','Socio Instalador'], ['trabajos','Trabajos a Desarrollar'],
+  ['fechaInicio','Fecha Inicio'], ['plazo','Plazo (días)'],
+];
+// Valores exactos del proyecto de ejemplo — si cualquiera de estos campos todavía
+// tiene este texto (intacto o reingresado a mano), se bloquea la generación/copia.
+const VALORES_EJEMPLO = {
+  nombreProyecto: 'startrek',
+  nombreCliente: 'jean luc picard',
+  correoCliente: 'jeanlucpicard@entreprise.org',
+  nombreITO: 'señor spock',
+  socioInstalador: 'inprogas',
+};
+function normalizarComparacion(v){ return String(v||'').trim().toLowerCase(); }
+
+// Devuelve null si todo está OK, o un mensaje de error listo para mostrar si falta
+// completar campos obligatorios o si persiste algún dato del proyecto de ejemplo.
+function validarDatosReales(tipo) {
+  const vacios = CAMPOS_REQUERIDOS.filter(([id]) => !g(id)).map(([, lbl]) => lbl);
+  if (tipo === 'EP' && !g('fechaFin')) vacios.push('Fecha Término');
+
+  const deEjemplo = Object.keys(VALORES_EJEMPLO)
+    .filter(id => normalizarComparacion(g(id)) === VALORES_EJEMPLO[id])
+    .map(id => CAMPOS_REQUERIDOS.find(([cid]) => cid === id)[1]);
+
+  if (deEjemplo.length) {
+    return '⚠️ Reemplaza los datos de ejemplo antes de generar el correo. Todavía tienen el valor del proyecto de ejemplo "StarTrek":\n\n- ' + deEjemplo.join('\n- ');
+  }
+  if (vacios.length) {
+    return '⚠️ Completa estos campos obligatorios antes de generar el correo:\n\n- ' + vacios.join('\n- ');
+  }
+  return null;
+}
+
 // ─── RUT chileno (puntos de miles + guión) ────────────────────────────────
 function formatearRutCL(v){
   const limpio = String(v||'').replace(/[^0-9kK]/g,'').toUpperCase();
@@ -753,6 +794,9 @@ function initials(name) {
 let activoTipo = null; // tracks which email is currently shown
 
 function generarCorreo(tipo) {
+  const errorValidacion = validarDatosReales(tipo);
+  if (errorValidacion) { alert(errorValidacion); return; }
+
   const data = {
     ciudad: g('ciudad'),
     fecha: g('fecha'),
@@ -773,12 +817,6 @@ function generarCorreo(tipo) {
     apoyoCliente: g('apoyoCliente'),
     fechaFin: g('fechaFin'),
   };
-
-  if (tipo === 'EP' && !data.fechaFin) {
-    alert('⚠️ Para generar el End Pack, debes ingresar la Fecha Término.');
-    document.getElementById('fechaFin').focus();
-    return;
-  }
 
   document.getElementById('placeholderMsg').style.display = 'none';
   activoTipo = tipo;
@@ -905,6 +943,9 @@ function copiarHTMLActivo() {
 }
 
 function copiarHTML(tipo) {
+  const errorValidacion = validarDatosReales(tipo);
+  if (errorValidacion) { alert(errorValidacion); return; }
+
   const el = document.getElementById(tipo === 'WP' ? 'wpContent' : 'epContent');
   const btn = document.getElementById('copyBtnTop');
 
@@ -947,6 +988,8 @@ function limpiarDatos() {
 
 function abrirEnOutlook() {
   if (!activoTipo) return;
+  const errorValidacion = validarDatosReales(activoTipo);
+  if (errorValidacion) { alert(errorValidacion); return; }
 
   const para   = activoTipo === 'WP' ? document.getElementById('metaParaWP').textContent.trim()
                                       : document.getElementById('metaParaEP').textContent.trim();
