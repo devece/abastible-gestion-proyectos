@@ -565,7 +565,7 @@ const IMG_EP_FOOTER = "data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUN
         </div>
         <div class="field">
           <label>RUT <span class="req">*</span></label>
-          <input type="text" id="rut" placeholder="14.567.890-k" value="14.567.890-k">
+          <input type="text" id="rut" placeholder="14.567.890-k" value="14.567.890-k" oninput="this.value=formatearRutCL(this.value)">
         </div>
         <div class="field">
           <label>Correo Cliente <span class="req">*</span></label>
@@ -596,7 +596,7 @@ const IMG_EP_FOOTER = "data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUN
         </div>
         <div class="field">
           <label>Teléfono ITO <span class="req">*</span></label>
-          <input type="text" id="telefonoITO" placeholder="+56 9 5889 7906" value="+56 9 5889 7906">
+          <input type="text" id="telefonoITO" placeholder="+56 9 5889 7906" value="+56 9 5889 7906" oninput="this.value=formatearTelefonoCL(this.value)">
         </div>
         <div class="field">
           <label>Medio de Contacto</label>
@@ -726,6 +726,25 @@ const IMG_EP_FOOTER = "data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUN
 
 <script>
 function g(id) { return document.getElementById(id).value.trim(); }
+
+// ─── RUT chileno (puntos de miles + guión) ────────────────────────────────
+function formatearRutCL(v){
+  const limpio = String(v||'').replace(/[^0-9kK]/g,'').toUpperCase();
+  if(limpio.length < 2) return limpio;
+  const cuerpo = limpio.slice(0,-1).replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+  return cuerpo + '-' + limpio.slice(-1);
+}
+// ─── Teléfono chileno (+56 9 1234 5678) ───────────────────────────────────
+function formatearTelefonoCL(valor){
+  let numeros = String(valor||'').replace(/\D/g,'');
+  if(numeros.startsWith('56')) numeros = numeros.slice(2);
+  numeros = numeros.slice(0,9);
+  let resultado = '+56 ';
+  if(numeros.length > 0) resultado += numeros[0] + ' ';
+  if(numeros.length > 1) resultado += numeros.slice(1,5);
+  if(numeros.length > 5) resultado += ' ' + numeros.slice(5,9);
+  return resultado.trim();
+}
 
 function initials(name) {
   return name.split(' ').filter(Boolean).slice(0,2).map(n => n[0].toUpperCase()).join('');
