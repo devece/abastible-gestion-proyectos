@@ -1,0 +1,28 @@
+/* ─── Convención visual "valor sugerido" (PR #66) ──────────────────────────
+   .valor-sugerido marca un campo cuyo contenido es una propuesta de la app
+   (dato de ejemplo, sugerencia derivada de otro campo, fecha de hoy prellenada,
+   etc.) y NO un dato real ya confirmado por la persona que usa el formulario.
+   Se agrega/quita por JS en cada página (ver quitarMarcaSugerido() y
+   equivalentes) apenas el usuario edita el campo a mano.
+   Compartido por: Abastible_Gestion_v8.html, anexo1-suministro-provisorio.html,
+   anexo2-prorroga-suministro-provisorio.html, anexos-d.html, panel-wp-ep.html,
+   planilla-datos.html, solicitud-envio-oc.html, solicitud-retiro-materiales.html,
+   solicitud-retiro-tq.html.
+   NO se usa en manual.html (no tiene formularios) ni en solicitud-liberar-grafo.html
+   (nunca implementó esta convención — fuera del alcance original del PR #66). */
+:root{
+  --color-valor-sugerido:#8A93A6;
+  --bg-valor-sugerido:#F3F5FA;
+  --border-valor-sugerido:#C7CEE0;
+}
+.valor-sugerido{
+  color:var(--color-valor-sugerido) !important;
+  font-style:italic;
+  background-color:var(--bg-valor-sugerido) !important;
+  border-color:var(--border-valor-sugerido) !important;
+}
+input::placeholder,textarea::placeholder{
+  color:var(--color-valor-sugerido);
+  font-style:italic;
+  opacity:1;
+}

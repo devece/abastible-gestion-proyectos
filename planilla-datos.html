@@ -6,24 +6,11 @@
 <title>Formulario Datos Instalación GLP - Versión 7.0</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Ubuntu+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="compartido/valor-sugerido.css?v=1">
 
 <style>
-:root{--accent:#FF6600;--card:#fff;--muted:#777;--color-valor-sugerido:#8A93A6;--bg-valor-sugerido:#F3F5FA;--border-valor-sugerido:#C7CEE0}
+:root{--accent:#FF6600;--card:#fff;--muted:#777}
 *{box-sizing:border-box}
-/* ─── Convención visual: "valor sugerido" vs. dato real confirmado ─────────
-   .valor-sugerido marca un campo cuyo contenido es una propuesta de la app,
-   no un dato ya guardado o confirmado por el usuario. */
-.valor-sugerido{
-  color:var(--color-valor-sugerido) !important;
-  font-style:italic;
-  background-color:var(--bg-valor-sugerido) !important;
-  border-color:var(--border-valor-sugerido) !important;
-}
-input::placeholder,textarea::placeholder{
-  color:var(--color-valor-sugerido);
-  font-style:italic;
-  opacity:1;
-}
 body{font-family:"Ubuntu Sans",Tahoma,Verdana,sans-serif;background:#f4f7f8;padding:20px;color:#222;margin:0}
 
 .wrapper{max-width:950px;margin:auto;background:var(--card);padding:22px 28px;border-radius:10px;box-shadow:0 8px 28px rgba(27,31,35,.06)}
@@ -305,12 +292,9 @@ textarea{min-height:90px}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+<script src="compartido/supabase-config.js?v=1"></script>
 
 <script>
-
-const SUPABASE_URL='https://aocbetucqvgxxjopjbjm.supabase.co';
-const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvY2JldHVjcXZneHhqb3BqYmptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxMzI1ODEsImV4cCI6MjEwMTcwODU4MX0.QfsInd_7iyeUHInGEMMSzLUh_FILaG4QPVn9pC8RByI';
-const sb=supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
 
