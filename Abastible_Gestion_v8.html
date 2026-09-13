@@ -255,6 +255,8 @@ tbody td:first-child{padding-left:20px}
 .dash-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:28px}
 .kpi{background:var(--panel);border-radius:var(--r2);padding:20px 22px;box-shadow:var(--sh);border-top:4px solid}
 .kpi-t{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700;margin-bottom:8px}
+.kpi-info{text-transform:none;letter-spacing:normal;font-weight:700;cursor:help;opacity:.7;margin-left:2px}
+.kpi-info:hover{opacity:1}
 .kpi-n{font-size:38px;font-weight:800;font-family:var(--mono);color:var(--ink);line-height:1}
 .kpi-s{font-size:14px;color:var(--muted);margin-top:4px}
 .kpi-navy{border-color:var(--navy)}.kpi-brand{border-color:var(--brand)}.kpi-ok{border-color:#059669}.kpi-warn{border-color:#F59E0B}.kpi-err{border-color:#DC2626}
@@ -2982,7 +2984,7 @@ function renderDash(){
     kpi('En ejecución',activos,'Proyectos activos','kpi-brand')+
     kpi('Cerrados',cerrados,'Cierre exitoso','kpi-ok')+
     kpi('Cierre Forzado',forzados,'Proyectos cancelados','kpi-warn')+
-    kpi('Requieren atención',venc,'Plazos vencidos','kpi-err')+
+    kpi('Requieren atención',venc,'Plazos vencidos','kpi-err',null,'Proyectos con más de 4 días sin revisión de antecedentes, o más de 7 días desde el envío de la O.C. sin iniciar trabajos.')+
     kpi('Toneladas Gestionadas',toneladas.toLocaleString('es-CL',{maximumFractionDigits:1}),'Suma de toneladas estimadas','kpi-ok');
 
   function barChart(el,arr,max,colorFn){
@@ -3061,7 +3063,11 @@ function renderDash(){
   renderExplorer();
 }
 
-function kpi(t,n,s,cls,delta){return '<div class="kpi '+cls+'"><div class="kpi-t">'+t+'</div><div class="kpi-n">'+n+'</div><div class="kpi-s">'+s+'</div>'+(delta?'<div class="kpi-delta">▲ '+delta+'</div>':'')+'</div>';}
+// info (opcional): explicación en lenguaje simple de la regla exacta detrás del
+// número, para tarjetas cuyo nombre puede confundirse con el de otra pestaña
+// (ej. "Requieren atención" del Dashboard vs. "Atrasados" de Resumen/Alertas,
+// que miden cosas distintas). No cambia ningún cálculo, solo lo explica.
+function kpi(t,n,s,cls,delta,info){return '<div class="kpi '+cls+'"><div class="kpi-t">'+t+(info?' <span class="kpi-info" title="'+esc(info)+'">ⓘ</span>':'')+'</div><div class="kpi-n">'+n+'</div><div class="kpi-s">'+s+'</div>'+(delta?'<div class="kpi-delta">▲ '+delta+'</div>':'')+'</div>';}
 
 // ─── EXPLORADOR DE DATOS (dashboard) ───────────────────────────────────────
 // Cuadro de control para que el usuario pida qué gráfico/comparativo/estadística/versus quiere ver,
@@ -3271,9 +3277,9 @@ function renderResumen(){
   if(document.getElementById('res-kpis')){
     document.getElementById('res-kpis').innerHTML=
       kpi('Total en ejecución',total,'Proyectos activos','kpi-navy')+
-      kpi('En plazo ✅',ok,'Menos de 90 días','kpi-ok')+
-      kpi('Por vencer ⚠️',warn,'Entre 60-90 días','kpi-warn')+
-      kpi('Atrasados ⛔',bad,'Más de 90 días','kpi-err');
+      kpi('En plazo ✅',ok,'Menos de 90 días','kpi-ok',null,'Proyectos en ejecución con 60 días o menos desde su liberación.')+
+      kpi('Por vencer ⚠️',warn,'Entre 60-90 días','kpi-warn',null,'Proyectos en ejecución con entre 61 y 90 días desde su liberación.')+
+      kpi('Atrasados ⛔',bad,'Más de 90 días','kpi-err',null,'Proyectos en ejecución con más de 90 días desde su liberación.');
   }
 
   var filtered=enEjec.filter(function(p){
