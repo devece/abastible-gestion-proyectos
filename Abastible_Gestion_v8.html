@@ -1953,6 +1953,9 @@ function abrirWPEP(idx,tipo){
 }
 function abrirEnvioOC(idx){
   var p=BD[idx];
+  if(!tieneFecha(p.f_liberado)){
+    if(!confirm('⚠️ Este proyecto todavía no tiene fecha de "Liberado".\n\n¿Generar la Solicitud de Envío OC de todas formas?'))return;
+  }
   var qs=new URLSearchParams({
     cliente:p.cliente||'',
     numeroProyecto:p.codigo||'',
@@ -1963,6 +1966,9 @@ function abrirEnvioOC(idx){
 }
 function abrirPedirGrafo(idx){
   var p=BD[idx];
+  if(!tieneFecha(p.f_ut)){
+    if(!confirm('⚠️ Este proyecto todavía no tiene fecha de "Crear UT".\n\n¿Generar la Solicitud de Liberar Grafo de todas formas?'))return;
+  }
   var qs=new URLSearchParams({
     cliente:p.cliente||'',
     numeroProyecto:p.codigo||'',
@@ -1982,6 +1988,9 @@ function abrirPedirGrafo(idx){
 }
 function abrirRetiroTQ(idx){
   var p=BD[idx];
+  if(!tieneFecha(p.f_montaje)){
+    if(!confirm('⚠️ Este proyecto todavía no tiene fecha de "Montaje TK".\n\n¿Generar la Solicitud de Retiro de TQ de todas formas?'))return;
+  }
   var qs=new URLSearchParams({
     cliente:p.cliente||'',
     numeroProyecto:p.codigo||'',
@@ -2011,6 +2020,10 @@ window.addEventListener('message', function(ev){
 });
 function abrirRetiroMateriales(idx){
   var p=BD[idx];
+  var sinMateriales=!(Number(p.reguladores_cant)>0) && !(Number(p.cant_tanque)>0);
+  if(sinMateriales){
+    if(!confirm('⚠️ Este proyecto no tiene reguladores ni tanques registrados en la ficha.\n\n¿Generar la Solicitud de Retiro de Materiales de todas formas?'))return;
+  }
   var qs=new URLSearchParams({
     cliente:p.cliente||'',
     numeroProyecto:p.codigo||'',
@@ -2603,8 +2616,10 @@ function abrirDet(id){
   h+='<div class="ehdr2">💰 Estados de Pago</div><div class="pgrid">';
   PK.forEach(function(k,i){
     var ok=p[k]==='OK';
+    var fueraSec=pagoFueraDeSecuencia(p,k);
     var click=cer?'':(ok?'borrarPago('+idx+',\''+k+'\',event)':'mkPago('+idx+',\''+k+'\',event)');
-    h+='<div class="pcard'+(ok?' pok':'')+'"'+(click?' onclick="'+click+'" style="cursor:pointer"':'')+' title="'+(cer?(ok?'Pago registrado':''):(ok?'Clic para deshacer':'Clic para registrar'))+'">';
+    var tit=fueraSec?'Fuera de secuencia: se registró sin el pago anterior':(cer?(ok?'Pago registrado':''):(ok?'Clic para deshacer':'Clic para registrar'));
+    h+='<div class="pcard'+(ok?' pok':'')+(fueraSec?' valor-sugerido':'')+'"'+(click?' onclick="'+click+'" style="cursor:pointer"':'')+' title="'+tit+'">';
     h+='<span class="pico">'+(ok?'✅':'○')+'</span><span class="plbl">Pago '+(i+1)+'</span></div>';
   });
   h+='</div><div style="padding:0 16px 12px;font-size:14.5px;color:var(--muted)"><strong style="color:var(--navy)">'+pagosOk+' de '+PK.length+'</strong> estados de pago registrados</div>';
@@ -2705,10 +2720,15 @@ function hF(idx, key, lbl, p, ico, sub, cer, botonExtra){
   if(botonExtra&&!cer)h+=botonExtra;
   if(ok){
     // Muestra fecha + input editable + botón guardar
+    // fueraSec: el usuario ya confirmó guardar esto pese a una advertencia blanda
+    // (hito anterior vacío, o excepción Inicio Trabajos/Envío OC) — se reutiliza
+    // .valor-sugerido (misma convención visual, PR de auditoría) para marcarlo;
+    // se recalcula en cada render, así que desaparece solo si se corrige después.
+    var fueraSec=hitoFueraDeSecuencia(p,key);
     h+='<div class="fecha-edit">';
-    h+='<span class="hval hf" id="fv-'+idx+'-'+key+'">📅 '+esc(fFH(v)||v)+'</span>';
+    h+='<span class="hval hf'+(fueraSec?' valor-sugerido':'')+'" id="fv-'+idx+'-'+key+'" title="'+(fueraSec?'Fuera de secuencia: el hito anterior no está registrado (o quedó después de este)':'')+'">📅 '+esc(fFH(v)||v)+'</span>';
     if(!cer){
-      h+='<input type="date" id="fi-'+idx+'-'+key+'" value="'+isoLocal(v)+'" onchange="saveFechaEdit('+idx+',\''+key+'\')" title="Editar fecha manualmente">';
+      h+='<input type="date" id="fi-'+idx+'-'+key+'"'+(fueraSec?' class="valor-sugerido"':'')+' value="'+isoLocal(v)+'" onchange="saveFechaEdit('+idx+',\''+key+'\')" title="Editar fecha manualmente">';
     }
     h+='<button class="hbtn hb-done" disabled>✓ Listo</button>';
     if(!cer)h+='<button class="hbtn hb-del" onclick="borrarFecha('+idx+',\''+key+'\',\''+esc(lbl).replace(/\'/g,"\\\'")+'\',event)" title="Quitar fecha (deshacer, quedará pendiente)">✕</button>';
@@ -2749,6 +2769,9 @@ function saveFechaEdit(idx, key){
   var val=el.value;
   if(!val){toast('⚠️ Selecciona una fecha válida','warn');return;}
   var ts=fromDtLocal(val);
+  var v=validarSecuenciaHito(BD[idx],key,ts);
+  if(v.tipo==='dura'){alert(v.mensaje);return;}
+  if(v.tipo==='blanda'&&!confirm(v.mensaje))return;
   BD[idx][key]=ts;
   autoStatus(BD[idx]);
   guardar(idx); filtrar();
@@ -2797,10 +2820,125 @@ function hDevITO(idx,p,cer){
   return h;
 }
 
+// ─── VALIDACIÓN DE SECUENCIA DE HITOS ──────────────────────────────────────
+// Cadena de hitos con fecha, en el orden de negocio confirmado con el usuario
+// (auditoría — motor de validación de secuencia). Cada nodo se valida SOLO
+// contra su vecino inmediato anterior y siguiente en esta lista, no contra
+// toda la historia del proyecto.
+//   - Si el vecino ya tiene fecha guardada y la nueva fecha lo cruza -> DURA (bloquea).
+//   - Si el vecino anterior todavía no tiene fecha -> BLANDA (advierte, confirmable;
+//     el registro administrativo a veces se atrasa respecto al trabajo real en terreno).
+// excepcionBlanda:true baja a blanda una violación que normalmente sería dura,
+// para el único par donde esto se confirmó como habitual en datos reales:
+// Inicio Trabajos con fecha anterior a Envío OC (6 de 120 proyectos hoy).
+var CADENA_HITOS=[
+  {key:'f_v_validar',label:'Ingreso'},
+  {key:'f_v_respondido',label:'Validación'},
+  {key:'f_v_coord',label:'Asignación'},
+  {key:'f_rev_ant',label:'Revisión'},
+  {key:'f_visita',label:'Visita Previa'},
+  {key:'f_liberar',label:'Envío a Liberar'},
+  {key:'f_liberado',label:'Liberado'},
+  {key:'f_ut',label:'Crear UT'},
+  {key:'f_pedir_grafo',label:'Pedir Liberar Grafo'},
+  {key:'f_oc',label:'Envío OC'},
+  {key:'f_trabajos',label:'Inicio Trabajos',excepcionBlanda:true},
+  {key:'f_despacho_tq',label:'Despacho Tanque y Equipos'},
+  {key:'f_tc8',label:'Envío TC8'},
+  {key:'f_montaje',label:'Montaje TK'},
+  {key:'f_ampliacion',label:'Ampliar Cliente'},
+  {key:'f_termino_ejecucion',label:'Término Trabajos'},
+  {key:'f_gestor',label:'Envío a Gestor Documental'}
+];
+var CADENA_POS={};
+CADENA_HITOS.forEach(function(h,i){CADENA_POS[h.key]=i;});
+
+// Evalúa guardar key=fechaISO (string ISO, el mismo formato que ya usan
+// nowForDB()/fromDtLocal()) sobre el proyecto p. No muta nada — solo devuelve
+// el veredicto para que quien llama decida si bloquea, pide confirmación o
+// sigue de largo.
+function validarSecuenciaHito(p, key, fechaISO){
+  var pos=CADENA_POS[key];
+  var fv=fechaISO?new Date(String(fechaISO).replace(' ','T')):null;
+  if(pos===undefined||!fv||isNaN(fv.getTime()))return {tipo:'ok'};
+  var nodo=CADENA_HITOS[pos];
+  var prev=CADENA_HITOS[pos-1];
+  if(prev){
+    var vPrev=p[prev.key];
+    if(tieneFecha(vPrev)){
+      var fPrev=new Date(String(vPrev).replace(' ','T'));
+      if(fv<fPrev){
+        var msgD='"'+nodo.label+'" quedaría el '+fFH(fechaISO)+', antes que "'+prev.label+'" ('+fFH(vPrev)+'), que ya está registrado.';
+        return nodo.excepcionBlanda
+          ? {tipo:'blanda', mensaje:'⚠️ '+msgD+'\n\n¿Guardar de todas formas?'}
+          : {tipo:'dura', mensaje:'🚫 No se puede guardar: '+msgD+'\nCorrige alguna de las dos fechas.'};
+      }
+    } else {
+      return {tipo:'blanda', mensaje:'⚠️ Vas a registrar "'+nodo.label+'", pero el hito anterior de la secuencia, "'+prev.label+'", todavía no tiene fecha.\n\n¿Confirmas que quieres guardarlo igual? (por ejemplo, porque el registro administrativo se atrasó respecto al trabajo real)'};
+    }
+  }
+  var next=CADENA_HITOS[pos+1];
+  if(next){
+    var vNext=p[next.key];
+    if(tieneFecha(vNext)){
+      var fNext=new Date(String(vNext).replace(' ','T'));
+      if(fv>fNext){
+        var msgD2='"'+nodo.label+'" quedaría el '+fFH(fechaISO)+', después de "'+next.label+'" ('+fFH(vNext)+'), que ya está registrado.';
+        return next.excepcionBlanda
+          ? {tipo:'blanda', mensaje:'⚠️ '+msgD2+'\n\n¿Guardar de todas formas?'}
+          : {tipo:'dura', mensaje:'🚫 No se puede guardar: '+msgD2+'\nCorrige alguna de las dos fechas.'};
+      }
+    }
+  }
+  return {tipo:'ok'};
+}
+
+// Para pintar (no para bloquear): true si el hito YA guardado quedó fuera de la
+// secuencia esperada — su vecino anterior sigue vacío, o la excepción blanda de
+// Inicio Trabajos/Envío OC quedó cruzada. Se recalcula en cada render: si el
+// hito salteado se completa después, la marca desaparece sola.
+function hitoFueraDeSecuencia(p, key){
+  var pos=CADENA_POS[key];
+  if(pos===undefined)return false;
+  var v=p[key];
+  if(!tieneFecha(v))return false;
+  var prev=CADENA_HITOS[pos-1];
+  if(!prev)return false;
+  var vPrev=p[prev.key];
+  if(!tieneFecha(vPrev))return true;
+  var fv=new Date(String(v).replace(' ','T')), fPrev=new Date(String(vPrev).replace(' ','T'));
+  return fv<fPrev && !!CADENA_HITOS[pos].excepcionBlanda;
+}
+
+// Mismo criterio que hitoFueraDeSecuencia pero para los Estados de Pago
+// (booleanos 'OK', sin fecha) — Pago N marcado sin que Pago N-1 lo esté.
+function pagoFueraDeSecuencia(p, key){
+  var PK=['pago1','pago2','pago3','pago4'];
+  var i=PK.indexOf(key);
+  if(i<=0)return false;
+  return p[key]==='OK' && p[PK[i-1]]!=='OK';
+}
+
 // ─── ACCIONES HITOS ───────────────────────────────────────────────────────
-function mkF(idx,key,ev){ev.stopPropagation();var ts=ahora();BD[idx][key]=nowForDB();autoStatus(BD[idx]);guardar(idx);filtrar();toast('📅 '+key+' · '+ts,'ok');setTimeout(function(){abrirDet(BD[idx]._id);},60);}
+function mkF(idx,key,ev){
+  ev.stopPropagation();
+  var candidata=nowForDB();
+  var v=validarSecuenciaHito(BD[idx],key,candidata);
+  if(v.tipo==='dura'){alert(v.mensaje);return;}
+  if(v.tipo==='blanda'&&!confirm(v.mensaje))return;
+  var ts=ahora();BD[idx][key]=candidata;autoStatus(BD[idx]);guardar(idx);filtrar();toast('📅 '+key+' · '+ts,'ok');setTimeout(function(){abrirDet(BD[idx]._id);},60);
+}
 function mkOK(idx,key,ev){ev.stopPropagation();BD[idx][key]='OK';guardar(idx);filtrar();toast('✅ '+key+' OK','ok');setTimeout(function(){abrirDet(BD[idx]._id);},60);}
-function mkPago(idx,key,ev){ev.stopPropagation();BD[idx][key]='OK';guardar(idx);filtrar();toast('💰 '+key+' registrado','ok');setTimeout(function(){abrirDet(BD[idx]._id);},60);}
+function mkPago(idx,key,ev){
+  ev.stopPropagation();
+  var p=BD[idx];
+  var PK=['pago1','pago2','pago3','pago4'];
+  var i=PK.indexOf(key);
+  if(i>0 && p[PK[i-1]]!=='OK'){
+    if(!confirm('⚠️ Vas a marcar "Pago '+(i+1)+'" pero "Pago '+i+'" todavía no está registrado.\n\n¿Confirmas que quieres marcarlo igual?'))return;
+  }
+  BD[idx][key]='OK';guardar(idx);filtrar();toast('💰 '+key+' registrado','ok');setTimeout(function(){abrirDet(BD[idx]._id);},60);
+}
 function borrarPago(idx,key,ev){
   ev.stopPropagation();
   if(!BD[idx])return;
@@ -2811,7 +2949,17 @@ function borrarPago(idx,key,ev){
   setTimeout(function(){abrirDet(BD[idx]._id);},60);
 }
 function mkCarga(idx,key,ev){ev.stopPropagation();var ts=ahora();BD[idx][key]=nowForDB();autoStatus(BD[idx]);guardar(idx);filtrar();toast('⛽ Carga · '+ts,'ok');setTimeout(function(){abrirDet(BD[idx]._id);},60);}
-function abrirDelCarga(idx,key,n,ev){ev.stopPropagation();DELCI=idx;DELCK=key;document.getElementById('delc-sub').textContent='Carga N°'+n+' · Acción permanente';document.getElementById('ov-delc').classList.add('open');}
+function abrirDelCarga(idx,key,n,ev){
+  ev.stopPropagation();
+  var p=BD[idx];
+  var CK=['f_c1','f_c2','f_c3','f_c4','f_c5','f_c6','f_c7','f_c8','f_c9','f_c10'];
+  var hayPosteriorConFecha=CK.slice(n).some(function(k){return tieneFecha(p[k]);});
+  if(hayPosteriorConFecha){
+    alert('🚫 No se puede eliminar la Carga N°'+n+' porque ya hay cargas posteriores registradas.\nElimina primero las cargas más nuevas, en orden inverso.');
+    return;
+  }
+  DELCI=idx;DELCK=key;document.getElementById('delc-sub').textContent='Carga N°'+n+' · Acción permanente';document.getElementById('ov-delc').classList.add('open');
+}
 function okDelCarga(){
   if(DELCI===null||!BD[DELCI])return;
   BD[DELCI][DELCK]=null;autoStatus(BD[DELCI]);guardar(DELCI);filtrar();closeOv('ov-delc');toast('🗑 Carga eliminada','ok');
@@ -2829,7 +2977,15 @@ function okDelCarga(){
 // que sí es un estado terminal soportado.
 function mkCierre(idx){
   if(!BD[idx])return;
-  if(!confirm('¿Confirmas el Cierre de Proyecto?\nEsta acción es permanente y no puede revertirse desde la app.'))return;
+  var p=BD[idx];
+  var PK=['pago1','pago2','pago3','pago4'];
+  var faltantes=[];
+  PK.forEach(function(k,i){if(p[k]!=='OK')faltantes.push('Pago '+(i+1));});
+  if(faltantes.length){
+    if(!confirm('⚠️ Este proyecto tiene estados de pago pendientes: '+faltantes.join(', ')+'.\n\n¿Confirmas el Cierre de Proyecto igual? Esta acción es permanente y no puede revertirse desde la app.'))return;
+  } else if(!confirm('¿Confirmas el Cierre de Proyecto?\nEsta acción es permanente y no puede revertirse desde la app.')){
+    return;
+  }
   var ts=ahora();
   BD[idx].status='7. Cierre Proyecto';BD[idx].etapa='Post Venta';
   BD[idx].f_cierre=nowForDB();
