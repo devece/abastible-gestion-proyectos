@@ -262,6 +262,16 @@ function extraerValorEtiqueta(bloque, etiqueta){
   return valor.slice(0, corte).trim();
 }
 
+// Nombre del proveedor (bloque "SEÑOR(ES)" del encabezado). En los PDF de SAP
+// esta etiqueta aparece en el texto desconectada de su valor — la razón
+// social real aparece antes, junto al RUT/Fono/Dirección del proveedor, en
+// un bloque que se repite igual en cada página. Solo se usa el nombre (por
+// decisión explícita) — no se autocompleta RUT, Fono ni Dirección desde acá.
+function extraerRazonSocialProveedor(textoCompleto){
+  const m = /([^\d\n]{3,80}?)Rut\s*:\s*[\dKk.\-]+/i.exec(textoCompleto);
+  return m ? m[1].trim() : null;
+}
+
 function parsearDatosOC(textoCompleto){
   const bloque = extraerBloqueObservaciones(textoCompleto);
   if(!bloque) return null;
@@ -302,39 +312,52 @@ async function cargarOC(file){
   try{
     const texto = await extraerTextoPDF(file);
     const datos = parsearDatosOC(texto);
+    const razonSocial = extraerRazonSocialProveedor(texto);
 
-    if(!datos){
+    if(!datos && !razonSocial){
       hint.textContent = `No se encontró la sección OBSERVACIONES en "${file.name}" — completa los campos manualmente.`;
       hint.style.color = 'var(--ambar)';
       return;
     }
 
-    if(datos.numeroProyecto){
-      document.getElementById('numeroProyecto').value = datos.numeroProyecto;
-      document.getElementById('numeroProyecto').classList.remove('valor-sugerido');
-    }
-    if(datos.cliente){
-      document.getElementById('cliente').value = datos.cliente;
-      document.getElementById('cliente').classList.remove('valor-sugerido');
-    }
-    if(datos.direccion){
-      document.getElementById('direccion').value = datos.direccion;
+    if(razonSocial){
+      document.getElementById('contratista').value = razonSocial;
+      document.getElementById('contratista').classList.remove('valor-sugerido');
+      onContratistaChange();
     }
 
-    const lineas = [];
-    if(datos.numeroProyecto) lineas.push(`PROYECTO RENOVA: ${datos.numeroProyecto}`);
-    if(datos.cliente)        lineas.push(`CLIENTE: ${datos.cliente}`);
-    if(datos.direccion)      lineas.push(`DIRECCIÓN: ${datos.direccion}`);
-    if(datos.ito)            lineas.push(`ITO: ${datos.ito}`);
-    if(datos.grafo)          lineas.push(`Grafo: ${datos.grafo}`);
-    document.getElementById('datosOC').value = lineas.join('\n');
+    if(datos){
+      if(datos.numeroProyecto){
+        document.getElementById('numeroProyecto').value = datos.numeroProyecto;
+        document.getElementById('numeroProyecto').classList.remove('valor-sugerido');
+      }
+      if(datos.cliente){
+        document.getElementById('cliente').value = datos.cliente;
+        document.getElementById('cliente').classList.remove('valor-sugerido');
+      }
+      if(datos.direccion){
+        document.getElementById('direccion').value = datos.direccion;
+      }
+
+      const lineas = [];
+      if(datos.numeroProyecto) lineas.push(`PROYECTO RENOVA: ${datos.numeroProyecto}`);
+      if(datos.cliente)        lineas.push(`CLIENTE: ${datos.cliente}`);
+      if(datos.direccion)      lineas.push(`DIRECCIÓN: ${datos.direccion}`);
+      if(datos.ito)            lineas.push(`ITO: ${datos.ito}`);
+      if(datos.grafo)          lineas.push(`Grafo: ${datos.grafo}`);
+      document.getElementById('datosOC').value = lineas.join('\n');
+    }
 
     ocFileName = file.name;
-    const faltantes = ETIQUETAS_OC.filter(e => !datos[e.campo]).map(e => e.label);
-    hint.textContent = faltantes.length
-      ? `✅ "${file.name}" leído — no se encontró: ${faltantes.join(', ')}. Revisa/completa antes de enviar.`
-      : `✅ "${file.name}" leído — 5/5 datos encontrados. Revisa antes de enviar.`;
-    hint.style.color = faltantes.length ? 'var(--ambar)' : 'var(--verde)';
+    const faltantes = datos ? ETIQUETAS_OC.filter(e => !datos[e.campo]).map(e => e.label) : ETIQUETAS_OC.map(e => e.label);
+    const partes = [
+      datos
+        ? (faltantes.length ? `de OBSERVACIONES no se encontró: ${faltantes.join(', ')}` : '5/5 datos de OBSERVACIONES')
+        : 'no se encontró la sección OBSERVACIONES',
+      razonSocial ? `contratista "${razonSocial}" identificado` : 'sin contratista identificado en el encabezado',
+    ];
+    hint.textContent = `✅ "${file.name}" leído — ${partes.join(' · ')}. Revisa antes de enviar.`;
+    hint.style.color = (datos && !faltantes.length && razonSocial) ? 'var(--verde)' : 'var(--ambar)';
     render();
   } catch(e){
     hint.textContent = `No se pudo leer "${file.name}" (¿es una imagen escaneada sin texto seleccionable?) — completa los campos manualmente.`;
