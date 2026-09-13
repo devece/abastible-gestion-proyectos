@@ -6,26 +6,11 @@
 <title>Anexos D — Suministro Provisorio · Abastible</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Ubuntu+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="compartido/valor-sugerido.css?v=1">
 
 <style>
-:root{--accent:#F47B20;--card:#fff;--muted:#777;--ink:#1a2e5a;--color-valor-sugerido:#8A93A6;--bg-valor-sugerido:#F3F5FA;--border-valor-sugerido:#C7CEE0}
+:root{--accent:#F47B20;--card:#fff;--muted:#777;--ink:#1a2e5a}
 *{box-sizing:border-box}
-/* ─── Convención visual: "valor sugerido" vs. dato real confirmado ─────────
-   .valor-sugerido marca un campo cuyo contenido es una propuesta de la app,
-   no un dato ya guardado o confirmado por el usuario. Esta página no tiene
-   campos con valores sugeridos hoy; se deja la convención lista para cuando
-   se agregue alguno. */
-.valor-sugerido{
-  color:var(--color-valor-sugerido) !important;
-  font-style:italic;
-  background-color:var(--bg-valor-sugerido) !important;
-  border-color:var(--border-valor-sugerido) !important;
-}
-input::placeholder,textarea::placeholder{
-  color:var(--color-valor-sugerido);
-  font-style:italic;
-  opacity:1;
-}
 body{font-family:"Ubuntu Sans",Tahoma,Verdana,sans-serif;background:#f4f7f8;padding:20px;color:#222;margin:0}
 
 .wrapper{max-width:980px;margin:auto}

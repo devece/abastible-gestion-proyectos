@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Panel de Control — Welcome Pack & End Pack</title>
 <link href="https://fonts.googleapis.com/css2?family=Ubuntu+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="compartido/valor-sugerido.css?v=1">
 <style>
   :root {
     --azul:       #001489;
@@ -20,25 +21,8 @@
     --blanco:     #FFFFFF;
     --radius:     8px;
     --sombra:     0 2px 12px rgba(0,20,137,0.10);
-    --color-valor-sugerido: #8A93A6;
-    --bg-valor-sugerido:    #F3F5FA;
-    --border-valor-sugerido:#C7CEE0;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  /* ─── Convención visual: "valor sugerido" vs. dato real confirmado ───────
-     .valor-sugerido marca un campo cuyo contenido es una propuesta de la app
-     (ej. la fecha de hoy), no un dato ya confirmado por el usuario. */
-  .valor-sugerido {
-    color: var(--color-valor-sugerido) !important;
-    font-style: italic;
-    background-color: var(--bg-valor-sugerido) !important;
-    border-color: var(--border-valor-sugerido) !important;
-  }
-  input::placeholder, textarea::placeholder {
-    color: var(--color-valor-sugerido);
-    font-style: italic;
-    opacity: 1;
-  }
   body {
     font-family: 'Ubuntu Sans', 'Ubuntu', Arial, sans-serif;
     background: var(--gris-bg);
@@ -741,6 +725,7 @@ const IMG_EP_FOOTER = "data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUN
 
 </div>
 
+<script src="compartido/utils-cl.js?v=1"></script>
 <script>
 function g(id) { return document.getElementById(id).value.trim(); }
 
@@ -797,24 +782,7 @@ function validarDatosReales(tipo) {
   return null;
 }
 
-// ─── RUT chileno (puntos de miles + guión) ────────────────────────────────
-function formatearRutCL(v){
-  const limpio = String(v||'').replace(/[^0-9kK]/g,'').toUpperCase();
-  if(limpio.length < 2) return limpio;
-  const cuerpo = limpio.slice(0,-1).replace(/\B(?=(\d{3})+(?!\d))/g,'.');
-  return cuerpo + '-' + limpio.slice(-1);
-}
-// ─── Teléfono chileno (+56 9 1234 5678) ───────────────────────────────────
-function formatearTelefonoCL(valor){
-  let numeros = String(valor||'').replace(/\D/g,'');
-  if(numeros.startsWith('56')) numeros = numeros.slice(2);
-  numeros = numeros.slice(0,9);
-  let resultado = '+56 ';
-  if(numeros.length > 0) resultado += numeros[0] + ' ';
-  if(numeros.length > 1) resultado += numeros.slice(1,5);
-  if(numeros.length > 5) resultado += ' ' + numeros.slice(5,9);
-  return resultado.trim();
-}
+// formatearRutCL()/formatearTelefonoCL() ahora vienen de compartido/utils-cl.js
 
 function initials(name) {
   return name.split(' ').filter(Boolean).slice(0,2).map(n => n[0].toUpperCase()).join('');

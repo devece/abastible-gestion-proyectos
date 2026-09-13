@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Abastible · Gestión de Proyectos</title>
+<link rel="stylesheet" href="compartido/valor-sugerido.css?v=1">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Ubuntu+Sans:wght@400;500;600;700;800&family=Ubuntu+Mono:wght@400;700&display=swap');
 :root{
@@ -21,22 +22,6 @@
   --r:8px;--r2:12px;
   --sh:0 1px 4px rgba(0,20,137,.06),0 4px 16px rgba(0,20,137,.06);
   --sh-lg:0 8px 36px rgba(0,20,137,.14);
-  --color-valor-sugerido:#8A93A6;--bg-valor-sugerido:#F3F5FA;--border-valor-sugerido:#C7CEE0;
-}
-/* ─── Convención visual: "valor sugerido" vs. dato real confirmado ───────
-   .valor-sugerido marca un campo cuyo contenido es una propuesta de la app
-   (ej. "hoy" para una fecha aún no registrada), no un dato ya guardado.
-   Se agrega/quita por JS — ver quitarMarcaSugerido() más abajo. */
-.valor-sugerido{
-  color:var(--color-valor-sugerido) !important;
-  font-style:italic;
-  background-color:var(--bg-valor-sugerido) !important;
-  border-color:var(--border-valor-sugerido) !important;
-}
-input::placeholder,textarea::placeholder{
-  color:var(--color-valor-sugerido);
-  font-style:italic;
-  opacity:1;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
@@ -733,11 +718,10 @@ tbody td:first-child{padding-left:20px}
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+<script src="compartido/supabase-config.js?v=1"></script>
+<script src="compartido/utils-cl.js?v=1"></script>
 <script>
 'use strict';
-var SUPABASE_URL='https://aocbetucqvgxxjopjbjm.supabase.co';
-var SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvY2JldHVjcXZneHhqb3BqYmptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxMzI1ODEsImV4cCI6MjEwMTcwODU4MX0.QfsInd_7iyeUHInGEMMSzLUh_FILaG4QPVn9pC8RByI';
-var sb=supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // FLT ahora es solo la página actual de la tabla principal (traída vía rpc_listar_proyectos,
 // filtrado/orden/paginación en Supabase) — FLT_TOTAL es el conteo exacto ya filtrado, usado
 // para el contador "X de Y" y la paginación. BD sigue siendo el dataset completo (Dashboard,
@@ -2262,17 +2246,8 @@ function formatearRut(v){
   var cuerpo=limpio.slice(0,-1).replace(/\B(?=(\d{3})+(?!\d))/g,'.');
   return cuerpo+'-'+limpio.slice(-1);
 }
-// ─── TELÉFONO CHILENO (+56 9 1234 5678) ───────────────────────────────────
-function formatearTelefonoCL(valor){
-  var numeros=String(valor||'').replace(/\D/g,'');
-  if(numeros.indexOf('56')===0)numeros=numeros.slice(2);
-  numeros=numeros.slice(0,9);
-  var resultado='+56 ';
-  if(numeros.length>0)resultado+=numeros[0]+' ';
-  if(numeros.length>1)resultado+=numeros.slice(1,5);
-  if(numeros.length>5)resultado+=' '+numeros.slice(5,9);
-  return resultado.trim();
-}
+// formatearTelefonoCL() ahora viene de compartido/utils-cl.js (idéntica a esta,
+// compartida también con panel-wp-ep.html).
 // ─── MONEDA CHILENA ($1.234.567) ──────────────────────────────────────────
 function formatearMonedaCL(v){
   var limpio=String(v||'').replace(/\D/g,'').replace(/^0+(?=\d)/,'');

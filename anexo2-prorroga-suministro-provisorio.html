@@ -4,23 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Anexo 2 – Prórroga Suministro Provisorio · Abastible</title>
+<link rel="stylesheet" href="compartido/valor-sugerido.css?v=1">
 <style>
-:root{--color-valor-sugerido:#8A93A6;--bg-valor-sugerido:#F3F5FA;--border-valor-sugerido:#C7CEE0}
-/* ─── Convención visual: "valor sugerido" vs. dato real confirmado ─────────
-   .valor-sugerido marca un campo cuyo contenido es una propuesta de la app
-   (ej. la fecha de hoy), no un dato ya confirmado por el usuario. Se retira
-   antes de imprimir para que nunca quede en el documento final. */
-.valor-sugerido{
-  color:var(--color-valor-sugerido) !important;
-  font-style:italic;
-  background-color:var(--bg-valor-sugerido) !important;
-  border-color:var(--border-valor-sugerido) !important;
-}
-input::placeholder,textarea::placeholder{
-  color:var(--color-valor-sugerido);
-  font-style:italic;
-  opacity:1;
-}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Arial,sans-serif;background:#f0f0f0;padding:20px;display:flex;flex-direction:column;align-items:center}
 .toolbar{width:816px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
@@ -141,13 +126,8 @@ label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.07e
   </div>
 
 </div>
+<script src="compartido/utils-cl.js?v=1"></script>
 <script>
-function formatearRutCL(v){
-  var limpio = String(v||'').replace(/[^0-9kK]/g,'').toUpperCase();
-  if(limpio.length < 2) return limpio;
-  var cuerpo = limpio.slice(0,-1).replace(/\B(?=(\d{3})+(?!\d))/g,'.');
-  return cuerpo + '-' + limpio.slice(-1);
-}
 function _hoy(){ var d=new Date(); return d.toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric'}); }
 // fecha2 arranca en "hoy" como SUGERENCIA (.valor-sugerido), no como dato ya
 // confirmado; se quita sola en cuanto el usuario la edita a mano.
