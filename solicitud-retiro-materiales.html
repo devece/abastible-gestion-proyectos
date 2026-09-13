@@ -26,8 +26,25 @@
     --ambar-borde:#f3c893;
     --radius:     8px;
     --sombra:     0 2px 12px rgba(0,20,137,0.10);
+    --color-valor-sugerido: #8A93A6;
+    --bg-valor-sugerido:    #F3F5FA;
+    --border-valor-sugerido:#C7CEE0;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  /* ─── Convención visual: "valor sugerido" vs. dato real confirmado ───────
+     Estos campos arrancan con datos de un proyecto de ejemplo para previsualizar
+     el documento; .valor-sugerido los distingue de un dato real ya confirmado. */
+  .valor-sugerido {
+    color: var(--color-valor-sugerido) !important;
+    font-style: italic;
+    background-color: var(--bg-valor-sugerido) !important;
+    border-color: var(--border-valor-sugerido) !important;
+  }
+  input::placeholder, textarea::placeholder {
+    color: var(--color-valor-sugerido);
+    font-style: italic;
+    opacity: 1;
+  }
   body {
     font-family: 'Ubuntu Sans', 'Ubuntu', Arial, sans-serif;
     background: var(--gris-bg);
@@ -170,43 +187,43 @@
       <div class="panel-body">
         <div class="field auto">
           <label for="cliente">Cliente</label>
-          <input type="text" id="cliente" value="MC Construcciones Limitada" oninput="render()">
+          <input type="text" id="cliente" class="valor-sugerido" value="MC Construcciones Limitada" oninput="render()">
           <div class="hint">campo <code>cliente</code> de tabla proyectos</div>
         </div>
         <div class="field auto">
           <label for="numeroProyecto">N° Proyecto (código) / N° Renova</label>
-          <input type="text" id="numeroProyecto" value="19527540" oninput="render()">
+          <input type="text" id="numeroProyecto" class="valor-sugerido" value="19527540" oninput="render()">
           <div class="hint">campo <code>codigo</code> — mismo valor va en Renova</div>
         </div>
         <div class="field auto">
           <label for="contratista">Contratista</label>
-          <input type="text" id="contratista" value="Sicor Ltda." list="listaContratistas" oninput="onContratistaChange()">
+          <input type="text" id="contratista" class="valor-sugerido" value="Sicor Ltda." list="listaContratistas" oninput="onContratistaChange()">
           <datalist id="listaContratistas"></datalist>
           <div class="hint">campo <code>contratista</code> — correo se busca en Listado de Contratistas</div>
         </div>
         <div class="field auto">
           <label for="correoContratista">Correo del contratista (CC)</label>
-          <input type="text" id="correoContratista" value="sicor.ltda@sicorltda.com" oninput="render()">
+          <input type="text" id="correoContratista" class="valor-sugerido" value="sicor.ltda@sicorltda.com" oninput="render()">
           <div class="hint" id="correoContratistaHint">encontrado en Listado_contratistas_actualizados.xlsx</div>
         </div>
         <div class="field auto">
           <label for="contactoContratista">Nombre de contacto (contratista)</label>
-          <input type="text" id="contactoContratista" value="Ulises Narvaez Villalobos" oninput="render()">
+          <input type="text" id="contactoContratista" class="valor-sugerido" value="Ulises Narvaez Villalobos" oninput="render()">
           <div class="hint" id="contactoContratistaHint">representante — Listado de Contratistas</div>
         </div>
         <div class="field auto">
           <label for="telefonoContratista">Teléfono de contacto (contratista)</label>
-          <input type="text" id="telefonoContratista" value="+56 9 9140 2402" oninput="this.value=formatoTelefonoCL(this.value); render()">
+          <input type="text" id="telefonoContratista" class="valor-sugerido" value="+56 9 9140 2402" oninput="this.value=formatoTelefonoCL(this.value); render()">
           <div class="hint" id="telefonoContratistaHint">+56 agregado automáticamente</div>
         </div>
         <div class="field auto">
           <label for="cantReguladores">Cantidad reguladores (ficha)</label>
-          <input type="text" id="cantReguladores" value="1" oninput="render()">
+          <input type="text" id="cantReguladores" class="valor-sugerido" value="1" oninput="render()">
           <div class="hint">campo <code>reguladores_cant</code> de tabla proyectos — referencia para verificar que coincida con la suma de materiales de abajo, no se incluye directo en el correo</div>
         </div>
         <div class="field auto">
           <label for="regionCodigo">Región</label>
-          <input type="text" id="regionCodigo" value="VII Maule" list="listaRegiones" oninput="onRegionChange()">
+          <input type="text" id="regionCodigo" class="valor-sugerido" value="VII Maule" list="listaRegiones" oninput="onRegionChange()">
           <datalist id="listaRegiones"></datalist>
           <div class="hint" id="regionCodigoHint">campo <code>region</code> de tabla proyectos — busca el bodeguero a cargo</div>
         </div>
@@ -251,12 +268,12 @@
       <div class="panel-body">
         <div class="field auto">
           <label for="destNombre">Nombre para el saludo</label>
-          <input type="text" id="destNombre" value="Raúl" oninput="render()">
+          <input type="text" id="destNombre" class="valor-sugerido" value="Raúl" oninput="render()">
           <div class="hint" id="destNombreHint">"Buenas tardes estimado/a ..."</div>
         </div>
         <div class="field auto">
           <label for="destPara">Para (correos separados por ;)</label>
-          <input type="text" id="destPara" value="Raul.Cornejo@abastible.cl" oninput="render()">
+          <input type="text" id="destPara" class="valor-sugerido" value="Raul.Cornejo@abastible.cl" oninput="render()">
           <div class="hint" id="destParaHint">bodeguero de la planta/región correspondiente — verifica antes de enviar</div>
         </div>
       </div>
@@ -299,6 +316,18 @@
 if(typeof pdfjsLib !== 'undefined'){
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
 }
+
+// ─── Convención visual "valor sugerido" ────────────────────────────────────
+// Los campos de "Desde la ficha del proyecto" arrancan con un proyecto de
+// ejemplo para previsualizar el documento (se sobrescriben con datos reales
+// si la página se abre desde la Planilla Maestra). .valor-sugerido los marca
+// mientras no se hayan confirmado; se retira sola al editar el campo.
+document.addEventListener('input', function(e){
+  if(e.target&&e.target.classList&&e.target.classList.contains('valor-sugerido')) e.target.classList.remove('valor-sugerido');
+}, true);
+document.addEventListener('change', function(e){
+  if(e.target&&e.target.classList&&e.target.classList.contains('valor-sugerido')) e.target.classList.remove('valor-sugerido');
+}, true);
 
 const UB = "'Ubuntu Sans', 'Ubuntu', Arial, sans-serif";
 
@@ -357,6 +386,13 @@ function onRegionChange(){
   if(match){
     document.getElementById('destNombre').value = primerNombre(match.nombre);
     document.getElementById('destPara').value = match.correo;
+    // Solo se marcan como confirmados si "regionCodigo" ya lo está: esta función
+    // también corre una vez al cargar la página (con la región de ejemplo), y
+    // ese primer llamado no debe "confirmar" nada todavía.
+    if(!document.getElementById('regionCodigo').classList.contains('valor-sugerido')){
+      document.getElementById('destNombre').classList.remove('valor-sugerido');
+      document.getElementById('destPara').classList.remove('valor-sugerido');
+    }
     hintRegion.textContent = `bodeguero encontrado: ${match.nombre}`;
     hintRegion.style.color = 'var(--verde)';
     hintNombre.textContent = 'bodeguero — Lista de Bodegueros por Región';
@@ -410,6 +446,14 @@ function onContratistaChange(){
     document.getElementById('correoContratista').value = match.correo;
     document.getElementById('contactoContratista').value = match.representante;
     document.getElementById('telefonoContratista').value = formatoTelefonoCL(match.telefono);
+    // Solo se marcan como confirmados si "contratista" ya lo está: esta función
+    // también corre una vez al cargar la página (con el contratista de ejemplo),
+    // y ese primer llamado no debe "confirmar" nada todavía.
+    if(!document.getElementById('contratista').classList.contains('valor-sugerido')){
+      document.getElementById('correoContratista').classList.remove('valor-sugerido');
+      document.getElementById('contactoContratista').classList.remove('valor-sugerido');
+      document.getElementById('telefonoContratista').classList.remove('valor-sugerido');
+    }
     hintCorreo.textContent = `encontrado en Listado de Contratistas · zona ${match.zona}`;
     hintCorreo.style.color = 'var(--verde)';
     hintContacto.textContent = 'representante — Listado de Contratistas';

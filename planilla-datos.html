@@ -8,8 +8,22 @@
 <link href="https://fonts.googleapis.com/css2?family=Ubuntu+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
 
 <style>
-:root{--accent:#FF6600;--card:#fff;--muted:#777}
+:root{--accent:#FF6600;--card:#fff;--muted:#777;--color-valor-sugerido:#8A93A6;--bg-valor-sugerido:#F3F5FA;--border-valor-sugerido:#C7CEE0}
 *{box-sizing:border-box}
+/* ─── Convención visual: "valor sugerido" vs. dato real confirmado ─────────
+   .valor-sugerido marca un campo cuyo contenido es una propuesta de la app,
+   no un dato ya guardado o confirmado por el usuario. */
+.valor-sugerido{
+  color:var(--color-valor-sugerido) !important;
+  font-style:italic;
+  background-color:var(--bg-valor-sugerido) !important;
+  border-color:var(--border-valor-sugerido) !important;
+}
+input::placeholder,textarea::placeholder{
+  color:var(--color-valor-sugerido);
+  font-style:italic;
+  opacity:1;
+}
 body{font-family:"Ubuntu Sans",Tahoma,Verdana,sans-serif;background:#f4f7f8;padding:20px;color:#222;margin:0}
 
 .wrapper{max-width:950px;margin:auto;background:var(--card);padding:22px 28px;border-radius:10px;box-shadow:0 8px 28px rgba(27,31,35,.06)}

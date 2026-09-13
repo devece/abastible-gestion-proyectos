@@ -5,6 +5,22 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Anexo 1 – Suministro Provisorio · Abastible</title>
 <style>
+:root{--color-valor-sugerido:#8A93A6;--bg-valor-sugerido:#F3F5FA;--border-valor-sugerido:#C7CEE0}
+/* ─── Convención visual: "valor sugerido" vs. dato real confirmado ─────────
+   .valor-sugerido marca un campo cuyo contenido es una propuesta de la app
+   (ej. la fecha de hoy), no un dato ya confirmado por el usuario. Se retira
+   antes de imprimir para que nunca quede en el documento final. */
+.valor-sugerido{
+  color:var(--color-valor-sugerido) !important;
+  font-style:italic;
+  background-color:var(--bg-valor-sugerido) !important;
+  border-color:var(--border-valor-sugerido) !important;
+}
+input::placeholder,textarea::placeholder{
+  color:var(--color-valor-sugerido);
+  font-style:italic;
+  opacity:1;
+}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Arial,sans-serif;background:#f0f0f0;padding:20px;display:flex;flex-direction:column;align-items:center}
 .toolbar{width:816px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
@@ -72,7 +88,7 @@ input:focus{border-bottom-color:#F47B20}
     <span class="sec-lbl">Datos del cliente</span>
     <div class="grid">
       <div class="fg full"><label>Nombre</label><input type="text" placeholder="Nombre completo del cliente"></div>
-      <div class="fg"><label>Fecha</label><input type="text" id="fecha1" placeholder="dd/mm/aaaa"></div>
+      <div class="fg"><label>Fecha</label><input type="text" id="fecha1" class="valor-sugerido" placeholder="dd/mm/aaaa"></div>
       <div class="fg"><label>Dirección</label><input type="text" placeholder="Dirección del cliente"></div>
     </div>
   </div>
@@ -121,7 +137,13 @@ input:focus{border-bottom-color:#F47B20}
 </div>
 <script>
 function _hoy(){ var d=new Date(); return d.toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric'}); }
+// fecha1 arranca en "hoy" como SUGERENCIA (.valor-sugerido), no como dato ya
+// confirmado; se quita sola en cuanto el usuario la edita a mano.
 document.getElementById('fecha1').value=_hoy();
+document.getElementById('fecha1').classList.add('valor-sugerido');
+document.addEventListener('input', function(e){
+  if(e.target&&e.target.classList&&e.target.classList.contains('valor-sugerido')) e.target.classList.remove('valor-sugerido');
+}, true);
 
 // Ocultar placeholders al imprimir y restaurarlos después
 var _ph = [];
@@ -132,10 +154,12 @@ window.addEventListener('beforeprint', function(){
     el.setAttribute('placeholder','');
   });
   document.getElementById('fecha1').value='';
+  document.getElementById('fecha1').classList.remove('valor-sugerido');
 });
 window.addEventListener('afterprint', function(){
   _ph.forEach(function(pair){ pair[0].setAttribute('placeholder', pair[1]||''); });
   document.getElementById('fecha1').value=_hoy();
+  document.getElementById('fecha1').classList.add('valor-sugerido');
 });
 
 function cargarFirma(input, imgId){
@@ -162,7 +186,10 @@ function enviarCopia(){
 function limpiar(){
   if(!confirm('¿Limpiar todos los campos?'))return;
   document.querySelectorAll('input[type=text],input[type=number]').forEach(i=>i.value='');
-  document.getElementById('fecha1').valueAsDate=new Date();
+  // Nota: fecha1 es type="text" (formato dd/mm/aaaa), no type="date" — usar
+  // .value=_hoy() en vez de .valueAsDate, que no aplica a inputs de texto.
+  document.getElementById('fecha1').value=_hoy();
+  document.getElementById('fecha1').classList.add('valor-sugerido');
 }
 </script>
 </body>

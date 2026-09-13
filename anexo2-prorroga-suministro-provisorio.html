@@ -5,6 +5,22 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Anexo 2 – Prórroga Suministro Provisorio · Abastible</title>
 <style>
+:root{--color-valor-sugerido:#8A93A6;--bg-valor-sugerido:#F3F5FA;--border-valor-sugerido:#C7CEE0}
+/* ─── Convención visual: "valor sugerido" vs. dato real confirmado ─────────
+   .valor-sugerido marca un campo cuyo contenido es una propuesta de la app
+   (ej. la fecha de hoy), no un dato ya confirmado por el usuario. Se retira
+   antes de imprimir para que nunca quede en el documento final. */
+.valor-sugerido{
+  color:var(--color-valor-sugerido) !important;
+  font-style:italic;
+  background-color:var(--bg-valor-sugerido) !important;
+  border-color:var(--border-valor-sugerido) !important;
+}
+input::placeholder,textarea::placeholder{
+  color:var(--color-valor-sugerido);
+  font-style:italic;
+  opacity:1;
+}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Arial,sans-serif;background:#f0f0f0;padding:20px;display:flex;flex-direction:column;align-items:center}
 .toolbar{width:816px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
@@ -73,7 +89,7 @@ label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.07e
     <div class="grid">
       <div class="fg full"><label>Empresa</label><input type="text" id="empresa" placeholder="Razón social de la empresa"></div>
       <div class="fg"><label>R.U.T.</label><input type="text" id="rutEmpresa" placeholder="Ej.: 76.000.000-0" oninput="this.value=formatearRutCL(this.value)"></div>
-      <div class="fg"><label>Fecha</label><input type="text" id="fecha2" placeholder="dd/mm/aaaa"></div>
+      <div class="fg"><label>Fecha</label><input type="text" id="fecha2" class="valor-sugerido" placeholder="dd/mm/aaaa"></div>
       <div class="fg full"><label>Representante legal</label><input type="text" id="rep" placeholder="Nombre completo del representante"></div>
       <div class="fg"><label>Cédula de identidad</label><input type="text" placeholder="RUT / CI del representante"></div>
       <div class="fg full"><label>Domicilio</label><input type="text" placeholder="Domicilio del cliente"></div>
@@ -133,7 +149,13 @@ function formatearRutCL(v){
   return cuerpo + '-' + limpio.slice(-1);
 }
 function _hoy(){ var d=new Date(); return d.toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric'}); }
+// fecha2 arranca en "hoy" como SUGERENCIA (.valor-sugerido), no como dato ya
+// confirmado; se quita sola en cuanto el usuario la edita a mano.
 document.getElementById('fecha2').value=_hoy();
+document.getElementById('fecha2').classList.add('valor-sugerido');
+document.addEventListener('input', function(e){
+  if(e.target&&e.target.classList&&e.target.classList.contains('valor-sugerido')) e.target.classList.remove('valor-sugerido');
+}, true);
 document.getElementById('rep').addEventListener('input',function(){document.getElementById('rep2').value=this.value});
 document.getElementById('empresa').addEventListener('input',function(){document.getElementById('empresa2').value=this.value});
 
@@ -146,11 +168,13 @@ window.addEventListener('beforeprint', function(){
     el.setAttribute('placeholder','');
   });
   document.getElementById('fecha2').value='';
+  document.getElementById('fecha2').classList.remove('valor-sugerido');
   document.getElementById('fecha_ing').value='';
 });
 window.addEventListener('afterprint', function(){
   _ph.forEach(function(pair){ pair[0].setAttribute('placeholder', pair[1]||''); });
   document.getElementById('fecha2').value=_hoy();
+  document.getElementById('fecha2').classList.add('valor-sugerido');
 });
 
 function cargarFirma(input, imgId){
@@ -178,6 +202,7 @@ function limpiar(){
   if(!confirm('¿Limpiar todos los campos?'))return;
   document.querySelectorAll('input[type=text]').forEach(i=>i.value='');
   document.getElementById('fecha2').value=_hoy();
+  document.getElementById('fecha2').classList.add('valor-sugerido');
 }
 </script>
 </body>
