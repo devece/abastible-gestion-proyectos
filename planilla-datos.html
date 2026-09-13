@@ -45,6 +45,12 @@ textarea{min-height:90px}
 .collapsible{display:none}
 .collapsible.open{display:block}
 
+/* Aviso mientras no se elige Tipo de Instalación: sin esto, el formulario
+   parece saltar de la sección "1." directo a la "3." (las 3 secciones "2."
+   posibles quedan todas ocultas hasta elegir un tipo). */
+.aviso-tipo{background:#fff3ee;border:1.5px dashed var(--accent);color:#a34a00;font-weight:600;text-align:center}
+.aviso-tipo.oculto{display:none}
+
 /* firma */
 .firma-section{margin-top:20px;border-top:1px solid #ccc;padding-top:16px;display:flex;gap:14px;flex-wrap:wrap}
 .firma-col{flex:1 1 320px}
@@ -144,6 +150,9 @@ textarea{min-height:90px}
 </div>
 </div>
 
+<div id="avisoTipoInstalacion" class="section aviso-tipo">
+👉 Selecciona un <strong>Tipo de Instalación</strong> arriba para continuar completando los datos del cliente.
+</div>
 
 <!-- HABITACIONAL -->
 <div id="habitacionalSection" class="section collapsible">
@@ -638,6 +647,7 @@ const tipo=document.getElementById("tipoInstalacion");
 const hab=document.getElementById("habitacionalSection");
 const cons=document.getElementById("constructoraSection");
 const com=document.getElementById("comercialSection");
+const avisoTipo=document.getElementById("avisoTipoInstalacion");
 
 tipo.addEventListener("change",function(){
  hab.classList.remove("open");
@@ -647,6 +657,9 @@ tipo.addEventListener("change",function(){
  if(this.value==="habitacional") hab.classList.add("open");
  if(this.value==="constructora") cons.classList.add("open");
  if(this.value==="comercial") com.classList.add("open");
+
+ // El aviso solo tiene sentido mientras no se ha elegido ningún tipo todavía.
+ avisoTipo.classList.toggle("oculto", !!this.value);
 });
 
 /* FIRMA */
