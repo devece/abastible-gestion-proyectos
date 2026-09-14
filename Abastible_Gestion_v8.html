@@ -87,19 +87,19 @@ table{width:100%;border-collapse:separate;border-spacing:0;background:var(--pane
 /* FIX ENCABEZADO: position sticky con top calculado desde el header+nav+filtros+chips */
 thead{position:sticky;top:0;z-index:200}
 thead tr{background:var(--navy)}
-thead th{padding:12px 14px;text-align:left;color:#fff;font-family:var(--sans);font-size:13px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;white-space:nowrap;cursor:pointer;user-select:none;transition:background .15s}
+thead th{padding:9px 11px;text-align:left;color:#fff;font-family:var(--sans);font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;cursor:pointer;user-select:none;transition:background .15s}
 thead th:hover{background:var(--navy2)}
-thead th:first-child{padding-left:20px}
+thead th:first-child{padding-left:16px}
 .si{opacity:.35;margin-left:3px;font-size:12px}
 tbody tr{border-bottom:1px solid var(--line);cursor:pointer;transition:background .08s}
 tbody tr:last-child{border-bottom:none}
 tbody tr:hover td{background:#EEF2FF!important}
 tbody tr.ven td{background:#FFF5F5!important}
 tbody tr.ven:hover td{background:#FFEAEA!important}
-tbody td{padding:10px 14px;font-size:15px;background:var(--panel);vertical-align:middle}
-tbody td:first-child{padding-left:20px}
-.td-n{font-family:var(--mono);font-size:14px;color:var(--muted);font-weight:700;width:50px}
-.td-cod{font-family:var(--mono);font-weight:700;color:var(--navy);font-size:14.5px}
+tbody td{padding:7px 11px;font-size:12px;background:var(--panel);vertical-align:middle}
+tbody td:first-child{padding-left:16px}
+.td-n{font-family:var(--mono);font-size:11px;color:var(--muted);font-weight:700}
+.td-cod{font-family:var(--mono);font-weight:700;color:var(--navy);font-size:12px}
 .td-cli{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
 /* Anchos fijos por columna (ver <colgroup> de la tabla principal) para que las
    13 columnas entren siempre en pantalla, sin scroll horizontal — el texto que
@@ -110,7 +110,7 @@ tbody td:first-child{padding-left:20px}
 .td-trunc{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* BADGES */
-.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-family:var(--sans);font-size:13.5px;font-weight:700;white-space:nowrap}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-family:var(--sans);font-size:11px;font-weight:700;white-space:nowrap}
 .badge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
 .b1{background:#EDE9FE;color:#5B21B6}.b2{background:#DBEAFE;color:#1E40AF}
 .b4{background:#FEF3C7;color:#B45309}.b5{background:#D1FAE5;color:#065F46}
@@ -118,10 +118,10 @@ tbody td:first-child{padding-left:20px}
 .b54{background:#F3E8FF;color:#6B21A8}.b6{background:#FFEDD5;color:#9A3412}
 .b7{background:#DCFCE7;color:#14532D}.b8{background:#FEE2E2;color:#991B1B}
 .progreso-cell{display:flex;align-items:center;gap:7px}
-.progreso-pct{font-size:12.5px;font-weight:800;font-family:var(--mono);white-space:nowrap}
-.dots{display:flex;gap:3px}.dot{width:9px;height:9px;border-radius:50%;background:var(--line);border:1.5px solid var(--line2);flex-shrink:0}
+.progreso-pct{font-size:10.5px;font-weight:800;font-family:var(--mono);white-space:nowrap}
+.dots{display:flex;gap:3px}.dot{width:7px;height:7px;border-radius:50%;background:var(--line);border:1px solid var(--line2);flex-shrink:0}
 .dot.f{background:#3B82F6;border-color:#1D4ED8}.dot.ok{background:#10B981;border-color:#059669}
-.dg{display:inline-block;padding:3px 8px;border-radius:6px;font-size:13px;font-weight:700;font-family:var(--mono)}
+.dg{display:inline-block;padding:2px 6px;border-radius:6px;font-size:11px;font-weight:700;font-family:var(--mono)}
 .dg-ok{background:var(--ok-bg);color:var(--ok)}.dg-w{background:var(--warn-bg);color:var(--warn)}.dg-bad{background:var(--err-bg);color:var(--err)}
 
 /* PAGINACIÓN */
@@ -2576,10 +2576,10 @@ function renderTabla(){
     html+='<td class="td-trunc" title="'+esc(p.nombre_proyecto||p.cliente||'')+'">'+esc(p.nombre_proyecto||p.cliente||'—')+'</td>';
     html+='<td class="td-trunc" title="'+esc(p.region||'')+'">'+esc(p.region||'—')+'</td>';
     html+='<td class="td-trunc">'+mkBadge(p.status)+'</td>';
-    html+='<td class="td-trunc" style="font-size:13px;'+(proxCompleto?'color:#059669;font-weight:700':'color:#3D4A6B')+'" title="'+esc(proxLbl)+'">'+esc(proxLbl)+'</td>';
+    html+='<td class="td-trunc" style="font-size:11px;'+(proxCompleto?'color:#059669;font-weight:700':'color:#3D4A6B')+'" title="'+esc(proxLbl)+'">'+esc(proxLbl)+'</td>';
     html+='<td class="td-trunc" title="'+esc(p.supervisor||'')+'">'+esc(p.supervisor||'—')+'</td>';
     html+='<td class="td-trunc" style="color:#3D4A6B" title="'+esc(p.contratista||'')+'">'+esc(p.contratista||'—')+'</td>';
-    html+='<td class="td-trunc" style="font-size:13.5px;color:#6B7A9E" title="'+esc(p.tipo||'')+'">'+tc+'</td>';
+    html+='<td class="td-trunc" style="font-size:11px;color:#6B7A9E" title="'+esc(p.tipo||'')+'">'+tc+'</td>';
     html+='<td title="'+pctProg+'% de avance ponderado"><div class="progreso-cell"><div class="dots">'+dots+'</div><span class="progreso-pct" style="color:'+colorProg+'">'+pctProg+'%</span></div></td>';
     html+='<td>'+(p._d?mkDias(p._d):'—')+'</td>';
     html+='<td>'+(ven?'<span title="Requiere atención">⚠️</span>':'')+'</td>';
