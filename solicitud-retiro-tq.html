@@ -382,9 +382,15 @@ function onRegionChange(){
       hint.textContent = `destinatario encontrado para esta región`;
       hint.style.color = 'var(--verde)';
     } else if(ambiguo){
+      document.getElementById('destNombre').value = '';
+      document.getElementById('destPara').value = '';
+      document.getElementById('coordinaRetiro').value = '';
       hint.textContent = 'esta región tiene más de un bodeguero — indica la comuna en "Región / Comuna" para identificar cuál corresponde';
       hint.style.color = 'var(--ambar)';
     } else {
+      document.getElementById('destNombre').value = '';
+      document.getElementById('destPara').value = '';
+      document.getElementById('coordinaRetiro').value = '';
       hint.textContent = 'sin destinatario registrado para esta región — completa manualmente';
       hint.style.color = 'var(--ambar)';
     }
