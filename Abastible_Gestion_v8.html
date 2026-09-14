@@ -100,7 +100,14 @@ tbody td{padding:10px 14px;font-size:15px;background:var(--panel);vertical-align
 tbody td:first-child{padding-left:20px}
 .td-n{font-family:var(--mono);font-size:14px;color:var(--muted);font-weight:700;width:50px}
 .td-cod{font-family:var(--mono);font-weight:700;color:var(--navy);font-size:14.5px}
-.td-cli{max-width:195px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+.td-cli{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+/* Anchos fijos por columna (ver <colgroup> de la tabla principal) para que las
+   13 columnas entren siempre en pantalla, sin scroll horizontal — el texto que
+   no entra se corta con "…" y queda completo en el title (tooltip). */
+.twrap table{table-layout:fixed}
+.twrap thead th{white-space:normal;line-height:1.25;border-right:1px solid rgba(255,255,255,.14)}
+.twrap thead th:last-child{border-right:none}
+.td-trunc{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* BADGES */
 .badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-family:var(--sans);font-size:13.5px;font-weight:700;white-space:nowrap}
@@ -411,6 +418,13 @@ tbody td:first-child{padding-left:20px}
   <div class="chips" id="hito-chips" style="display:none;margin-top:6px"></div>
   <div class="twrap">
     <table>
+      <colgroup>
+        <col style="width:3%"><col style="width:6%"><col style="width:11%">
+        <col style="width:11%"><col style="width:7%"><col style="width:9%">
+        <col style="width:10%"><col style="width:8%"><col style="width:9%">
+        <col style="width:7%"><col style="width:12%"><col style="width:4%">
+        <col style="width:3%">
+      </colgroup>
       <thead><tr>
         <th onclick="ord('item')">N° <span class="si">↕</span></th>
         <th onclick="ord('codigo')">Código <span class="si">↕</span></th>
@@ -2559,13 +2573,13 @@ function renderTabla(){
     html+='<td class="td-n">'+p.item+'</td>';
     html+='<td class="td-cod">'+esc(p.codigo||'—')+'</td>';
     html+='<td class="td-cli" title="'+esc(p.cliente||'')+'">'+esc(p.cliente||'—')+'</td>';
-    html+='<td title="'+esc(p.nombre_proyecto||p.cliente||'')+'">'+esc(p.nombre_proyecto||p.cliente||'—')+'</td>';
-    html+='<td style="white-space:nowrap">'+esc(p.region||'—')+'</td>';
-    html+='<td>'+mkBadge(p.status)+'</td>';
-    html+='<td style="font-size:13px;white-space:nowrap;'+(proxCompleto?'color:#059669;font-weight:700':'color:#3D4A6B')+'">'+esc(proxLbl)+'</td>';
-    html+='<td>'+esc(p.supervisor||'—')+'</td>';
-    html+='<td style="color:#3D4A6B">'+esc(p.contratista||'—')+'</td>';
-    html+='<td style="font-size:13.5px;color:#6B7A9E">'+tc+'</td>';
+    html+='<td class="td-trunc" title="'+esc(p.nombre_proyecto||p.cliente||'')+'">'+esc(p.nombre_proyecto||p.cliente||'—')+'</td>';
+    html+='<td class="td-trunc" title="'+esc(p.region||'')+'">'+esc(p.region||'—')+'</td>';
+    html+='<td class="td-trunc">'+mkBadge(p.status)+'</td>';
+    html+='<td class="td-trunc" style="font-size:13px;'+(proxCompleto?'color:#059669;font-weight:700':'color:#3D4A6B')+'" title="'+esc(proxLbl)+'">'+esc(proxLbl)+'</td>';
+    html+='<td class="td-trunc" title="'+esc(p.supervisor||'')+'">'+esc(p.supervisor||'—')+'</td>';
+    html+='<td class="td-trunc" style="color:#3D4A6B" title="'+esc(p.contratista||'')+'">'+esc(p.contratista||'—')+'</td>';
+    html+='<td class="td-trunc" style="font-size:13.5px;color:#6B7A9E" title="'+esc(p.tipo||'')+'">'+tc+'</td>';
     html+='<td title="'+pctProg+'% de avance ponderado"><div class="progreso-cell"><div class="dots">'+dots+'</div><span class="progreso-pct" style="color:'+colorProg+'">'+pctProg+'%</span></div></td>';
     html+='<td>'+(p._d?mkDias(p._d):'—')+'</td>';
     html+='<td>'+(ven?'<span title="Requiere atención">⚠️</span>':'')+'</td>';
