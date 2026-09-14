@@ -1,0 +1,8 @@
+{
+  "name": "abastible-gestion-proyectos",
+  "private": true,
+  "description": "App estática (HTML/JS) sin build. package.json solo existe para fijar Playwright como dependencia de desarrollo, usada para grabar el video demostrativo (capturas_video/) — no participa del producto en sí.",
+  "devDependencies": {
+    "playwright": "1.56.1"
+  }
+}
