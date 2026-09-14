@@ -669,3 +669,16 @@ grant execute on function public.rpc_listar_proyectos(text,text,text,text,text,i
 -- corresponda). supabase-js además deserializa jsonb como array JS nativo, sin
 -- parseo manual del lado del cliente.
 alter table public.proyectos add column if not exists hitos_na jsonb not null default '[]'::jsonb;
+
+-- ── Stage: policy de DELETE en proyectos (reversión deliberada) ──
+-- Hasta acá, la tabla proyectos NO tenía policy de "delete" a propósito (ver el
+-- comentario más arriba, junto al resto de las policies): un botón viejo de
+-- "Eliminar Proyecto" (abrirDelProy/okDelProy, ya retirado de la UI) llamaba a
+-- sb.from('proyectos').delete(), pero como RLS no tenía ninguna policy de delete,
+-- PostgREST devolvía éxito sin borrar ninguna fila — la UI mentía. Se optó
+-- entonces por sacar el botón en vez de dejar esa trampa.
+-- El usuario pidió explícitamente reactivar el borrado real, con una
+-- confirmación en la UI que exige escribir el N° de ítem exacto del proyecto
+-- antes de habilitar el botón (ver okDelProy() en Abastible_Gestion_v8.html) —
+-- es una acción permanente e irreversible sobre datos de producción.
+create policy "anon_delete_proyectos" on public.proyectos for delete using (true);
