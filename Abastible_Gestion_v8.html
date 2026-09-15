@@ -2707,8 +2707,9 @@ function abrirDet(id){
   h+='<div class="ehdr2">⛽ Cargas Provisorias</div><div class="cgrid">';
   CK.forEach(function(k,i){
     var v=p[k], ok=v&&v!=='null';
-    h+='<div class="cc"><label>Carga '+(i+1)+'</label><div class="cv'+(ok?'':' nd')+'">'+(ok?'📅 '+(fFH(v)||v):'Pendiente')+'</div>'
-      +(ok&&!cer?'<button class="cc-del" onclick="abrirDelCarga('+idx+',\''+k+'\','+(i+1)+',event)" title="Eliminar carga N°'+(i+1)+'">🗑</button>':'')
+    h+='<div class="cc"><label>Carga '+(i+1)+'</label><div class="cv'+(ok?'':' nd')+'">'+(ok?'📅 '+(fFH(v)||v):'Pendiente')+'</div>';
+    if(ok&&!cer)h+='<input type="date" id="fi-'+idx+'-'+k+'" value="'+isoLocal(v)+'" onchange="saveFechaEdit('+idx+',\''+k+'\')" title="Editar fecha de la Carga '+(i+1)+'" style="width:100%;margin-top:4px;padding:4px 6px;font-size:12.5px;font-family:var(--mono);border:1.5px solid var(--line2);border-radius:5px;color:var(--navy);outline:none">';
+    h+=(ok&&!cer?'<button class="cc-del" onclick="abrirDelCarga('+idx+',\''+k+'\','+(i+1)+',event)" title="Eliminar carga N°'+(i+1)+'">🗑</button>':'')
       +'</div>';
     if(!ok&&nextN<0){nextN=i+1;nextK=k;}
   });
