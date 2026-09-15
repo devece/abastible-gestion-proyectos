@@ -2050,8 +2050,11 @@ function abrirPedirGrafo(idx){
 }
 function abrirRetiroTQ(idx){
   var p=BD[idx];
-  if(!tieneFecha(p.f_montaje)){
-    if(!confirm('⚠️ Este proyecto todavía no tiene fecha de "Montaje TK".\n\n¿Generar la Solicitud de Retiro de TQ de todas formas?'))return;
+  // El Retiro de TQ siempre va antes del Montaje TK (puede incluso ir antes
+  // de Inicio de Trabajos). Si Montaje TK ya tiene fecha, el retiro se está
+  // pidiendo fuera de orden — eso sí amerita confirmar con el usuario.
+  if(tieneFecha(p.f_montaje)){
+    if(!confirm('⚠️ Este proyecto ya tiene fecha de "Montaje TK" registrada.\n\nEl Retiro de TQ debería solicitarse antes del montaje. ¿Generar la Solicitud de Retiro de TQ de todas formas?'))return;
   }
   var qs=new URLSearchParams({
     cliente:p.cliente||'',
@@ -2263,7 +2266,8 @@ function validarOrdenFechas(p){
     ['f_liberado','f_pedir_grafo'],
     ['f_pedir_grafo','f_oc'],
     ['f_oc','f_trabajos'],
-    ['f_trabajos','f_tc8'],
+    // f_trabajos -> f_tc8 queda fuera: el retiro de tanque (Despacho TQ / TC8)
+    // puede quedar antes de Inicio de Trabajos, no es cronología inválida.
     ['f_tc8','f_montaje'],
     ['f_montaje','f_gestor']
   ];
@@ -2274,7 +2278,9 @@ function validarOrdenFechas(p){
     orden = orden.concat([
       ['f_rev_ant','f_visita'],['f_visita','f_liberar'],
       ['f_liberado','f_ut'],['f_ut','f_pedir_grafo'],
-      ['f_trabajos','f_despacho_tq'],['f_despacho_tq','f_retiro_materiales'],
+      // f_trabajos -> f_despacho_tq queda fuera: el Retiro de TQ puede pedirse
+      // antes de Inicio de Trabajos, no es una cronología inválida.
+      ['f_despacho_tq','f_retiro_materiales'],
       ['f_retiro_materiales','f_tc8'],['f_tc8','f_montaje'],
       ['f_montaje','f_ampliacion'],['f_ampliacion','f_c1'],
       ['f_c1','f_c2'],['f_c2','f_c3'],['f_c3','f_c4'],['f_c4','f_c5'],['f_c5','f_c6'],
@@ -2970,7 +2976,11 @@ var CADENA_HITOS=[
   {key:'f_pedir_grafo',label:'Pedir Liberar Grafo',sinPredecesor:true},
   {key:'f_oc',label:'Envío OC'},
   {key:'f_trabajos',label:'Inicio Trabajos',excepcionBlanda:true},
-  {key:'f_despacho_tq',label:'Despacho Tanque y Equipos'},
+  // sinPredecesor: el Retiro de TQ (Despacho Tanque y Equipos) puede pedirse
+  // antes de Inicio de Trabajos — es habitual en datos reales, así que no se
+  // valida contra ese vecino (confirmado con el usuario). Sigue validando
+  // como siempre contra su vecino siguiente: Montaje TK va siempre después.
+  {key:'f_despacho_tq',label:'Despacho Tanque y Equipos',sinPredecesor:true},
   {key:'f_tc8',label:'Envío TC8'},
   {key:'f_montaje',label:'Montaje TK'},
   {key:'f_ampliacion',label:'Ampliar Cliente'},
