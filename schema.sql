@@ -522,10 +522,10 @@ begin
           when p.status = '7. Cierre Proyecto' then 'pasado_post_venta'
           when p.f_gestor is not null then 'envio_gestor_documental'
           when p.f_termino_ejecucion is not null then 'termino_trabajos'
-          when p.pago4 = 'OK' then 'pago_4'
-          when p.pago3 = 'OK' then 'pago_3'
-          when p.pago2 = 'OK' then 'pago_2'
-          when p.pago1 = 'OK' then 'pago_1'
+          when p.pago4 is not null then 'pago_4'
+          when p.pago3 is not null then 'pago_3'
+          when p.pago2 is not null then 'pago_2'
+          when p.pago1 is not null then 'pago_1'
           when p.tc7 = 'OK' then 'tc5_tc7_otros'
           when p.ir = 'OK' then 'ir'
           when p.tc6 = 'OK' then 'tc6'
@@ -682,3 +682,15 @@ alter table public.proyectos add column if not exists hitos_na jsonb not null de
 -- antes de habilitar el botón (ver okDelProy() en Abastible_Gestion_v8.html) —
 -- es una acción permanente e irreversible sobre datos de producción.
 create policy "anon_delete_proyectos" on public.proyectos for delete using (true);
+
+-- ── Stage: pago1..pago4 pasan a guardar la fecha real del pago ──
+-- Hasta acá, pago1..pago4 solo guardaban el texto literal 'OK' al marcar un pago
+-- (sin fecha) — igual que tc2/sello/tc6/ir/tc7. A pedido del usuario, ahora se
+-- comportan como f_c1..f_c10 (Cargas Provisorias): se guarda la fecha/hora real
+-- (nowForDB() al marcar "ahora", editable después con un <input type="date">
+-- en la ficha, ver hF()/saveFechaEdit() reusado para pago1..pago4 en
+-- Abastible_Gestion_v8.html). Las columnas ya eran "text" así que no hace falta
+-- ALTER de tipo — un timestamptz en formato ISO cabe igual.
+-- rpc_listar_proyectos (arriba) se actualiza en el mismo sentido: el cálculo de
+-- hito_actual pasa de "p.pagoN = 'OK'" a "p.pagoN is not null", que sigue
+-- reconociendo también los pagos históricos que quedaron marcados 'OK'.

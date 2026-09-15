@@ -2130,6 +2130,12 @@ function tieneFecha(v){
   var d=new Date(String(v).replace(' ','T'));
   return !isNaN(d.getTime());
 }
+// pago1..pago4 guardan la fecha/hora real del pago (igual que f_c1..f_c10) —
+// a diferencia de tieneFecha() se acepta también el 'OK' histórico de antes de
+// este cambio, para que los pagos ya marcados sigan contando como registrados.
+function pagoOk(v){
+  return !!(v&&v!=='null'&&v!=='None');
+}
 // Etapa (etiqueta comercial) según el status recién calculado — se mantiene
 // sincronizada sola siguiendo la regla "la etapa es la última fecha tickeada",
 // igual que el status. Único override manual: mkCierre() al cerrar el proyecto.
@@ -2196,10 +2202,10 @@ var HITOS_DEF=[
   {id:'tc6',etapa:2,label:'TC6',chk:function(p){return p.tc6==='OK';},enFiltro:false},
   {id:'ir',etapa:2,label:'IR',chk:function(p){return p.ir==='OK';},enFiltro:false},
   {id:'tc5_tc7_otros',etapa:2,label:'TC5 - TC7 - Otros',chk:function(p){return p.tc7==='OK';},enFiltro:false},
-  {id:'pago_1',etapa:2,label:'Pago 1',chk:function(p){return p.pago1==='OK';},enFiltro:false},
-  {id:'pago_2',etapa:2,label:'Pago 2',chk:function(p){return p.pago2==='OK';},enFiltro:false},
-  {id:'pago_3',etapa:2,label:'Pago 3',chk:function(p){return p.pago3==='OK';},enFiltro:false},
-  {id:'pago_4',etapa:2,label:'Pago 4',chk:function(p){return p.pago4==='OK';},enFiltro:false},
+  {id:'pago_1',etapa:2,label:'Pago 1',chk:function(p){return pagoOk(p.pago1);},enFiltro:false},
+  {id:'pago_2',etapa:2,label:'Pago 2',chk:function(p){return pagoOk(p.pago2);},enFiltro:false},
+  {id:'pago_3',etapa:2,label:'Pago 3',chk:function(p){return pagoOk(p.pago3);},enFiltro:false},
+  {id:'pago_4',etapa:2,label:'Pago 4',chk:function(p){return pagoOk(p.pago4);},enFiltro:false},
   {id:'termino_trabajos',etapa:3,label:'Término Trabajos',chk:function(p){return tieneFecha(p.f_termino_ejecucion);}},
   {id:'envio_gestor_documental',etapa:3,label:'Envío a Gestor Documental',chk:function(p){return tieneFecha(p.f_gestor);}},
   {id:'pasado_post_venta',etapa:3,label:'Pasado a Post Venta',chk:function(p){return p.status==='7. Cierre Proyecto';}},
@@ -2724,15 +2730,22 @@ function abrirDet(id){
   h+=hOK(idx,'tc7','TC5 - TC7 - Otros',p,'📝',cer);
 
   var PK=['pago1','pago2','pago3','pago4'];
-  var pagosOk=PK.filter(function(k){return p[k]==='OK';}).length;
+  var pagosOk=PK.filter(function(k){return pagoOk(p[k]);}).length;
   h+='<div class="ehdr2">💰 Estados de Pago</div><div class="pgrid">';
   PK.forEach(function(k,i){
-    var ok=p[k]==='OK';
+    var v=p[k], ok=pagoOk(v), esFecha=tieneFecha(v);
     var fueraSec=pagoFueraDeSecuencia(p,k);
-    var click=cer?'':(ok?'borrarPago('+idx+',\''+k+'\',event)':'mkPago('+idx+',\''+k+'\',event)');
-    var tit=fueraSec?'Fuera de secuencia: se registró sin el pago anterior':(cer?(ok?'Pago registrado':''):(ok?'Clic para deshacer':'Clic para registrar'));
-    h+='<div class="pcard'+(ok?' pok':'')+(fueraSec?' valor-sugerido':'')+'"'+(click?' onclick="'+click+'" style="cursor:pointer"':'')+' title="'+tit+'">';
-    h+='<span class="pico">'+(ok?'✅':'○')+'</span><span class="plbl">Pago '+(i+1)+'</span></div>';
+    var tit=fueraSec?'Fuera de secuencia: se registró sin el pago anterior':(ok?'Pago registrado':'Clic para registrar');
+    h+='<div class="pcard'+(ok?' pok':'')+(fueraSec?' valor-sugerido':'')+'"'+(!ok&&!cer?' onclick="mkPago('+idx+',\''+k+'\',event)" style="cursor:pointer"':'')+' title="'+tit+'">';
+    h+='<span class="pico">'+(ok?'✅':'○')+'</span><span class="plbl">Pago '+(i+1)+'</span>';
+    if(ok){
+      h+='<div style="margin-top:4px;font-size:12px;font-family:var(--mono);color:var(--navy)">'+(esFecha?'📅 '+esc(fFH(v)):'Sin fecha (marcado antes)')+'</div>';
+      if(!cer){
+        h+='<input type="date" id="fi-'+idx+'-'+k+'" value="'+isoLocal(v)+'" onclick="event.stopPropagation()" onchange="event.stopPropagation();saveFechaEdit('+idx+',\''+k+'\')" title="Editar fecha del Pago '+(i+1)+'" style="width:100%;margin-top:4px;padding:3px 4px;font-size:11.5px;font-family:var(--mono);border:1.5px solid var(--line2);border-radius:5px;color:var(--navy);outline:none">';
+        h+='<button onclick="event.stopPropagation();borrarPago('+idx+',\''+k+'\',event)" title="Quitar registro del Pago '+(i+1)+'" style="margin-top:4px;background:transparent;border:none;cursor:pointer;font-size:13px;opacity:.6">🗑</button>';
+      }
+    }
+    h+='</div>';
   });
   h+='</div><div style="padding:0 16px 12px;font-size:14.5px;color:var(--muted)"><strong style="color:var(--navy)">'+pagosOk+' de '+PK.length+'</strong> estados de pago registrados</div>';
   h+='</div>';
@@ -3114,12 +3127,12 @@ function desmarcarHitoNA(idx,key){
 }
 
 // Mismo criterio que hitoFueraDeSecuencia pero para los Estados de Pago
-// (booleanos 'OK', sin fecha) — Pago N marcado sin que Pago N-1 lo esté.
+// (guardan la fecha real del pago) — Pago N registrado sin que Pago N-1 lo esté.
 function pagoFueraDeSecuencia(p, key){
   var PK=['pago1','pago2','pago3','pago4'];
   var i=PK.indexOf(key);
   if(i<=0)return false;
-  return p[key]==='OK' && p[PK[i-1]]!=='OK';
+  return pagoOk(p[key]) && !pagoOk(p[PK[i-1]]);
 }
 
 // ─── PRÓXIMO HITO ───────────────────────────────────────────────────────────
@@ -3163,10 +3176,10 @@ function mkPago(idx,key,ev){
   var p=BD[idx];
   var PK=['pago1','pago2','pago3','pago4'];
   var i=PK.indexOf(key);
-  if(i>0 && p[PK[i-1]]!=='OK'){
+  if(i>0 && !pagoOk(p[PK[i-1]])){
     if(!confirm('⚠️ Vas a marcar "Pago '+(i+1)+'" pero "Pago '+i+'" todavía no está registrado.\n\n¿Confirmas que quieres marcarlo igual?'))return;
   }
-  BD[idx][key]='OK';guardar(idx).then(filtrar);toast('💰 '+key+' registrado','ok');setTimeout(function(){abrirDet(BD[idx]._id);},60);
+  var ts=ahora();BD[idx][key]=nowForDB();guardar(idx).then(filtrar);toast('💰 '+key+' · '+ts,'ok');setTimeout(function(){abrirDet(BD[idx]._id);},60);
 }
 function borrarPago(idx,key,ev){
   ev.stopPropagation();
@@ -3210,7 +3223,7 @@ function mkCierre(idx){
   var p=BD[idx];
   var PK=['pago1','pago2','pago3','pago4'];
   var faltantes=[];
-  PK.forEach(function(k,i){if(p[k]!=='OK')faltantes.push('Pago '+(i+1));});
+  PK.forEach(function(k,i){if(!pagoOk(p[k]))faltantes.push('Pago '+(i+1));});
   if(faltantes.length){
     if(!confirm('⚠️ Este proyecto tiene estados de pago pendientes: '+faltantes.join(', ')+'.\n\n¿Confirmas el Cierre de Proyecto igual? Esta acción es permanente y no puede revertirse desde la app.'))return;
   } else if(!confirm('¿Confirmas el Cierre de Proyecto?\nEsta acción es permanente y no puede revertirse desde la app.')){
@@ -3972,7 +3985,7 @@ async function expCSV(){
       porcentajeProgreso(p),p.supervisor,p.ito,p.contratista,p.cert,p.jefe,p.vendedor,p.potencia,p.tanque,p.cant_tanque,p.costo,p.reguladores_cant,p.reguladores_modelo,p.medidores_cant,p.toneladas_estimadas,
       soloFecha(p.f_v_validar),soloFecha(p.f_v_respondido),soloFecha(p.f_v_coord),soloFecha(p.f_rev_ant),soloFecha(p.f_visita),soloFecha(p.f_liberar),soloFecha(p.f_liberado),soloFecha(p.f_ut),soloFecha(p.f_pedir_grafo),p.num_grafo,soloFecha(p.f_oc),soloFecha(p.f_trabajos),soloFecha(p.f_despacho_tq),soloFecha(p.f_tc8),soloFecha(p.f_retiro_materiales),soloFecha(p.f_montaje),soloFecha(p.f_ampliacion),
       soloFecha(p.f_c1),soloFecha(p.f_c2),soloFecha(p.f_c3),soloFecha(p.f_c4),soloFecha(p.f_c5),soloFecha(p.f_c6),soloFecha(p.f_c7),soloFecha(p.f_c8),soloFecha(p.f_c9),soloFecha(p.f_c10),
-      p.tc2,p.sello,p.tc6,p.ir,p.tc7,p.pago1,p.pago2,p.pago3,p.pago4,
+      p.tc2,p.sello,p.tc6,p.ir,p.tc7,soloFecha(p.pago1),soloFecha(p.pago2),soloFecha(p.pago3),soloFecha(p.pago4),
       soloFecha(p.f_termino_ejecucion),soloFecha(p.f_gestor),soloFecha(p.dev_ito),soloFecha(p.f_cierre),soloFecha(p.f_forzado),diasProy(p),p.obs];
   });
   var ws=XLSX.utils.aoa_to_sheet([HDR].concat(rows));
