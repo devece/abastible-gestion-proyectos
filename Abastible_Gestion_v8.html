@@ -3384,11 +3384,12 @@ async function crearProyecto(){
     if(maxRes.error) throw maxRes.error;
     var maxItem=(maxRes.data&&maxRes.data[0]&&maxRes.data[0].item)||0;
     var nuevo=Object.assign({}, DC_EXTRAIDO||{}, PD_EXTRAIDO||{}, normalizarNuevoProyecto(raw), {
-      item:maxItem+1,
-      status:'2. Entregado a coordinador',
-      etapa:'Validación',
-      f_v_coord:nowForDB()
+      item:maxItem+1
     });
+    // El hito "Asignación" (f_v_coord) y el status/etapa se derivan de las fechas
+    // reales de la cadena de hitos — no se auto-completan al crear el proyecto,
+    // se marcan a mano cuando el evento realmente ocurre.
+    autoStatus(nuevo);
     var res=await sb.from('proyectos').insert(nuevo).select().single();
     if(res.error) throw res.error;
     var creado=res.data; creado._id=String(creado.id);
