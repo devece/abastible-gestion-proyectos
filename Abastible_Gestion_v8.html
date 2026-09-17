@@ -2098,7 +2098,7 @@ function abrirRetiroMateriales(idx){
     item:(p.item!=null?String(p.item):'')
   });
   window.open('solicitud-retiro-materiales.html?'+qs.toString(),'_blank');
-  if(!p.f_retiro_materiales){
+  if(!p.f_retiro_materiales && !esHitoNA(p,'f_retiro_materiales')){
     p.f_retiro_materiales=nowForDB();
     guardar(idx).then(filtrar);
     if(document.getElementById('p-tanques')&&document.getElementById('p-tanques').classList.contains('on'))renderReguladores();
@@ -2848,11 +2848,11 @@ function saveCampoEdit(idx,key){
 // ─── HITO FECHA EDITABLE ──────────────────────────────────────────────────
 function hF(idx, key, lbl, p, ico, sub, cer, botonExtra){
   var v=p[key], ok=v&&v!=='null'&&v!=='None'&&v!=='N/A';
-  // esCadena: solo los hitos de CADENA_HITOS (PR #73) tienen estado N/A — otros
-  // hF() como f_retiro_materiales (se marca solo, no es parte de la secuencia
-  // validada) no ofrecen esta opción.
-  var esCadena=CADENA_POS[key]!==undefined;
-  var na=esCadena&&esHitoNA(p,key);
+  // Todo hito renderizado con hF() admite "N/A · No aplica" (a pedido del
+  // usuario), esté o no en CADENA_HITOS — los que no están (ej. f_retiro_materiales,
+  // que se marca solo al generar la solicitud) simplemente quedan fuera del
+  // motor de validación de secuencia, pero igual pueden marcarse N/A.
+  var na=esHitoNA(p,key);
   var h='<div class="hito'+(na?' hito-na':'')+'"><div class="hico">'+ico+'</div>';
   h+='<div class="hlbl">'+lbl+(sub?'<small>'+sub+'</small>':'')+'</div>';
   h+='<div class="hright">';
@@ -2888,7 +2888,7 @@ function hF(idx, key, lbl, p, ico, sub, cer, botonExtra){
     h+='<input type="date" id="fi-'+idx+'-'+key+'" title="Sin fecha registrada — ajusta manualmente o confirma con 📌 Ahora">';
     h+='<button class="fe-ok" onclick="saveFechaEdit('+idx+',\''+key+'\')">Guardar</button>';
     h+='<button class="fe-auto" onclick="mkF('+idx+',\''+key+'\',event)">📌 Ahora</button>';
-    if(esCadena)h+='<button class="hb-na" onclick="marcarHitoNA('+idx+',\''+key+'\')" title="Este proyecto no pasa por este hito">🚫 N/A</button>';
+    h+='<button class="hb-na" onclick="marcarHitoNA('+idx+',\''+key+'\')" title="Este proyecto no pasa por este hito">🚫 N/A</button>';
     h+='</div>';
   }
   h+='</div></div>';
@@ -3005,12 +3005,15 @@ var CADENA_POS={};
 CADENA_HITOS.forEach(function(h,i){CADENA_POS[h.key]=i;});
 
 // ─── Estado "N/A · No aplica" por hito (por proyecto) ──────────────────────
-// p.hitos_na es un array de keys de CADENA_HITOS que NO aplican a este proyecto
-// en particular (ver columna hitos_na, jsonb). Un hito N/A nunca tiene fecha a
-// la vez (se bloquea en ambos sentidos, ver más abajo), así que para el resto
-// del motor de validación un hito N/A se trata como si no formara parte de la
-// secuencia de ESTE proyecto: se salta al buscar el vecino anterior/siguiente
-// aplicable, en vez de tratarlo como "vacío/pendiente".
+// p.hitos_na es un array de keys de hitos (cualquiera de los que renderiza
+// hF(), estén o no en CADENA_HITOS) que NO aplican a este proyecto en
+// particular (ver columna hitos_na, jsonb). Un hito N/A nunca tiene fecha a
+// la vez (se bloquea en ambos sentidos, ver más abajo). Para los que además
+// forman parte de CADENA_HITOS, el motor de validación de secuencia los trata
+// como si no formaran parte de la secuencia de ESTE proyecto: se saltan al
+// buscar el vecino anterior/siguiente aplicable, en vez de tratarse como
+// "vacío/pendiente". Los que no están en CADENA_HITOS (ej. f_retiro_materiales)
+// simplemente quedan fuera de ese motor, con o sin la marca N/A.
 function esHitoNA(p, key){
   return !!(p && Array.isArray(p.hitos_na) && p.hitos_na.indexOf(key)>=0);
 }
