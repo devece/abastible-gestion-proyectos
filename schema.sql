@@ -694,3 +694,39 @@ create policy "anon_delete_proyectos" on public.proyectos for delete using (true
 -- rpc_listar_proyectos (arriba) se actualiza en el mismo sentido: el cálculo de
 -- hito_actual pasa de "p.pagoN = 'OK'" a "p.pagoN is not null", que sigue
 -- reconociendo también los pagos históricos que quedaron marcados 'OK'.
+
+-- ── Stage: auditoría de seguridad — Fase 1, corrección mínima reversible (SEC-001/SEC-002) ──
+-- Hasta acá, "anon" (la clave pública embebida en compartido/supabase-config.js,
+-- visible para cualquiera que vea el código fuente de la página) podía hacer
+-- SELECT/INSERT/UPDATE/DELETE SIN NINGUNA restricción sobre "proyectos" — es
+-- decir, cualquiera con la URL de la app podía leer, crear, modificar o borrar
+-- cualquier proyecto directamente contra la API de Supabase, sin pasar por la
+-- UI ni sus confirmaciones (esas confirmaciones son solo de la interfaz).
+--
+-- Mientras no exista una capa de autenticación real (backlog: agregar Supabase
+-- Auth y policies acotadas a un rol autenticado), se revocan las policies de
+-- escritura de "anon" sobre proyectos. anon_select_proyectos se mantiene: la
+-- app sigue leyendo y mostrando datos con normalidad, pero los botones de
+-- crear/editar/cerrar/eliminar proyecto (Abastible_Gestion_v8.html y
+-- planilla-datos.html, las únicas 2 páginas que escriben directo a Supabase)
+-- van a fallar por RLS hasta el siguiente paso. Se agregó un aviso visible en
+-- ambas páginas para que nadie pierda trabajo pensando que guardó algo que en
+-- realidad la base rechazó.
+drop policy if exists "anon_insert_proyectos" on public.proyectos;
+drop policy if exists "anon_update_proyectos" on public.proyectos;
+drop policy if exists "anon_delete_proyectos" on public.proyectos;
+
+-- contratista_proyectos y contratista_notif_cola (ver migraciones
+-- crear_contratista_proyectos y siguientes) son un feature que se empezó a
+-- construir en la base de datos pero nunca se conectó a ninguna pantalla de
+-- la aplicación (0 referencias en el código). Tenían el mismo problema de
+-- policies "using(true)" abiertas a anon. Se revocan TODAS sus policies
+-- (incluida SELECT) para cerrar el acceso anónimo por completo; las tablas y
+-- sus datos se conservan intactos por si el feature se retoma más adelante.
+drop policy if exists "anon_select_contratista_proyectos" on public.contratista_proyectos;
+drop policy if exists "anon_insert_contratista_proyectos" on public.contratista_proyectos;
+drop policy if exists "anon_update_contratista_proyectos" on public.contratista_proyectos;
+drop policy if exists "anon_delete_contratista_proyectos" on public.contratista_proyectos;
+
+drop policy if exists "anon_select_contratista_notif_cola" on public.contratista_notif_cola;
+drop policy if exists "anon_insert_contratista_notif_cola" on public.contratista_notif_cola;
