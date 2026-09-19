@@ -10,6 +10,22 @@ function formatearRutCL(v){
   const cuerpo = limpio.slice(0,-1).replace(/\B(?=(\d{3})+(?!\d))/g,'.');
   return cuerpo + '-' + limpio.slice(-1);
 }
+// Valida el dígito verificador (módulo 11) — mismo algoritmo que dvRut()/validarRut()
+// de Abastible_Gestion_v8.html, centralizado acá para no reimplementarlo de nuevo
+// en cada página que agregue una validación de RUT (auditoría UX-002).
+function validarRutCL(v){
+  const limpio = String(v||'').replace(/[^0-9kK]/g,'').toUpperCase();
+  if(!/^\d{6,8}[0-9K]$/.test(limpio)) return false;
+  const cuerpo = limpio.slice(0,-1);
+  let suma = 0, multiplo = 2;
+  for(let i=cuerpo.length-1;i>=0;i--){
+    suma += parseInt(cuerpo.charAt(i),10)*multiplo;
+    multiplo = multiplo===7?2:multiplo+1;
+  }
+  const resto = 11 - (suma % 11);
+  const dv = resto===11?'0':resto===10?'K':String(resto);
+  return dv === limpio.slice(-1);
+}
 // ─── Teléfono chileno (+56 9 1234 5678) ───────────────────────────────────
 // Compartido por: panel-wp-ep.html, Abastible_Gestion_v8.html.
 function formatearTelefonoCL(valor){

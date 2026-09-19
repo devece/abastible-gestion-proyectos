@@ -55,7 +55,7 @@ label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.07e
   <span>Anexo 2 · Prórroga / Aumento de Carga · Papel Carta</span>
   <div style="display:flex;gap:8px">
     <button class="btn" onclick="limpiar()">🗑 Limpiar</button>
-    <button class="btn primary" onclick="window.print()">🖨 Imprimir / Guardar PDF</button>
+    <button class="btn primary" onclick="imprimirValidado()">🖨 Imprimir / Guardar PDF</button>
     <button class="btn" onclick="enviarCopia()">📧 Enviar copia</button>
   </div>
 </div>
@@ -169,7 +169,25 @@ function cargarFirma(input, imgId){
   reader.readAsDataURL(file);
 }
 
+// UX-002: el R.U.T. no tenía ninguna validación — se podía imprimir/enviar el
+// documento con un RUT mal escrito. No es un campo obligatorio (a diferencia de
+// panel-wp-ep.html/planilla-datos.html, acá no hay ningún campo obligatorio hoy),
+// pero si se completó, tiene que tener el dígito verificador correcto.
+function rutEmpresaEsValido(){
+  var val = document.getElementById('rutEmpresa').value;
+  if(val && !validarRutCL(val)){
+    alert('⚠️ El R.U.T. no es válido (revisa el dígito verificador). Corrígelo antes de continuar.');
+    document.getElementById('rutEmpresa').focus();
+    return false;
+  }
+  return true;
+}
+function imprimirValidado(){
+  if(!rutEmpresaEsValido())return;
+  window.print();
+}
 function enviarCopia(){
+  if(!rutEmpresaEsValido())return;
   window.print();
   var asunto='Anexo 2 - Prórroga Suministro Provisorio';
   var cuerpo='Adjunto el Anexo 2 - Prórroga Suministro Provisorio.\n\n'
