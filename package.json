@@ -3,7 +3,8 @@
   "private": true,
   "description": "App estática (HTML/JS) sin build. package.json existe para fijar Playwright (grabar el video demostrativo, capturas_video/) y @supabase/supabase-js como dependencias de desarrollo — ninguna de las dos participa del producto en sí, que carga sus propias versiones pineadas desde CDN.",
   "scripts": {
-    "verificar-hitos": "node tests/verifica-rpc-hitos.js"
+    "verificar-hitos": "node tests/verifica-rpc-hitos.js",
+    "verificar-datos": "node tests/verifica-integridad-datos.js"
   },
   "devDependencies": {
     "playwright": "1.56.1",
