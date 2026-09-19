@@ -769,3 +769,19 @@ comment on table public.proyectos_backup_20260819 is
 -- poder verificar que su contenido es idéntico al paquete de npm; y se
 -- reemplazó el nombre real residual del placeholder de solicitud-envio-oc.html
 -- (quedaba del PR #93) por uno ficticio.
+
+-- ── Stage: DAT-002 — "dias" del RPC en hora de Chile, no UTC ──
+-- La sesión de Postgres corre en UTC (confirmado con current_setting('TIMEZONE')).
+-- rpc_listar_proyectos calculaba "dias" con current_date (medianoche UTC),
+-- mientras que Dashboard/Resumen/Alertas lo calculan en el navegador con la
+-- hora local de Chile. Todos los días, entre que anochece en Chile y la
+-- medianoche UTC (~3-4 horas), Postgres ya consideraba "mañana" mientras el
+-- navegador seguía en "hoy" — desfasando en 1 día la columna "Días" de la
+-- tabla principal respecto al resto de la app. Se reemplaza current_date por
+-- (now() at time zone 'America/Santiago')::date. No requiere DROP (mismo
+-- RETURNS TABLE); se deja el CREATE OR REPLACE completo más abajo porque
+-- pg_get_functiondef() lo devuelve así y evita reescribirlo a mano con riesgo
+-- de error de transcripción sobre una función con 3 niveles de quoting.
+--
+-- (el cuerpo completo de la función, idéntico al de arriba salvo esa línea,
+-- se aplicó directo en Supabase — ver migración rpc_listar_proyectos_dias_hora_chile)
