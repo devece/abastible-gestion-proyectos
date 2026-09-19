@@ -97,6 +97,7 @@
 
 </div>
 
+<script src="compartido/utils-cl.js?v=1"></script>
 <script>
 const UB = "'Ubuntu Sans', 'Ubuntu', Arial, sans-serif";
 
@@ -128,9 +129,7 @@ function g(id){ return document.getElementById(id).value.trim(); }
 // escribió a mano antes de (o después de) elegir la región.
 let jefeInstManual=false, correoJefeManual=false;
 
-function normaliza(s){
-  return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]/g,'');
-}
+// normaliza() ahora viene de compartido/utils-cl.js (auditoría DEU-001).
 
 function poblarDatalistRegiones(){
   const dl = document.getElementById('listaRegiones');

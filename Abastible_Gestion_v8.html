@@ -1868,6 +1868,9 @@ async function cargarCertificadores(){
     res.data.forEach(function(r){CERT_POR_REGION[r.region]=r;});
   }catch(e){
     console.error('Error cargando certificadores_por_region', e);
+    // DEU-004: antes esto fallaba en silencio — el usuario no se enteraba de
+    // que el autocompletado de Certificador iba a estar apagado hasta recargar.
+    toast('⚠️ No se pudo cargar la tabla de certificadores por región — el autocompletado de Certificador no va a sugerir nada hasta recargar la página.','warn');
   }
 }
 
@@ -3162,13 +3165,6 @@ function proximoHitoPos(p){
   }
   return null;
 }
-// Etiqueta lista para mostrar: "n/17 · Nombre del Hito" o "Completo".
-function proximoHitoLabel(p){
-  var pos=proximoHitoPos(p);
-  if(pos===null)return 'Completo';
-  return (pos+1)+'/'+CADENA_HITOS.length+' · '+CADENA_HITOS[pos].label;
-}
-
 // ─── ACCIONES HITOS ───────────────────────────────────────────────────────
 function mkF(idx,key,ev){
   ev.stopPropagation();
@@ -3741,7 +3737,6 @@ function renderResumen(){
   var ok=enEjec.filter(function(p){return semaforo(p)==='ok';}).length;
   var warn=enEjec.filter(function(p){return semaforo(p)==='warn';}).length;
   var bad=enEjec.filter(function(p){return semaforo(p)==='bad';}).length;
-  var venc2=BD.filter(function(p){return vencido(p);}).length;
 
   if(document.getElementById('res-kpis')){
     document.getElementById('res-kpis').innerHTML=
