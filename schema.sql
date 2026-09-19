@@ -747,3 +747,25 @@ drop policy if exists "anon_insert_contratista_notif_cola" on public.contratista
 create policy "anon_insert_proyectos" on public.proyectos for insert with check (true);
 create policy "anon_update_proyectos" on public.proyectos for update using (true) with check (true);
 create policy "anon_delete_proyectos" on public.proyectos for delete using (true);
+
+-- ── Stage: resto de correcciones chicas y seguras de Fase 1 de la auditoría (SEC-003/006/007/008) ──
+-- SEC-008: search_path explícito en las únicas 2 funciones de public (evita que
+-- un objeto con el mismo nombre en otro schema del search_path de la sesión
+-- termine usándose por error en vez del de public).
+alter function public.set_updated_at() set search_path = public, pg_temp;
+alter function public.rpc_listar_proyectos(text,text,text,text,text,int,text,text,boolean,int,int,text) set search_path = public, pg_temp;
+
+-- SEC-003: documentar el origen y el estado real de la tabla de backup (RLS
+-- habilitada sin ninguna policy, a propósito: hoy es inaccesible tanto para
+-- anon como para authenticated). No se mueve de schema ni se borra.
+comment on table public.proyectos_backup_20260819 is
+  'Backup manual tomado el 2026-08-19, antes de una limpieza de datos en public.proyectos (por eso tiene más filas — 259 vs las 129 actuales). Sin PK. RLS habilitada SIN ninguna policy a propósito: hoy es inaccesible tanto para anon como para authenticated. No se usa desde ninguna pantalla de la app. No borrar sin confirmar que ya no hace falta para reconciliar datos históricos.';
+
+-- SEC-007 (vercel.json) y SEC-004/SEC-006 (los 10 HTML) se corrigieron en el
+-- mismo commit que esta migración: header X-Robots-Tag: noindex,nofollow en
+-- todas las rutas; integrity+crossorigin real (calculado contra el paquete
+-- exacto de npm de cada librería, no inventado) en los 5 <script> de CDN;
+-- html2pdf.js pasó de cdnjs.cloudflare.com a cdn.jsdelivr.net/npm/... para
+-- poder verificar que su contenido es idéntico al paquete de npm; y se
+-- reemplazó el nombre real residual del placeholder de solicitud-envio-oc.html
+-- (quedaba del PR #93) por uno ficticio.
