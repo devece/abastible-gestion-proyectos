@@ -59,12 +59,12 @@
         </div>
         <div class="field auto">
           <label for="jefeInstalaciones">Nombre Jefe de Proyecto</label>
-          <input type="text" id="jefeInstalaciones" value="" placeholder="Nombre del Jefe de Proyecto" oninput="render()">
+          <input type="text" id="jefeInstalaciones" value="" placeholder="Nombre del Jefe de Proyecto" oninput="jefeInstManual=true;render()">
           <div class="hint" id="jefeHint">encontrado en Listado de Jefes por Región</div>
         </div>
         <div class="field auto">
           <label for="correoJefe">Correo del Jefe de Proyecto (Para)</label>
-          <input type="text" id="correoJefe" value="" placeholder="correo@abastible.cl" oninput="render()">
+          <input type="text" id="correoJefe" value="" placeholder="correo@abastible.cl" oninput="correoJefeManual=true;render()">
           <div class="hint" id="correoJefeHint">encontrado en Listado de Jefes por Región</div>
         </div>
       </div>
@@ -122,6 +122,12 @@ const JEFES_POR_REGION = [
 
 function g(id){ return document.getElementById(id).value.trim(); }
 
+// NEG-005: esta página no usaba la convención "valor-sugerido" de las demás
+// (no arranca con un proyecto de ejemplo) — se agrega un flag manual simple
+// por campo para no pisar jefeInstalaciones/correoJefe si el usuario ya los
+// escribió a mano antes de (o después de) elegir la región.
+let jefeInstManual=false, correoJefeManual=false;
+
 function normaliza(s){
   return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]/g,'');
 }
@@ -144,8 +150,8 @@ function onRegionChange(){
   const hintCorreo = document.getElementById('correoJefeHint');
 
   if(match){
-    document.getElementById('jefeInstalaciones').value = match.jefe;
-    document.getElementById('correoJefe').value = match.correo;
+    if(!jefeInstManual) document.getElementById('jefeInstalaciones').value = match.jefe;
+    if(!correoJefeManual) document.getElementById('correoJefe').value = match.correo;
     hintJefe.textContent = 'encontrado en Listado de Jefes por Región';
     hintJefe.style.color = 'var(--verde)';
     hintCorreo.textContent = 'encontrado en Listado de Jefes por Región';

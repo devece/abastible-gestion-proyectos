@@ -179,10 +179,18 @@ function onContratistaChange(){
   const match = buscarContratista(g('contratista'));
   const hintCorreo = document.getElementById('correoContratistaHint');
   const hintContacto = document.getElementById('contactoContratistaHint');
+  const elCorreo = document.getElementById('correoContratista');
+  const elContacto = document.getElementById('contactoContratista');
+  // NEG-005: antes esto pisaba correo/contacto sin condición, incluso si el
+  // usuario ya los había editado a mano (la clase valor-sugerido ya se les
+  // había sacado). Ahora solo se autocompleta el campo que sigue "sugerido"
+  // o está vacío — un campo editado a mano no se vuelve a tocar.
+  const correoEditadoAMano = elCorreo.value && !elCorreo.classList.contains('valor-sugerido');
+  const contactoEditadoAMano = elContacto.value && !elContacto.classList.contains('valor-sugerido');
 
   if(match){
-    document.getElementById('correoContratista').value = match.correo;
-    document.getElementById('contactoContratista').value = match.representante;
+    if(!correoEditadoAMano) elCorreo.value = match.correo;
+    if(!contactoEditadoAMano) elContacto.value = match.representante;
     // Solo se marcan como confirmados si "contratista" ya lo está: esta función
     // también corre una vez al cargar la página (con el contratista de ejemplo),
     // y ese primer llamado no debe "confirmar" nada todavía.
