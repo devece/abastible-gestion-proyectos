@@ -237,10 +237,15 @@ function onRegionChange(){
   const hintRegion = document.getElementById('regionCodigoHint');
   const hintNombre = document.getElementById('destNombreHint');
   const hintPara = document.getElementById('destParaHint');
+  const elNombre = document.getElementById('destNombre');
+  const elPara = document.getElementById('destPara');
+  // NEG-005: no pisar destinatario/correo si ya se editaron a mano.
+  const nombreEditadoAMano = elNombre.value && !elNombre.classList.contains('valor-sugerido');
+  const paraEditadoAMano = elPara.value && !elPara.classList.contains('valor-sugerido');
 
   if(match){
-    document.getElementById('destNombre').value = primerNombre(match.nombre);
-    document.getElementById('destPara').value = match.correo;
+    if(!nombreEditadoAMano) elNombre.value = primerNombre(match.nombre);
+    if(!paraEditadoAMano) elPara.value = match.correo;
     // Solo se marcan como confirmados si "regionCodigo" ya lo está: esta función
     // también corre una vez al cargar la página (con la región de ejemplo), y
     // ese primer llamado no debe "confirmar" nada todavía.
@@ -296,11 +301,18 @@ function onContratistaChange(){
   const hintCorreo = document.getElementById('correoContratistaHint');
   const hintContacto = document.getElementById('contactoContratistaHint');
   const hintTelefono = document.getElementById('telefonoContratistaHint');
+  const elCorreo = document.getElementById('correoContratista');
+  const elContacto = document.getElementById('contactoContratista');
+  const elTelefono = document.getElementById('telefonoContratista');
+  // NEG-005: no pisar correo/contacto/teléfono si ya se editaron a mano.
+  const correoEditadoAMano = elCorreo.value && !elCorreo.classList.contains('valor-sugerido');
+  const contactoEditadoAMano = elContacto.value && !elContacto.classList.contains('valor-sugerido');
+  const telefonoEditadoAMano = elTelefono.value && !elTelefono.classList.contains('valor-sugerido');
 
   if(match){
-    document.getElementById('correoContratista').value = match.correo;
-    document.getElementById('contactoContratista').value = match.representante;
-    document.getElementById('telefonoContratista').value = formatoTelefonoCL(match.telefono);
+    if(!correoEditadoAMano) elCorreo.value = match.correo;
+    if(!contactoEditadoAMano) elContacto.value = match.representante;
+    if(!telefonoEditadoAMano) elTelefono.value = formatoTelefonoCL(match.telefono);
     // Solo se marcan como confirmados si "contratista" ya lo está: esta función
     // también corre una vez al cargar la página (con el contratista de ejemplo),
     // y ese primer llamado no debe "confirmar" nada todavía.

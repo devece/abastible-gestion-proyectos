@@ -797,7 +797,7 @@ tbody td:first-child{padding-left:16px}
 // Resumen/Alertas, Despacho Tanques y edición por _id lo siguen necesitando entero).
 var BD=[], FLT=[], FLT_TOTAL=0, PAG=1, PPP=25, SC='item', SA=true, CFI=null, DELCI=null, DELCK='', DET_IDX=null;
 var _filtrarSeq=0, _qTimer=null;
-var CERT_POR_REGION={}, certManual=false;
+var CERT_POR_REGION={}, certManual=false, jefeManual=false;
 
 // ─── Convención visual "valor sugerido" ────────────────────────────────────
 // Cualquier campo con la clase .valor-sugerido muestra una propuesta de la app
@@ -1493,6 +1493,10 @@ function mapearJefePorRegion(region){
 }
 
 function sugerirJefeInstalaciones(){
+  // NEG-004: mismo resguardo que sugerirCertificador()/certManual — antes esto
+  // pisaba el campo sin condición alguna, incluso si el usuario ya lo había
+  // corregido a mano y solo cambió la región por otro motivo.
+  if(jefeManual)return;
   var reg = document.getElementById('nr').value;
   var jefe = mapearJefePorRegion(reg);
   if(jefe){ document.getElementById('nj').value = jefe; }
@@ -1796,6 +1800,7 @@ document.addEventListener('DOMContentLoaded', async function() {
   document.getElementById('nr').addEventListener('change', function(){ sugerirCertificador(); sugerirJefeInstalaciones(); actualizarResumenNuevoProyecto(); });
   document.getElementById('nct').addEventListener('input', sugerirCertificador);
   document.getElementById('nce').addEventListener('input', function(){certManual=true;});
+  document.getElementById('nj').addEventListener('input', function(){jefeManual=true;});
   ['nc','ncl','nr','ntp','ns'].forEach(function(id){
     var el=document.getElementById(id);
     if(el){ el.addEventListener('input', actualizarResumenNuevoProyecto); el.addEventListener('change', actualizarResumenNuevoProyecto); }
@@ -3323,7 +3328,7 @@ function actualizarResumenNuevoProyecto(){
   res.innerHTML='<strong>Checklist:</strong> faltan: <span class="warn">'+faltan.join(', ')+'</span>. Completa estos campos antes de guardar.';
 }
 function abrirNuevo(){
-  certManual=false; PD_EXTRAIDO=null; DC_EXTRAIDO=null;
+  certManual=false; jefeManual=false; PD_EXTRAIDO=null; DC_EXTRAIDO=null;
   var defaults={
     nr:'RM Metropolitana',
     ntp:'P01 Habitacional',
@@ -3432,8 +3437,8 @@ function renderDash(){
     kpi('En ejecución',activos,'Proyectos activos','kpi-brand')+
     kpi('Cerrados',cerrados,'Cierre exitoso','kpi-ok')+
     kpi('Cierre Forzado',forzados,'Proyectos cancelados','kpi-warn')+
-    kpi('Requieren atención',venc,'Plazos vencidos','kpi-err',null,'Proyectos con más de 4 días sin revisión de antecedentes, o más de 7 días desde el envío de la O.C. sin iniciar trabajos.')+
-    kpi('Toneladas Gestionadas',toneladas.toLocaleString('es-CL',{maximumFractionDigits:1}),'Suma de toneladas estimadas','kpi-ok');
+    kpi('Requieren atención',venc,'Plazos vencidos','kpi-err',null,'Proyectos con más de 4 días sin revisión de antecedentes, o más de 7 días desde el envío de la O.C. sin iniciar trabajos. Es un criterio distinto de "Atrasados" en Resumen/Alertas (ese mide días desde la liberación) — los números de ambos paneles no tienen por qué coincidir.')+
+    kpi('Toneladas Gestionadas',toneladas.toLocaleString('es-CL',{maximumFractionDigits:1}),'Suma de toneladas estimadas','kpi-ok',null,'Incluye TODOS los proyectos con toneladas cargadas, también los ya cerrados (normal o forzado) — es un acumulado histórico, no solo de los activos.');
 
   function barChart(el,arr,max,colorFn){
     var h='';
@@ -3743,7 +3748,7 @@ function renderResumen(){
       kpi('Total en ejecución',total,'Proyectos activos','kpi-navy')+
       kpi('En plazo ✅',ok,'Menos de 90 días','kpi-ok',null,'Proyectos en ejecución con 60 días o menos desde su liberación.')+
       kpi('Por vencer ⚠️',warn,'Entre 60-90 días','kpi-warn',null,'Proyectos en ejecución con entre 61 y 90 días desde su liberación.')+
-      kpi('Atrasados ⛔',bad,'Más de 90 días','kpi-err',null,'Proyectos en ejecución con más de 90 días desde su liberación.');
+      kpi('Atrasados ⛔',bad,'Más de 90 días','kpi-err',null,'Proyectos en ejecución con más de 90 días desde su liberación. Es un criterio distinto de "Requieren atención" del Dashboard (ese mide días sin avanzar un hito puntual) — los números de ambos paneles no tienen por qué coincidir.');
   }
 
   var filtered=enEjec.filter(function(p){

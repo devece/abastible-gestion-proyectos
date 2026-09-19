@@ -565,7 +565,14 @@ document.getElementById('pdfInput').addEventListener('change', async function(){
   try{
     var filas = await extraerFilasDePDF(file);
     var res = mapearFilasACampos(filas);
-    mostrarBanner('✅ Se completaron '+res.encontrados+' campos automáticamente desde el PDF. Revisa todo antes de guardar — el reconocimiento de texto puede tener errores.','ok');
+    // UX-001: con 0 campos encontrados esto no es un éxito — antes se mostraba
+    // igual en verde, dando a entender que el PDF se procesó bien cuando en
+    // realidad no se pudo extraer nada (el formulario queda vacío igual).
+    if(res.encontrados===0){
+      mostrarBanner('⚠️ No se pudo completar ningún campo automáticamente desde este PDF. Completa los datos a mano.','err');
+    }else{
+      mostrarBanner('✅ Se completaron '+res.encontrados+' campos automáticamente desde el PDF. Revisa todo antes de guardar — el reconocimiento de texto puede tener errores.','ok');
+    }
   }catch(e){
     console.error('Error leyendo PDF', e);
     mostrarBanner('⚠️ No se pudo leer el PDF automáticamente: '+(e.message||e)+'. Completa los datos a mano.','err');
