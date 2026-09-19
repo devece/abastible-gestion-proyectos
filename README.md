@@ -70,4 +70,8 @@ Hoy la tabla `proyectos` acepta lectura y escritura desde el cliente sin autenti
 
 ## Testing
 
-No hay tests automatizados hoy. `playwright` está como dependencia de desarrollo (se usó para grabar un video demostrativo, no para testing). Si se agrega testing a futuro, lo más valioso para esta app sería: (1) E2E con Playwright cubriendo crear/editar/cerrar un proyecto y exportar Excel/JSON, y (2) tests unitarios simples sobre las funciones puras más críticas (`hitoActual()`, `diasDesde()`, `dvRut()`/`validarRut()` en `Abastible_Gestion_v8.html`).
+No hay tests de UI automatizados hoy (`playwright` está como dependencia de desarrollo, se usó para grabar un video demostrativo, no para testing de interfaz).
+
+Sí existe un chequeo de regresión para la parte más sensible de la lógica de negocio: `npm run verificar-hitos` (`tests/verifica-rpc-hitos.js`) reimplementa de forma independiente la especificación documentada de `hito_actual`/`etapa_actual`/`proximo_hito_key`/`proximo_hito_pos` y la compara contra lo que `rpc_listar_proyectos` devuelve realmente para todos los proyectos reales — pensado para detectar automáticamente si el servidor y el cliente (`HITOS_DEF`/`CADENA_HITOS` en `Abastible_Gestion_v8.html`) se desincronizan al agregar un hito nuevo, en vez de depender de una verificación manual puntual. Requiere `npm install` una vez, y conexión de salida a `*.supabase.co` (no funciona detrás de un proxy que la bloquee).
+
+Si se agrega más testing a futuro, lo más valioso sería E2E con Playwright cubriendo crear/editar/cerrar un proyecto y exportar Excel/JSON.
