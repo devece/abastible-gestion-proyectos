@@ -54,6 +54,7 @@ textarea{min-height:90px}
 .banner.show{display:block}
 .banner.ok{background:#e6f6ec;color:#166534;border:1px solid #a7dfba}
 .banner.err{background:#fdeaea;color:#8a1f1f;border:1px solid #f3b7b7}
+.banner.warn{background:#fef3c7;color:#92400e;border:1px solid #f5d78a}
 
 @media print {
 
@@ -362,6 +363,30 @@ const OCR_LABELS_COMERCIAL = [
   ['telefonocontacto','com_contacto_telefono'],
   ['correocontacto','com_contacto_correo']
 ];
+/* id de campo -> etiqueta legible, para poder avisar "no se encontró: X, Y"
+   igual que ya hace solicitud-envio-oc.html (antes esta página solo decía
+   "se completaron N campos" sin decir cuáles faltaron). */
+const OCR_ID_A_ETIQUETA = {
+  nombreProyecto:'Nombre Proyecto', fecha:'Fecha', direccion:'Dirección del Proyecto',
+  region:'Región', comuna:'Comuna', tipoInstalacion:'Tipo de Instalación',
+  hab_nombre:'Nombre Cliente', hab_rut:'RUT', hab_correo:'Correo', hab_telefono:'Teléfono',
+  hab_contacto_nombre:'Nombre Contacto en Obra', hab_contacto_telefono:'Teléfono Contacto',
+  const_razon_social:'Razón Social', const_rut_empresa:'RUT Empresa',
+  const_rep_nombre:'Nombre Representante Legal', const_rep_rut:'RUT Representante Legal',
+  const_rep_telefono:'Teléfono Representante', const_rep_correo:'Correo Representante',
+  const_contacto_nombre:'Nombre Contacto en Obra', const_contacto_telefono:'Teléfono Contacto',
+  const_contacto_correo:'Correo Contacto', const_correo_facturacion:'Correo Facturación',
+  const_cant_edificios:'Cantidad Edificios', const_cant_pisos:'Cantidad Pisos',
+  const_cant_instalaciones:'Cantidad Instalaciones', const_anio_construccion:'Año Construcción',
+  const_vivienda_social:'Vivienda Social', const_conductos_colectivos:'Conductos Colectivos',
+  const_cant_conductos:'Cantidad Conductos Individuales', const_cant_calderas:'Cantidad Calderas',
+  com_razon_social:'Razón Social / Nombre', com_rut_empresa:'RUT Empresa', com_rubro_sii:'Rubro SII',
+  com_rep_nombre:'Nombre Representante Legal', com_rep_rut:'RUT Representante',
+  com_rep_correo:'Correo Representante', com_correo_facturacion:'Correo Facturación',
+  com_fecha_fundacion:'Fecha Fundación', com_tamano_empresa:'Tamaño Empresa',
+  com_estacionalidad:'Estacionalidad', com_contacto_nombre:'Nombre Contacto',
+  com_contacto_telefono:'Teléfono Contacto', com_contacto_correo:'Correo Contacto'
+};
 function mapaParaTipo(tipo){
   var extra = tipo==='habitacional' ? OCR_LABELS_HABITACIONAL
             : tipo==='constructora' ? OCR_LABELS_CONSTRUCTORA
@@ -553,7 +578,17 @@ function mapearFilasACampos(filas){
       encontrados++;
     });
   }
-  return {encontrados:encontrados, total:total};
+  // Lista de campos esperados para este tipo de instalación que quedaron sin
+  // valor — antes esto no se reportaba, solo un conteo agregado (UX-002/PDF
+  // más robusto, Fase 6). tipoInstalacion y region/comuna quedan afuera porque
+  // se resuelven con lógica propia (detectarTipoInstalacion) y un valor vacío
+  // ahí no significa lo mismo que en un campo de texto simple.
+  var idsEsperados = Array.from(new Set(mapa.map(function(par){ return par[1]; })))
+    .filter(function(id){ return id!=='tipoInstalacion' && id!=='region' && id!=='comuna'; });
+  var faltantes = idsEsperados
+    .filter(function(id){ var el=document.getElementById(id); return el && !el.value; })
+    .map(function(id){ return OCR_ID_A_ETIQUETA[id] || id; });
+  return {encontrados:encontrados, total:total, faltantes:faltantes};
 }
 
 document.getElementById('pdfInput').addEventListener('change', async function(){
@@ -571,7 +606,14 @@ document.getElementById('pdfInput').addEventListener('change', async function(){
     if(res.encontrados===0){
       mostrarBanner('⚠️ No se pudo completar ningún campo automáticamente desde este PDF. Completa los datos a mano.','err');
     }else{
-      mostrarBanner('✅ Se completaron '+res.encontrados+' campos automáticamente desde el PDF. Revisa todo antes de guardar — el reconocimiento de texto puede tener errores.','ok');
+      // PDF más robusto (Fase 6): antes solo se decía "se completaron N campos"
+      // sin decir cuáles faltaron — ahora se listan, igual que en Solicitud de
+      // Envío de OC, para no tener que adivinar qué revisar a mano.
+      var msg = '✅ Se completaron '+res.encontrados+' campos automáticamente desde el PDF. Revisa todo antes de guardar — el reconocimiento de texto puede tener errores.';
+      if(res.faltantes.length){
+        msg += ' No se encontró: '+res.faltantes.join(', ')+'.';
+      }
+      mostrarBanner(msg, res.faltantes.length ? 'warn' : 'ok');
     }
   }catch(e){
     console.error('Error leyendo PDF', e);

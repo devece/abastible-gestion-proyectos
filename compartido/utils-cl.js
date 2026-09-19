@@ -45,3 +45,12 @@ function formatearTelefonoCL(valor){
   if(numeros.length > 5) resultado += ' ' + numeros.slice(5,9);
   return resultado.trim();
 }
+
+// Este archivo se carga como <script> plano en el navegador (por eso las
+// funciones de arriba son globales, no exports de módulo). Este bloque solo
+// las expone también vía require() para los scripts de Node en tests/
+// (verifica-integridad-datos.js) — "typeof module" es undefined en el
+// navegador, así que ahí este bloque no hace nada.
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { formatearRutCL, validarRutCL, normaliza, formatearTelefonoCL };
+}
