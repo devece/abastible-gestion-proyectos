@@ -26,6 +26,13 @@ function validarRutCL(v){
   const dv = resto===11?'0':resto===10?'K':String(resto);
   return dv === limpio.slice(-1);
 }
+// ─── Normalización de texto para comparar/buscar (sin tildes, minúsculas, solo alfanumérico) ──
+// Compartido por: solicitud-envio-oc.html, solicitud-retiro-materiales.html,
+// solicitud-retiro-tq.html, solicitud-liberar-grafo.html (auditoría DEU-001:
+// antes esta misma función estaba duplicada en los 4 archivos).
+function normaliza(s){
+  return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]/g,'');
+}
 // ─── Teléfono chileno (+56 9 1234 5678) ───────────────────────────────────
 // Compartido por: panel-wp-ep.html, Abastible_Gestion_v8.html.
 function formatearTelefonoCL(valor){
