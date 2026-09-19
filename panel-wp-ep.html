@@ -822,6 +822,11 @@ function validarDatosReales(tipo) {
   if (vacios.length) {
     return '⚠️ Completa estos campos obligatorios antes de generar el correo:\n\n- ' + vacios.join('\n- ');
   }
+  // UX-002: el RUT ya era obligatorio (arriba), pero no se validaba su dígito
+  // verificador — se podía generar/enviar el correo con un RUT mal escrito.
+  if (g('rut') && !validarRutCL(g('rut'))) {
+    return '⚠️ El RUT no es válido (revisa el dígito verificador).';
+  }
   return null;
 }
 
