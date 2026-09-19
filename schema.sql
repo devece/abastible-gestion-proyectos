@@ -730,3 +730,20 @@ drop policy if exists "anon_delete_contratista_proyectos" on public.contratista_
 
 drop policy if exists "anon_select_contratista_notif_cola" on public.contratista_notif_cola;
 drop policy if exists "anon_insert_contratista_notif_cola" on public.contratista_notif_cola;
+
+-- ── Stage: reversión temporal y deliberada de la restricción de escritura en "proyectos" ──
+-- El cierre de contratista_proyectos/contratista_notif_cola de arriba se mantiene
+-- (no las usa ninguna pantalla, reabrirlas no devuelve ninguna función real).
+--
+-- La restricción de "proyectos" a solo-lectura, en cambio, se revierte a pedido
+-- del usuario: por ahora la app la sigue usando una sola persona (o un grupo muy
+-- acotado) sin necesidad de login, y se prefiere mantenerla funcionando como
+-- siempre a costa del riesgo ya documentado en SEC-001 (cualquiera con la anon
+-- key puede leer/crear/editar/eliminar cualquier proyecto sin restricción). Es
+-- una decisión consciente y temporal, no un descuido: se retoma cuando se
+-- implemente un login real (backlog: Microsoft/Azure AD, cuentas @abastible.cl)
+-- para varios usuarios, momento en el que corresponde volver a policies
+-- acotadas a un rol autenticado en vez de "anon"/using(true).
+create policy "anon_insert_proyectos" on public.proyectos for insert with check (true);
+create policy "anon_update_proyectos" on public.proyectos for update using (true) with check (true);
+create policy "anon_delete_proyectos" on public.proyectos for delete using (true);
