@@ -61,7 +61,11 @@ footer{max-width:880px;margin:30px auto 0;padding:0 5vw;color:var(--muted);font-
   <a href="#hitos">Marcar hitos</a>
   <a href="#wpep">Welcome Pack / End Pack</a>
   <a href="#envio-oc">Solicitud de Envío de OC</a>
+  <a href="#retiro-materiales">Solicitud Retiro de Materiales</a>
+  <a href="#retiro-tq">Solicitud Retiro TQ</a>
+  <a href="#liberar-grafo">Solicitud Liberar Grafo</a>
   <a href="#planilla-datos">Planilla de Datos (con lectura automática)</a>
+  <a href="#anexos-d">Anexos D</a>
   <a href="#dashboard">Dashboard</a>
   <a href="#tecnico">Notas técnicas</a>
 </nav>
@@ -77,6 +81,10 @@ footer{max-width:880px;margin:30px auto 0;padding:0 5vw;color:var(--muted);font-
     <tr><td><span class="badge">planilla-datos.html</span></td><td>Formulario de antecedentes del cliente. Se puede llenar a mano o cargar el PDF que llega de comercial y se autocompleta.</td></tr>
     <tr><td><span class="badge">panel-wp-ep.html</span></td><td>Genera el correo de Welcome Pack (inicio) y End Pack (cierre), ya redactado y listo para pegar en Outlook.</td></tr>
     <tr><td><span class="badge">solicitud-envio-oc.html</span></td><td>Genera el correo de envío de la Orden de Compra al contratista y a Impovar. Se puede subir la OC en PDF para autocompletar los datos del proyecto en vez de tipearlos.</td></tr>
+    <tr><td><span class="badge">solicitud-retiro-materiales.html</span></td><td>Genera la Solicitud de Retiro de Materiales (reguladores y otros equipos). Se puede autocompletar la lista de materiales subiendo el PDF de Detalle Comercial.</td></tr>
+    <tr><td><span class="badge">solicitud-retiro-tq.html</span></td><td>Genera la Solicitud de Retiro de Tanques. En Región VI arma una fila para SharePoint en vez de correo; en Región VII sugiere confirmar por WhatsApp antes de enviar.</td></tr>
+    <tr><td><span class="badge">solicitud-liberar-grafo.html</span></td><td>Genera el correo para pedir la liberación del grafo de un proyecto al Jefe de Instalaciones de la región.</td></tr>
+    <tr><td><span class="badge">anexos-d.html</span></td><td>Página de acceso a los formatos de Anexo 1 (Suministro Provisorio) y Anexo 2 (Prórroga / Aumento de Carga), en Word, HTML o PDF.</td></tr>
   </table>
   <div class="tip"><strong>Todo se guarda en la misma base de datos (Supabase).</strong> Si dos personas abren la Planilla Maestra en computadores distintos, ambas ven los mismos proyectos — no hace falta enviarse archivos.</div>
   <div class="tip"><strong>Convención de colores en los formularios:</strong> un campo con fondo celeste es un <em>valor sugerido</em> (viene de un dato de referencia, todavía sin confirmar); un campo con fondo durazno y un punto naranjo es un <em>valor real</em>, ya confirmado porque lo escribiste a mano o lo trajo una lectura automática (PDF, Listado de Contratistas, etc.). Ambos se pueden editar libremente.</div>
@@ -157,6 +165,33 @@ footer{max-width:880px;margin:30px auto 0;padding:0 5vw;color:var(--muted);font-
   <div class="warn"><strong>El PDF de la OC se sigue adjuntando a mano en Outlook.</strong> Un enlace de correo (mailto) nunca puede llevar archivos adjuntos — es una restricción del navegador, no del sistema. El aviso de éxito te recuerda el nombre del archivo que subiste, para que no te olvides de adjuntarlo.</div>
 </section>
 
+<section id="retiro-materiales">
+  <h2>📦 Solicitud Retiro de Materiales</h2>
+  <p class="sub">Arma la solicitud para retirar reguladores y otros equipos de bodega.</p>
+  <h3>Lista de materiales</h3>
+  <div class="step"><div class="step-n">1</div><div>Se puede tipear la lista a mano (código, descripción, cantidad) o subir el PDF de <strong>Detalle Comercial</strong> — el sistema busca la sección "EQUIPOS" y arma la lista solo.</div></div>
+  <div class="step"><div class="step-n">2</div><div>Si el PDF no tiene esa sección con el formato esperado, el sistema avisa y hay que completar la lista a mano — no inventa datos.</div></div>
+  <h3>Destinatario y contratista</h3>
+  <p>El bodeguero destinatario se sugiere solo según la región del proyecto (se puede corregir a mano). El contratista trae su correo, contacto y teléfono desde el Listado de Contratistas, igual que en Solicitud de Envío de OC.</p>
+  <div class="tip"><strong>Si esta solicitud se generó desde el detalle de un proyecto</strong> en la Planilla Maestra, al armarla queda registrado solo en ese proyecto: se marca la fecha de "Retiro de Materiales Generado" y se guarda un resumen de los modelos de regulador retirados — no hace falta cargarlo a mano después. Si se abre directo, sin pasar por un proyecto, solo arma el correo y no queda registrado ningún hito.</div>
+</section>
+
+<section id="retiro-tq">
+  <h2>🚚 Solicitud Retiro TQ</h2>
+  <p class="sub">Arma la solicitud de retiro de tanques — el flujo cambia según la región.</p>
+  <ul>
+    <li><strong>Región VI:</strong> no se envía correo. En su lugar, la página arma una fila de datos lista para copiar y pegar directo en la planilla de SharePoint que usa esa región (botón "Copiar fila para pegar en SharePoint").</li>
+    <li><strong>Región VII:</strong> antes de armar el correo, sugiere confirmar la disponibilidad del retiro por WhatsApp — un botón abre un mensaje ya redactado para enviar.</li>
+    <li><strong>Resto de regiones:</strong> funciona igual que las demás solicitudes — correo listo para copiar o abrir directo en Outlook, con destinatario sugerido según la región.</li>
+  </ul>
+</section>
+
+<section id="liberar-grafo">
+  <h2>🔓 Solicitud Liberar Grafo</h2>
+  <p class="sub">Arma el correo para pedir la liberación del grafo de un proyecto.</p>
+  <p>El <strong>Jefe de Instalaciones</strong> y su correo se sugieren solos según la región del proyecto (se pueden corregir a mano si no calzan). El resto de los datos del proyecto (cliente, N° de proyecto, dirección, N° de grafo) se completan a mano o llegan prellenados si la página se abrió desde un proyecto en la Planilla Maestra.</p>
+</section>
+
 <section id="planilla-datos">
   <h2>📄 Planilla de Datos — con lectura automática de PDF</h2>
   <p class="sub">El formulario de antecedentes del cliente (Habitacional / Constructora / Comercial-Industrial).</p>
@@ -172,6 +207,18 @@ footer{max-width:880px;margin:30px auto 0;padding:0 5vw;color:var(--muted);font-
     <li>El PDF para el cliente se descarga igual que siempre, sin cambios en ese formato.</li>
   </ul>
   <div class="tip"><strong>También se puede llenar a mano</strong>, sin subir ningún PDF — el botón de autocompletar es un atajo, no un requisito.</div>
+</section>
+
+<section id="anexos-d">
+  <h2>📎 Anexos D — Suministro Provisorio</h2>
+  <p class="sub">Acceso a los formatos de Anexo 1 y Anexo 2, para completar y firmar en papel.</p>
+  <p>Cada anexo tiene 3 formatos, para elegir según lo que sea más cómodo:</p>
+  <ul>
+    <li><strong>Word (.dotx):</strong> se descarga la plantilla, se llena en Word, se agrega la firma como imagen y se imprime a PDF.</li>
+    <li><strong>HTML (online):</strong> se llena directo en el navegador (mismo estilo que los demás formularios del sistema), se carga la firma como imagen y se imprime a PDF desde el botón "Imprimir / Guardar PDF".</li>
+    <li><strong>PDF (a mano):</strong> se imprime en blanco, se llena a mano, se firma físicamente, se escanea y se envía.</li>
+  </ul>
+  <div class="warn"><strong>Estos documentos no se conectan con la Planilla Maestra.</strong> Son formularios independientes — no guardan ni leen nada de la base de datos de proyectos, a diferencia de la Planilla de Datos o el resto de las solicitudes.</div>
 </section>
 
 <section id="dashboard">
