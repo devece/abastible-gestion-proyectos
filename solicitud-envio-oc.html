@@ -136,14 +136,11 @@ Grafo: 100501"></textarea>
 
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js" integrity="sha384-/1qUCSGwTur9vjf/z9lmu/eCUYbpOTgSjmpbMQZ1/CtX2v/WcAIKqRv+U1DUCG6e" crossorigin="anonymous"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.2.67/build/pdf.min.mjs" integrity="sha384-ZCFxELU1bvPx4evkYZ+4CxkApXPjaMxGVdWGuBjqwJe5aBdx8oSItpalx5V4e5Yh" crossorigin="anonymous"></script>
+<script type="module">pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@4.2.67/build/pdf.worker.min.mjs';</script>
 <script src="compartido/utils-cl.js?v=1"></script>
 <script src="compartido/contratistas.js?v=1"></script>
 <script>
-if(typeof pdfjsLib !== 'undefined'){
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
-}
-
 const UB = "'Ubuntu Sans', 'Ubuntu', Arial, sans-serif";
 
 // ─── Convención visual "valor sugerido" ────────────────────────────────────
