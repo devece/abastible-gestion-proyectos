@@ -1883,14 +1883,29 @@ function sugerirCertificador(){
   document.getElementById('nce').value=val;
 }
 
+// CONC-01 (Fase 4.2): control optimista de concurrencia usando updated_at.
+// El UPDATE ahora exige además "updated_at = el que tenía p cuando se cargó" —
+// si otra sesión ya guardó ese mismo proyecto mientras tanto, el updated_at
+// real en la base ya cambió, la condición no matchea ninguna fila, y
+// PostgREST devuelve data:[] (0 filas) SIN error. Eso es justo lo que se usa
+// para distinguir "se pisó un cambio ajeno" (0 filas, no se guarda nada) de
+// "se guardó bien" (1 fila) y de un error real de red/Supabase (va al catch,
+// sin cambios). No se toca la fila de otro modo: los datos que el usuario
+// estaba editando quedan tal cual en pantalla, listos para que recargue el
+// proyecto y decida qué hacer — no se sobrescribe ni se reintenta solo.
 async function guardar(idx){
   if(idx===undefined||idx===null||!BD[idx])return;
   var p=BD[idx];
   var payload=Object.assign({},p);
   delete payload._id; delete payload._d; delete payload.id; delete payload.created_at; delete payload.updated_at;
   try{
-    var res=await sb.from('proyectos').update(payload).eq('id', p.id);
+    var res=await sb.from('proyectos').update(payload).eq('id', p.id).eq('updated_at', p.updated_at).select('updated_at');
     if(res.error) throw res.error;
+    if(!res.data||!res.data.length){
+      toast('⚠️ Este proyecto fue modificado por otra sesión mientras lo editabas. Tus cambios NO se guardaron para no sobrescribir información más reciente — recargá el proyecto y revisá antes de volver a guardar.','err');
+      return;
+    }
+    p.updated_at=res.data[0].updated_at;
   }catch(e){
     console.error('Error guardando en Supabase', e);
     toast('⚠️ No se pudo guardar: '+(e.message||e),'err');
