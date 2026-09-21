@@ -1816,29 +1816,47 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 // ─── SINCRONIZACIÓN EN VIVO ────────────────────────────────────────────────
 // requiere que la tabla "proyectos" tenga Realtime habilitado en Supabase (ver schema.sql)
+// OBS-ALTO-01/02 (Fase 4.9): antes, si sb no llegaba a existir (ej. el CDN de
+// supabase-js no cargó) esta función lanzaba una excepción sin capturar, y
+// .subscribe() se llamaba sin callback de estado — un CHANNEL_ERROR/TIMED_OUT
+// dejaba Realtime muerto en silencio, sin ningún aviso ni en consola ni para
+// el usuario. Se agrega try/catch y un aviso único (no repetido en cada
+// reintento) cuando el canal no logra conectarse.
+var _realtimeAvisoMostrado=false;
 function activarRealtime(){
-  sb.channel('proyectos-realtime')
-    .on('postgres_changes', {event:'*', schema:'public', table:'proyectos'}, function(payload){
-      if(payload.eventType==='INSERT'){
-        var nuevo=payload.new; nuevo._id=String(nuevo.id);
-        autoStatus(nuevo);
-        if(!BD.some(function(p){return p.id===nuevo.id;})) BD.push(nuevo);
-      } else if(payload.eventType==='UPDATE'){
-        var idx=BD.findIndex(function(p){return p.id===payload.new.id;});
-        var actualizado=payload.new; actualizado._id=String(actualizado.id);
-        autoStatus(actualizado);
-        if(idx>=0) BD[idx]=actualizado; else BD.push(actualizado);
-      } else if(payload.eventType==='DELETE'){
-        BD=BD.filter(function(p){return p.id!==payload.old.id;});
-      }
-      poblarContratistas();
-      poblarListasNuevoProyecto();
-      filtrar();
-      if(document.getElementById('p-dash').classList.contains('on')) renderDash();
-      if(document.getElementById('p-resumen').classList.contains('on')) renderResumen();
-      if(document.getElementById('p-tanques').classList.contains('on')){ renderTanques(); renderReguladores(); }
-    })
-    .subscribe();
+  try{
+    sb.channel('proyectos-realtime')
+      .on('postgres_changes', {event:'*', schema:'public', table:'proyectos'}, function(payload){
+        if(payload.eventType==='INSERT'){
+          var nuevo=payload.new; nuevo._id=String(nuevo.id);
+          autoStatus(nuevo);
+          if(!BD.some(function(p){return p.id===nuevo.id;})) BD.push(nuevo);
+        } else if(payload.eventType==='UPDATE'){
+          var idx=BD.findIndex(function(p){return p.id===payload.new.id;});
+          var actualizado=payload.new; actualizado._id=String(actualizado.id);
+          autoStatus(actualizado);
+          if(idx>=0) BD[idx]=actualizado; else BD.push(actualizado);
+        } else if(payload.eventType==='DELETE'){
+          BD=BD.filter(function(p){return p.id!==payload.old.id;});
+        }
+        poblarContratistas();
+        poblarListasNuevoProyecto();
+        filtrar();
+        if(document.getElementById('p-dash').classList.contains('on')) renderDash();
+        if(document.getElementById('p-resumen').classList.contains('on')) renderResumen();
+        if(document.getElementById('p-tanques').classList.contains('on')){ renderTanques(); renderReguladores(); }
+      })
+      .subscribe(function(status, err){
+        if((status==='CHANNEL_ERROR'||status==='TIMED_OUT') && !_realtimeAvisoMostrado){
+          _realtimeAvisoMostrado=true;
+          console.error('Realtime no pudo conectarse', status, err);
+          toast('⚠️ La sincronización en vivo no pudo conectarse — los cambios de otras sesiones no se van a reflejar solos hasta que recargues la página.','warn');
+        }
+      });
+  }catch(e){
+    console.error('Error activando Realtime', e);
+    toast('⚠️ No se pudo activar la sincronización en vivo — recargá la página si necesitás ver cambios de otras sesiones.','warn');
+  }
 }
 
 async function cargarDesdeSupabase(){
@@ -3290,13 +3308,26 @@ function revisarConfirmDelProy(){
   else if(ok){hint.textContent='✓ Coincide — ya podés confirmar';hint.style.color='var(--verde,#059669)';}
   else{hint.textContent='✕ No coincide con N°'+BD[DELPI].item;hint.style.color='var(--rojo,#C0304A)';}
 }
+// OBS-CRIT-01 (Fase 4.9): un DELETE sin .select() devuelve data:null/error:null
+// aunque no haya afectado ninguna fila (ej. otra sesión ya lo había borrado) —
+// antes de este cambio eso se informaba igual como "eliminado" (falsa
+// confirmación de éxito). Se agrega .select('id') para poder distinguir
+// "0 filas afectadas" de un borrado real, mismo criterio que ya usa guardar()
+// desde la Fase 4.2 con el UPDATE.
 async function okDelProy(){
   if(DELPI===null||!BD[DELPI])return;
   var p=BD[DELPI];
   if((document.getElementById('delproy-confirm').value||'').trim()!==String(p.item))return;
   try{
-    var res=await sb.from('proyectos').delete().eq('id', p.id);
+    var res=await sb.from('proyectos').delete().eq('id', p.id).select('id');
     if(res.error) throw res.error;
+    if(!res.data||!res.data.length){
+      toast('⚠️ Este proyecto ya no existe en la base de datos (probablemente lo eliminó otra sesión) — se quita de la lista local.','warn');
+      BD.splice(DELPI,1);
+      closeOv('ov-delproy');closeOv('ov-det');
+      filtrar();renderDash();renderResumen();
+      return;
+    }
   }catch(e){
     console.error('Error eliminando proyecto', e);
     toast('⚠️ No se pudo eliminar: '+(e.message||e),'err');
