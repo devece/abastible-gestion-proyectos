@@ -1631,7 +1631,7 @@ async function manejarPdfDetalleComercial(){
   }catch(e){
     console.error('Error leyendo Detalle Comercial', e);
     prog.style.display='none';
-    toast('⚠️ No se pudo leer el Detalle Comercial: '+(e.message||e),'err');
+    toast('⚠️ No se pudo leer el Detalle Comercial: '+mensajeErrorPDF(e),'err');
   }
 }
 
@@ -1669,7 +1669,7 @@ async function manejarPdfNuevoProyecto(){
   }catch(e){
     console.error('Error leyendo Planilla de Datos', e);
     prog.style.display='none';
-    toast('⚠️ No se pudo leer el PDF automáticamente: '+(e.message||e),'err');
+    toast('⚠️ No se pudo leer el PDF automáticamente: '+mensajeErrorPDF(e),'err');
   }
 }
 
@@ -1766,7 +1766,7 @@ async function manejarRecargaPlanilla(ev){
     await aplicarRecarga(idx, candidatos, 'la Planilla de Datos');
   }catch(e){
     console.error('Error recargando Planilla de Datos', e);
-    toast('⚠️ No se pudo leer el PDF: '+(e.message||e),'err');
+    toast('⚠️ No se pudo leer el PDF: '+mensajeErrorPDF(e),'err');
   }
 }
 
@@ -1781,7 +1781,7 @@ async function manejarRecargaDC(ev){
     await aplicarRecarga(idx, candidatos, 'el Detalle Comercial');
   }catch(e){
     console.error('Error recargando Detalle Comercial', e);
-    toast('⚠️ No se pudo leer el Detalle Comercial: '+(e.message||e),'err');
+    toast('⚠️ No se pudo leer el Detalle Comercial: '+mensajeErrorPDF(e),'err');
   }
 }
 
@@ -1881,7 +1881,7 @@ async function cargarDesdeSupabase(){
     if(cambios.length)await Promise.all(cambios);
   }catch(e){
     console.error('Error cargando proyectos desde Supabase', e);
-    toast('⚠️ No se pudo cargar proyectos: '+(e.message||e),'err');
+    toast('⚠️ No se pudo cargar proyectos: '+mensajeErrorBD(e),'err');
     BD=[];
   }
 }
@@ -1956,7 +1956,7 @@ async function guardar(idx){
     if(esFichaAbierta) DET_ORIGINAL.updated_at=res.data[0].updated_at;
   }catch(e){
     console.error('Error guardando en Supabase', e);
-    toast('⚠️ No se pudo guardar: '+(e.message||e),'err');
+    toast('⚠️ No se pudo guardar: '+mensajeErrorBD(e),'err');
   }
 }
 
@@ -2548,13 +2548,13 @@ async function cargarPagina(){
     res=await sb.rpc('rpc_listar_proyectos', params);
   }catch(e){
     console.error('Error consultando rpc_listar_proyectos', e);
-    toast('⚠️ No se pudo cargar la tabla: '+(e.message||e),'err');
+    toast('⚠️ No se pudo cargar la tabla: '+mensajeErrorBD(e),'err');
     return;
   }
   if(seq!==_filtrarSeq)return; // llegó una respuesta vieja después de una consulta más nueva
   if(res.error){
     console.error('Error consultando rpc_listar_proyectos', res.error);
-    toast('⚠️ No se pudo cargar la tabla: '+(res.error.message||res.error),'err');
+    toast('⚠️ No se pudo cargar la tabla: '+mensajeErrorBD(res.error),'err');
     return;
   }
   FLT=res.data||[];
@@ -3361,7 +3361,7 @@ async function okDelProy(){
     }
   }catch(e){
     console.error('Error eliminando proyecto', e);
-    toast('⚠️ No se pudo eliminar: '+(e.message||e),'err');
+    toast('⚠️ No se pudo eliminar: '+mensajeErrorBD(e),'err');
     return;
   }
   BD.splice(DELPI,1);
@@ -3490,7 +3490,7 @@ async function crearProyecto(){
     toast('✅ Proyecto '+raw.codigo+' creado · '+ts,'ok');
   }catch(e){
     console.error('Error creando proyecto en Supabase', e);
-    toast('⚠️ No se pudo crear el proyecto: '+(e.message||e),'err');
+    toast('⚠️ No se pudo crear el proyecto: '+mensajeErrorBD(e),'err');
   }
 }
 
@@ -4040,12 +4040,12 @@ async function expCSV(){
     res=await sb.rpc('rpc_listar_proyectos', params);
   }catch(e){
     console.error('Error consultando rpc_listar_proyectos para exportar', e);
-    toast('⚠️ No se pudo exportar: '+(e.message||e),'err');
+    toast('⚠️ No se pudo exportar: '+mensajeErrorBD(e),'err');
     return;
   }
   if(res.error){
     console.error('Error consultando rpc_listar_proyectos para exportar', res.error);
-    toast('⚠️ No se pudo exportar: '+(res.error.message||res.error),'err');
+    toast('⚠️ No se pudo exportar: '+mensajeErrorBD(res.error),'err');
     return;
   }
   var ordenId=(res.data||[]).map(function(r){return r.id;});
@@ -4077,11 +4077,72 @@ async function expCSV(){
 }
 
 function closeOv(id){document.getElementById(id).classList.remove('open');}
-var _tt;
+
+// Fase 4.11 (OBS-BAJO-01/02): traducen errores técnicos reales a un mensaje
+// funcional para el usuario, sin exponer nunca el texto crudo de Postgres/
+// PostgREST ni de pdf.js. El error completo SIEMPRE queda en console.error
+// (ver cada catch) — esto solo cambia lo que termina en el toast.
+// Códigos reales confirmados en fases anteriores (Fase 4.6: 23505/23502/23514
+// contra las constraints de "proyectos"); 23503/42501/PGRST116 son códigos
+// estándar de Postgres/PostgREST que hoy no se disparan en este código (RLS
+// de "proyectos" es using(true) para todos), pero se traducen igual por si
+// una fase futura de Auth/RLS los habilita — no se inventa ningún código.
+var MENSAJES_ERROR_BD={
+  '23505':'Ya existe un registro con ese mismo valor único (por ejemplo, un código de proyecto repetido).',
+  '23502':'Falta completar un campo obligatorio.',
+  '23514':'Uno de los valores ingresados no es válido (por ejemplo, una cantidad negativa).',
+  '23503':'La operación hace referencia a un registro que no existe.',
+  '42501':'No tenés permisos para realizar esta operación.',
+  'PGRST116':'No se encontró el registro esperado — puede que ya no exista.'
+};
+function mensajeErrorBD(error){
+  if(error&&error.code&&MENSAJES_ERROR_BD[error.code])return MENSAJES_ERROR_BD[error.code];
+  var texto=String((error&&error.message)||error||'');
+  if(/fetch|network|conexi[oó]n/i.test(texto))return 'No fue posible comunicarse con el servidor. Intentá nuevamente.';
+  return 'Ocurrió un error al procesar la operación. Si el problema continúa, avisá a soporte.';
+}
+// Nombres reales de las excepciones de pdf.js (pdfjs-dist/src/shared/util.js).
+function mensajeErrorPDF(error){
+  var texto=String((error&&error.message)||error||'');
+  var nombre=(error&&error.name)||'';
+  if(typeof pdfjsLib==='undefined'||/pdfjsLib/i.test(texto))return 'La herramienta para leer PDF no está disponible en este momento — recargá la página o intentá más tarde.';
+  if(nombre==='PasswordException')return 'El PDF está protegido con contraseña y no se puede leer automáticamente.';
+  if(nombre==='InvalidPDFException')return 'El archivo no es un PDF válido o está dañado.';
+  if(nombre==='MissingPDFException')return 'No se encontró el archivo PDF.';
+  if(nombre==='UnexpectedResponseException')return 'No fue posible descargar el archivo PDF.';
+  return 'No fue posible leer este PDF. El archivo puede estar dañado o no ser compatible.';
+}
+
+// Fase 4.11 (OBS-MEDIO-01): antes, un toast nuevo reemplazaba instantáneamente
+// al anterior — con varios errores independientes en secuencia rápida (ej. al
+// arrancar, si fallan proyectos/certificadores/RPC a la vez), solo el último
+// llegaba a mostrarse. Se agrega una cola mínima: mismo elemento visual, misma
+// duración base, sin ningún rediseño — simplemente se muestran uno por uno en
+// vez de pisarse. Se deduplica (mismo texto+tipo ya mostrado o ya encolado no
+// se repite) para evitar spam, y los errores quedan un poco más tiempo en
+// pantalla que el resto, porque son los que más importa que se alcancen a leer.
+var _tt, _toastQueue=[], _toastActual=null, _toastMostrando=false;
 function toast(msg,tipo){
-  var t=document.getElementById('toast');t.textContent=msg;
-  t.className='show'+(tipo==='ok'?' tok':tipo==='err'?' terr':tipo==='warn'?' twarn':'');
-  clearTimeout(_tt);_tt=setTimeout(function(){t.className='';},3500);
+  if(_toastActual&&_toastActual.msg===msg&&_toastActual.tipo===tipo)return;
+  if(_toastQueue.some(function(x){return x.msg===msg&&x.tipo===tipo;}))return;
+  _toastQueue.push({msg:msg,tipo:tipo});
+  _mostrarSiguienteToast();
+}
+function _mostrarSiguienteToast(){
+  if(_toastMostrando||!_toastQueue.length)return;
+  _toastMostrando=true;
+  _toastActual=_toastQueue.shift();
+  var t=document.getElementById('toast');
+  t.textContent=_toastActual.msg;
+  t.className='show'+(_toastActual.tipo==='ok'?' tok':_toastActual.tipo==='err'?' terr':_toastActual.tipo==='warn'?' twarn':'');
+  var duracion=_toastActual.tipo==='err'?6000:3500;
+  clearTimeout(_tt);
+  _tt=setTimeout(function(){
+    t.className='';
+    _toastMostrando=false;
+    _toastActual=null;
+    _mostrarSiguienteToast();
+  },duracion);
 }
 
 </script>
