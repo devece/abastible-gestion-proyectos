@@ -797,6 +797,14 @@ tbody td:first-child{padding-left:16px}
 // para el contador "X de Y" y la paginación. BD sigue siendo el dataset completo (Dashboard,
 // Resumen/Alertas, Despacho Tanques y edición por _id lo siguen necesitando entero).
 var BD=[], FLT=[], FLT_TOTAL=0, PAG=1, PPP=25, SC='item', SA=true, CFI=null, DELCI=null, DELCK='', DET_IDX=null;
+// DET_ORIGINAL (Fase 4.10, OBS-CRIT-02): "id" y "updated_at" congelados en el
+// momento exacto en que se abrió la ficha de detalle actualmente visible. Ver
+// guardar() para el porqué: Realtime puede reemplazar BD[idx] en silencio
+// mientras la ficha sigue abierta con datos viejos en pantalla — sin este
+// congelado, guardar() terminaba comparando contra un updated_at que ya
+// había sido pisado por la otra sesión, y el control de concurrencia de la
+// Fase 4.2 dejaba de detectar el conflicto.
+var DET_ORIGINAL=null;
 var _filtrarSeq=0, _qTimer=null;
 var CERT_POR_REGION={}, certManual=false, jefeManual=false;
 
@@ -1914,16 +1922,38 @@ function sugerirCertificador(){
 async function guardar(idx){
   if(idx===undefined||idx===null||!BD[idx])return;
   var p=BD[idx];
+  // Fase 4.10 (OBS-CRIT-02): si este guardado corresponde a la ficha de
+  // detalle actualmente abierta (idx===DET_IDX), no confiar en p.updated_at
+  // "en vivo" — un evento Realtime puede haberlo reemplazado en silencio
+  // mientras la ficha seguía abierta con datos viejos en pantalla, lo que
+  // hacía que el control de concurrencia de la Fase 4.2 diera por buena una
+  // condición que en realidad ya no reflejaba lo que el usuario veía. Se usa
+  // en su lugar el updated_at congelado al abrir la ficha (DET_ORIGINAL).
+  // Además, si BD[idx] ya no es el mismo proyecto que se abrió (ej. un DELETE
+  // remoto de OTRO proyecto corrió los índices del arreglo), p.id no va a
+  // coincidir con DET_ORIGINAL.id — se aborta sin enviar nada al servidor,
+  // en vez de guardar por error sobre un proyecto distinto al que el usuario
+  // cree estar editando.
+  var updatedAtParaComparar=p.updated_at;
+  var esFichaAbierta=DET_ORIGINAL&&DET_IDX===idx;
+  if(esFichaAbierta){
+    if(p.id!==DET_ORIGINAL.id){
+      toast('⚠️ La ficha que tenías abierta ya no corresponde a este proyecto (probablemente se eliminó otro proyecto de la lista mientras la mirabas) — recargá la página antes de seguir editando.','err');
+      return;
+    }
+    updatedAtParaComparar=DET_ORIGINAL.updated_at;
+  }
   var payload=Object.assign({},p);
   delete payload._id; delete payload._d; delete payload.id; delete payload.created_at; delete payload.updated_at;
   try{
-    var res=await sb.from('proyectos').update(payload).eq('id', p.id).eq('updated_at', p.updated_at).select('updated_at');
+    var res=await sb.from('proyectos').update(payload).eq('id', p.id).eq('updated_at', updatedAtParaComparar).select('updated_at');
     if(res.error) throw res.error;
     if(!res.data||!res.data.length){
       toast('⚠️ Este proyecto fue modificado por otra sesión mientras lo editabas. Tus cambios NO se guardaron para no sobrescribir información más reciente — recargá el proyecto y revisá antes de volver a guardar.','err');
       return;
     }
     p.updated_at=res.data[0].updated_at;
+    if(esFichaAbierta) DET_ORIGINAL.updated_at=res.data[0].updated_at;
   }catch(e){
     console.error('Error guardando en Supabase', e);
     toast('⚠️ No se pudo guardar: '+(e.message||e),'err');
@@ -2670,6 +2700,7 @@ function abrirDet(id){
   if(idx<0)return;
   DET_IDX=idx;
   var p=BD[idx];
+  DET_ORIGINAL={id:p.id, updated_at:p.updated_at};
   document.getElementById('m-titulo').textContent='Proyecto '+esc(p.codigo||'—');
   document.getElementById('m-sub').textContent=(p.cliente||'—')+'  ·  '+(p.region||'')+'  ·  '+(p.tipo||'');
   var dias=diasProy(p), dg=p.f_gestor?diasDesde(p.f_gestor):null;
