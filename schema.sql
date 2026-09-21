@@ -785,3 +785,36 @@ comment on table public.proyectos_backup_20260819 is
 --
 -- (el cuerpo completo de la función, idéntico al de arriba salvo esa línea,
 -- se aplicó directo en Supabase — ver migración rpc_listar_proyectos_dias_hora_chile)
+
+-- ── Stage: Fase 4.5 — hardening de Storage y GRANTS (SEC-ALTO-01 / SEC-MEDIO-01) ──
+-- La auditoría de la Fase 4.4 (Seguridad de Datos, RLS y Control de Acceso)
+-- encontró dos exposiciones que no dependen de implementar autenticación:
+--
+-- 1) SEC-ALTO-01: el bucket de Storage "contratista-docs" (usado por una
+--    integración externa que no forma parte de este repositorio — 0
+--    referencias en el código a contratista_proyectos/contratista_notif_cola/
+--    contratista-docs, confirmado con grep en toda la app) tenía una policy
+--    que permitía subir archivos de forma anónima e irrestricta:
+--    anon_insert_contratista_docs, with_check: bucket_id = 'contratista-docs',
+--    sin ninguna otra condición, roles={public}. Se elimina esa policy. Se
+--    mantiene intacta anon_select_contratista_docs (lectura pública) porque
+--    el único archivo real que hay ahí depende de una URL pública legible
+--    desde fuera de esta app.
+drop policy if exists "anon_insert_contratista_docs" on storage.objects;
+
+-- 2) SEC-MEDIO-01: contratista_proyectos, contratista_notif_cola y
+--    proyectos_backup_20260819 ya estaban cerradas en la práctica por RLS
+--    sin ninguna policy (SEC-002/SEC-003 de la Fase 1), pero anon/authenticated
+--    conservaban GRANTS de tabla completos (SELECT/INSERT/UPDATE/DELETE) sobre
+--    las tres. Eso no cambiaba el comportamiento actual, pero si alguna vez se
+--    deshabilita RLS por error en esas tablas, quedarían abiertas de golpe sin
+--    ninguna otra barrera. Se revocan esos GRANTS como defensa en profundidad.
+--    No se toca proyectos ni certificadores_por_region, ni el rol service_role.
+revoke all on table public.contratista_proyectos from anon, authenticated;
+revoke all on table public.contratista_notif_cola from anon, authenticated;
+revoke all on table public.proyectos_backup_20260819 from anon, authenticated;
+--
+-- Verificado con SET ROLE anon antes/después: las 3 tablas y la subida al
+-- bucket pasaron de "bloqueadas por RLS" (0 filas / rechazo silencioso) a
+-- "permission denied" explícito (más estricto todavía); proyectos y
+-- rpc_listar_proyectos siguen exactamente igual para anon, sin cambios.
