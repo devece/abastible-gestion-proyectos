@@ -818,3 +818,51 @@ revoke all on table public.proyectos_backup_20260819 from anon, authenticated;
 -- bucket pasaron de "bloqueadas por RLS" (0 filas / rechazo silencioso) a
 -- "permission denied" explícito (más estricto todavía); proyectos y
 -- rpc_listar_proyectos siguen exactamente igual para anon, sin cambios.
+
+-- ── Stage: Fase 4.6 — integridad de datos en public.proyectos (DAT-INT-01/02) ──
+-- La auditoría de integridad de la Fase 4.6 encontró que varios campos que el
+-- frontend ya trata como obligatorios/con mínimos (validarProyectoNuevo() al
+-- crear, y saveCampoEdit()/MIN_CAMPO_NUM al editar la ficha) no tenían ningún
+-- respaldo en la base: se podía crear un proyecto solo con "item" (probado con
+-- INSERT directo), dejar "codigo" o "cliente" en blanco editando la ficha sin
+-- ninguna advertencia (saveCampoEdit no valida esos dos campos, a diferencia
+-- de rut_cliente/costo/reguladores_cant/medidores_cant/cant_tanque, que sí
+-- tienen guardas en el propio frontend), duplicar "codigo" entre dos
+-- proyectos, o guardar costo/cant_tanque/reguladores_cant/medidores_cant en
+-- negativo. Todo esto fue reproducido con pruebas reales contra Supabase de
+-- producción (en transacciones con ROLLBACK, sin dejar residuo) antes de
+-- corregir nada.
+--
+-- Se agregan como respaldo en la BD exactamente las mismas reglas que el
+-- frontend ya declara e impone hoy — no se inventa ninguna regla nueva:
+alter table public.proyectos alter column codigo set not null;
+alter table public.proyectos add constraint proyectos_codigo_key unique (codigo);
+alter table public.proyectos alter column cliente set not null;
+alter table public.proyectos alter column region set not null;
+alter table public.proyectos alter column tipo set not null;
+alter table public.proyectos add constraint proyectos_costo_check check (costo is null or costo >= 0);
+alter table public.proyectos add constraint proyectos_cant_tanque_check check (cant_tanque is null or cant_tanque >= 0);
+alter table public.proyectos add constraint proyectos_reguladores_cant_check check (reguladores_cant is null or reguladores_cant >= 0);
+alter table public.proyectos add constraint proyectos_medidores_cant_check check (medidores_cant is null or medidores_cant >= 0);
+--
+-- Verificado contra las 129 filas reales ANTES de aplicar que ninguna violaba
+-- estas reglas (0 codigo/cliente/region/tipo nulos o vacíos, 0 codigo
+-- duplicados, 0 valores negativos) — por eso la migración pudo aplicarse sin
+-- tocar ni un solo dato existente. Y verificado DESPUÉS, en producción real,
+-- que las mismas pruebas que antes se guardaban silenciosamente ahora las
+-- rechaza la base con un error real (que la app ya sabía mostrar, vía el
+-- catch existente de guardar()/crearProyecto()), y que crear/editar/guardar
+-- un proyecto válido, rpc_listar_proyectos y el control de concurrencia de la
+-- Fase 4.2 (updated_at) siguen funcionando exactamente igual para "anon".
+--
+-- A propósito NO se tocó: "construccion" (hay 11 filas reales — datos de un
+-- import de agosto — con el campo NULL/'' hoy; forzar NOT NULL ahí rompería
+-- datos válidos existentes, así que queda documentado como hallazgo, no como
+-- corrección), "status"/"etapa" (son de texto libre sin CHECK; los 8 valores
+-- realmente usados en producción son válidos hoy, pero restringirlos a una
+-- lista fija es una decisión de negocio que esta fase no tiene evidencia
+-- suficiente para tomar), ni ninguna fecha/hito (la propia producción tiene
+-- casos reales de "envío de O.C." registrado después de "inicio de trabajos",
+-- lo que sugiere que no es una secuencia estrictamente obligatoria en la
+-- práctica). No se tocaron RLS, permisos, Storage, Auth ni ningún dato
+-- existente.
