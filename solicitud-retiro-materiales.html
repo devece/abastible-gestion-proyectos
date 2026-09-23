@@ -407,6 +407,12 @@ function tablaMateriales(materiales){
   </table>`;
 }
 
+// Espaciador "a prueba de Outlook" — una celda de alto fijo es más confiable
+// entre clientes de correo que el margin-bottom de una tabla suelta.
+function espacio(alto){
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;"><tr><td style="height:${alto}px;line-height:${alto}px;font-size:0;">&nbsp;</td></tr></table>`;
+}
+
 function templateCorreo(d){
   const parrafo = (texto, padBottom) => `<tr><td style="padding:0 0 ${padBottom} 0;font-family:${UB};font-size:14px;line-height:175%;mso-line-height-rule:exactly;">${texto}</td></tr>`;
   const parrafoBold = (texto, padBottom) => `<tr><td style="padding:0 0 ${padBottom} 0;font-family:${UB};font-size:14px;font-weight:700;line-height:175%;mso-line-height-rule:exactly;">${texto}</td></tr>`;
@@ -416,23 +422,23 @@ function templateCorreo(d){
     ${parrafo(`Buenas tardes estimado/a ${d.destNombre || '[NOMBRE]'}`, '18px')}
     ${parrafo('Espero que te encuentres bien.', '18px')}
     ${parrafo(`Favor necesitamos su apoyo para preparar la entrega de los materiales señalados y demás equipos de la reserva <span style="color:${NARANJA_ABASTIBLE};font-weight:bold;">${d.numReserva || '[N° RESERVA]'}</span>, la cual retirará <span style="color:${NARANJA_ABASTIBLE};font-weight:bold;">${d.contactoContratista || '[CONTACTO CONTRATISTA]'}</span>${d.telefonoContratista ? `, teléfono <span style="color:${NARANJA_ABASTIBLE};font-weight:bold;">${d.telefonoContratista}</span>` : ''}`, '18px')}
-    ${parrafoBold('Favor confirmar cuando estés disponible para despacho', '26px')}
+    ${parrafoBold('Favor confirmar cuando estés disponible para despacho', '4px')}
   </table>
 
+  ${espacio(18)}
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin-bottom:4px;">
     <tr><td style="background:${NARANJA_ABASTIBLE};height:4px;line-height:4px;font-size:0;">&nbsp;</td></tr>
   </table>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border:1px solid ${NARANJA_SUAVE_BORDE};border-top:none;margin-bottom:22px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border:1px solid ${NARANJA_SUAVE_BORDE};border-top:none;">
     ${row('Renova', d.numeroProyecto, {highlight:true})}
     ${row('Reserva', d.numReserva, {highlight:true})}
     ${row('Nombre cliente', d.cliente, {zebra:true})}
   </table>
+  ${espacio(22)}
 
   ${tablaMateriales(d.materiales)}
+  ${espacio(20)}
 
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
-    <tr><td style="height:20px;line-height:20px;font-size:0;">&nbsp;</td></tr>
-  </table>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
     ${parrafo('Saludos', '0')}
   </table>
