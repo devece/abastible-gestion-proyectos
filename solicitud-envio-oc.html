@@ -389,14 +389,41 @@ function escapeHtml(s){
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-// Bloque pegado desde la OC: se muestra tal cual, línea por línea, con interlineado 1.5
+// Espaciador "a prueba de Outlook" — una celda de alto fijo es más confiable
+// entre clientes de correo que el margin-bottom de una tabla suelta.
+function espacio(alto){
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;"><tr><td style="height:${alto}px;line-height:${alto}px;font-size:0;">&nbsp;</td></tr></table>`;
+}
+
+// Fila etiqueta/valor del bloque de datos de la OC (mismo lenguaje visual que filaDatoOC)
+function filaOC(label, valor, zebra){
+  const bg = zebra ? '#FFF9F4' : '#FFFFFF';
+  return `<tr>
+    <td width="34%" style="background:${NARANJA_SUAVE};border:1px solid ${NARANJA_SUAVE_BORDE};padding:10px 12px;font-family:${UB};font-size:11px;line-height:1.5;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:${NARANJA_TEXTO};">${escapeHtml(label)}</td>
+    <td style="background:${bg};border:1px solid #ece7e2;padding:10px 12px;font-family:${UB};font-size:13.5px;line-height:1.5;color:#1C1E26;">${escapeHtml(valor) || '&nbsp;'}</td>
+  </tr>`;
+}
+
+// Bloque pegado desde la OC: cada línea "ETIQUETA: valor" se separa y se muestra
+// como una fila con la misma línea visual (naranja + tabla bordeada) que el resto
+// de los correos, en vez de volcar el texto plano tal cual se pegó.
 function bloqueOC(texto){
   const lineas = String(texto || '').split('\n').map(l => l.trim()).filter(Boolean);
   if(!lineas.length) return '';
-  // tabla con una fila por línea — Outlook/Word no respeta line-height entre saltos <br>
-  // dentro de una misma celda, pero sí lo aplica de forma consistente por línea/fila
-  const filas = lineas.map(l => `<tr><td style="font-family:${UB};font-size:14px;line-height:150%;mso-line-height-rule:exactly;">${escapeHtml(l)}</td></tr>`).join('');
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin-bottom:14px;">${filas}</table>`;
+
+  const filas = lineas.map((l, i) => {
+    const idx = l.indexOf(':');
+    if(idx === -1){
+      return `<tr><td colspan="2" style="background:${i % 2 ? '#FFF9F4' : '#FFFFFF'};border:1px solid #ece7e2;padding:10px 12px;font-family:${UB};font-size:13.5px;line-height:1.5;color:#1C1E26;">${escapeHtml(l)}</td></tr>`;
+    }
+    return filaOC(l.slice(0, idx).trim(), l.slice(idx + 1).trim(), i % 2 === 1);
+  }).join('');
+
+  return `
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin-bottom:4px;">
+    <tr><td style="background:${NARANJA_ABASTIBLE};height:4px;line-height:4px;font-size:0;">&nbsp;</td></tr>
+  </table>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border:1px solid ${NARANJA_SUAVE_BORDE};border-top:none;">${filas}</table>`;
 }
 
 // Mismo bloque pegado desde la OC, quitando la línea de DIRECCIÓN (correo a Impovar no la lleva)
@@ -408,30 +435,33 @@ function quitarLineaDireccion(texto){
 }
 
 function templateCorreo(d){
-  const parrafo = (texto, padBottom) => `<tr><td style="padding:0 0 ${padBottom} 0;font-family:${UB};font-size:14px;line-height:150%;mso-line-height-rule:exactly;">${texto}</td></tr>`;
+  const parrafo = (texto, padBottom) => `<tr><td style="padding:0 0 ${padBottom} 0;font-family:${UB};font-size:14px;line-height:175%;mso-line-height-rule:exactly;">${texto}</td></tr>`;
 
   return `
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
-    ${parrafo(`Estimado(a) ${d.contactoContratista || ''}`.trim(), '14px')}
-    ${parrafo('Adjunto OC correspondiente', '10px')}
+    ${parrafo(`Estimado(a) ${d.contactoContratista || ''}`.trim(), '16px')}
+    ${parrafo('Junto con saludar, adjunto la Orden de Compra (OC) correspondiente al proyecto:', '4px')}
   </table>
 
+  ${espacio(16)}
   ${bloqueOC(d.datosOC)}
+  ${espacio(24)}
 
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
-    ${parrafo('Favor completar/confirmar los siguientes datos:', '10px')}
+    ${parrafo('Favor completar/confirmar los siguientes datos:', '14px')}
   </table>
 
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin-bottom:4px;">
     <tr><td style="background:${NARANJA_ABASTIBLE};height:4px;line-height:4px;font-size:0;">&nbsp;</td></tr>
   </table>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border:1px solid ${NARANJA_SUAVE_BORDE};border-top:none;margin-bottom:20px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border:1px solid ${NARANJA_SUAVE_BORDE};border-top:none;">
     ${filaDatoOC('Fecha Inicio de Trabajos', 'Para enviar Welcome Pack a cliente')}
     ${filaDatoOC('Plazo de ejecución', 'Plazo a considerar sin contar documentación SEC (Declaraciones)', true)}
     ${filaDatoOC('Fecha de necesidad de cañerías (si corresponde, incluir dirección)', 'Indicar cantidad o total de cañerías y la dirección de entrega')}
     ${filaDatoOC('Fecha de necesidad de envío de tanque (si corresponde)', 'Si proyecto contempla tanque (s), indicar fecha requerida de entrega (sujeto al stock y transporte)', true)}
     ${filaDatoOC('Confirmar que dirección es la del proyecto o indicar una distinta', 'Si la dirección de entrega de tanque (s) es distinta al de proyecto, indicar')}
   </table>
+  ${espacio(22)}
 
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
     ${parrafo('Saludos cordiales', '0')}
@@ -440,18 +470,20 @@ function templateCorreo(d){
 }
 
 function templateCorreoImpovar(d){
-  const parrafo = (texto, padBottom) => `<tr><td style="padding:0 0 ${padBottom} 0;font-family:${UB};font-size:14px;line-height:150%;mso-line-height-rule:exactly;">${texto}</td></tr>`;
+  const parrafo = (texto, padBottom) => `<tr><td style="padding:0 0 ${padBottom} 0;font-family:${UB};font-size:14px;line-height:175%;mso-line-height-rule:exactly;">${texto}</td></tr>`;
 
   return `
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
-    ${parrafo('Estimados (a)', '14px')}
-    ${parrafo('Adjunto OC correspondiente a proyecto', '10px')}
+    ${parrafo('Estimados (a)', '16px')}
+    ${parrafo('Junto con saludar, adjunto la Orden de Compra (OC) correspondiente al proyecto:', '4px')}
   </table>
 
+  ${espacio(16)}
   ${bloqueOC(quitarLineaDireccion(d.datosOC))}
+  ${espacio(24)}
 
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
-    ${parrafo('A la brevedad se indicará cantidad y lugar de entrega de cañerías', '14px')}
+    ${parrafo('A la brevedad se indicará la cantidad y el lugar de entrega de las cañerías.', '16px')}
     ${parrafo('Atentamente', '0')}
   </table>
   `;
