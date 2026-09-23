@@ -499,22 +499,29 @@ function row(label, val, opts={}){
   </tr>`;
 }
 
+// Espaciador "a prueba de Outlook" — una celda de alto fijo es más confiable
+// entre clientes de correo que el margin-bottom de una tabla suelta.
+function espacio(alto){
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;"><tr><td style="height:${alto}px;line-height:${alto}px;font-size:0;">&nbsp;</td></tr></table>`;
+}
+
 function templateCorreo(d){
   const formatoTanque = d.cantTanques && d.tanqueCodigo ? `${d.cantTanques} x ${d.tanqueCodigo}` : (d.tanqueCodigo || '');
 
-  const parrafo = (texto, padBottom) => `<tr><td style="padding:0 0 ${padBottom} 0;font-family:${UB};font-size:14px;line-height:150%;mso-line-height-rule:exactly;">${texto}</td></tr>`;
+  const parrafo = (texto, padBottom) => `<tr><td style="padding:0 0 ${padBottom} 0;font-family:${UB};font-size:14px;line-height:175%;mso-line-height-rule:exactly;">${texto}</td></tr>`;
 
   return `
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
-    ${parrafo(`Buenas tardes estimado/a ${d.destNombre || '[NOMBRE]'}`, '14px')}
-    ${parrafo('Espero que te encuentres bien.', '14px')}
-    ${parrafo(`Favor, gestionar guía de despacho de TQ de RESERVA <span style="color:${NARANJA_ABASTIBLE};font-weight:bold;">${d.numReserva || '[N° RESERVA]'}</span>`, '20px')}
+    ${parrafo(`Buenas tardes estimado/a ${d.destNombre || '[NOMBRE]'}`, '16px')}
+    ${parrafo('Espero que te encuentres bien.', '16px')}
+    ${parrafo(`Favor, gestionar guía de despacho de TQ de RESERVA <span style="color:${NARANJA_ABASTIBLE};font-weight:bold;">${d.numReserva || '[N° RESERVA]'}</span>`, '4px')}
   </table>
 
+  ${espacio(18)}
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin-bottom:4px;">
     <tr><td style="background:${NARANJA_ABASTIBLE};height:4px;line-height:4px;font-size:0;">&nbsp;</td></tr>
   </table>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border:1px solid ${NARANJA_SUAVE_BORDE};border-top:none;margin-bottom:22px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;border:1px solid ${NARANJA_SUAVE_BORDE};border-top:none;">
     ${row('N° Renova', d.numeroProyecto, {highlight:true})}
     ${row('N° Reserva', d.numReserva, {highlight:true})}
     ${row('Contratista', d.contratista, {zebra:true})}
@@ -525,9 +532,10 @@ function templateCorreo(d){
     ${row('Ubicación', [d.region, d.direccion].filter(Boolean).join(' - '))}
     ${row('Coordenadas GPS', d.coordenadasGPS, {zebra:true})}
   </table>
+  ${espacio(22)}
 
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
-    ${parrafo(`Por favor avisar cuando estén disponibles para coordinar retiro con <span style="color:${NARANJA_ABASTIBLE};font-weight:bold;">${d.coordinaRetiro || '[COORDINA RETIRO]'}</span>, quien va en correo también.`, '16px')}
+    ${parrafo(`Por favor avisar cuando estén disponibles para coordinar retiro con <span style="color:${NARANJA_ABASTIBLE};font-weight:bold;">${d.coordinaRetiro || '[COORDINA RETIRO]'}</span>, quien va en correo también.`, '18px')}
     ${parrafo('Saludos', '0')}
   </table>
   `;
