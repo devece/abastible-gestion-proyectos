@@ -69,13 +69,17 @@ function calcularHitoActual(p) {
   if (p.f_rev_ant) return 'revision';
   if (p.f_v_coord) return 'asignacion';
   if (p.f_v_respondido) return 'validacion';
+  if (p.f_v_prevalidacion) return 'primera_validacion';
   return 'ingreso';
 }
 
+// etapa_actual: agrupación VISUAL (reunión 2026-09 — Vende/Construye), no la cadena de
+// secuencia (CADENA_HITOS, más abajo, a propósito sin cambios). 'asignacion' y 'liberado'
+// pasan a la etapa 1 (Construye), 'primera_validacion' se agrega a la etapa 0 (Vende).
 function calcularEtapaActual(hitoActual) {
-  if (['revision', 'visita_previa', 'envio_a_liberar'].includes(hitoActual)) return 1;
+  if (['revision', 'asignacion', 'visita_previa', 'envio_a_liberar', 'liberado'].includes(hitoActual)) return 1;
   if (['termino_trabajos', 'envio_gestor_documental', 'pasado_post_venta', 'cierre_forzado'].includes(hitoActual)) return 3;
-  if (['ingreso', 'validacion', 'asignacion'].includes(hitoActual)) return 0;
+  if (['ingreso', 'primera_validacion', 'validacion'].includes(hitoActual)) return 0;
   return 2;
 }
 

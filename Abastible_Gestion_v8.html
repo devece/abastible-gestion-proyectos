@@ -144,7 +144,6 @@ tbody td:first-child{padding-left:16px}
 .mhdr-navy{background:var(--navy);border-bottom:3px solid var(--brand)}
 .mhdr-green{background:#064E3B;border-bottom:3px solid #059669}
 .mhdr-red{background:#7F1D1D;border-bottom:3px solid #DC2626}
-.mhdr-amber{background:#78350F;border-bottom:3px solid #F59E0B}
 .mhdr h2{font-size:20px;font-weight:800;color:#fff;letter-spacing:-.01em}
 .mhdr .msub{font-size:14px;color:rgba(255,255,255,.6);margin-top:3px}
 .mx{background:rgba(255,255,255,.12);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center;transition:background .15s;flex-shrink:0}
@@ -714,52 +713,25 @@ tbody td:first-child{padding-left:16px}
       <div class="fg"><label>Motivo obligatorio *</label>
         <textarea id="mcf" style="min-height:95px" placeholder="Ej: Cliente desistió · Inviabilidad técnica · Sin presupuesto..."></textarea>
       </div>
+      <div class="fg"><label>Observaciones del correo recibido</label>
+        <textarea id="mcf-obs" style="min-height:70px" placeholder="Ej: Cliente informa por correo que no continuará con la instalación..."></textarea>
+      </div>
+      <div class="fg" style="display:flex;gap:10px">
+        <div style="flex:1"><label>Fecha del correo / autorización</label>
+          <input type="date" id="mcf-fecha">
+        </div>
+        <div style="flex:1"><label>Quién autoriza</label>
+          <input type="text" id="mcf-autoriza" placeholder="Nombre y cargo">
+        </div>
+      </div>
+      <div class="fg"><label>Adjuntar captura del correo (opcional, máx. 3 MB)</label>
+        <input type="file" id="mcf-captura" accept="image/*">
+        <div id="mcf-captura-hint" style="font-size:12.5px;color:var(--muted);min-height:16px;margin-top:4px"></div>
+      </div>
     </div>
     <div class="mfoot">
       <button class="btn btn-ghost" onclick="closeOv('ov-cf')">Cancelar</button>
       <button class="btn btn-red" id="btn-cf">⛔ &nbsp;Confirmar Cierre Forzado</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL ELIMINAR PROYECTO -->
-<div class="ov" id="ov-delproy">
-  <div class="modal modal-sm">
-    <div class="mhdr mhdr-red">
-      <div><h2>🗑 Eliminar Proyecto</h2><div class="msub">Acción permanente e irreversible</div></div>
-      <button class="mx" onclick="closeOv('ov-delproy')">✕</button>
-    </div>
-    <div class="mbody">
-      <div class="alerta al-r" style="margin-bottom:16px">⚠️ &nbsp;Esto borra <strong>de verdad</strong> el proyecto <strong id="delproy-nombre">—</strong> de la base de datos. No hay forma de deshacerlo desde la app.</div>
-      <div class="fg">
-        <label>Para confirmar, escribe el N° de ítem exacto: <strong id="delproy-item">—</strong></label>
-        <input type="text" id="delproy-confirm" placeholder="Escribe el N° de ítem" oninput="revisarConfirmDelProy()" autocomplete="off" autofocus>
-        <div id="delproy-hint" style="font-size:12.5px;color:var(--muted);min-height:16px"></div>
-      </div>
-    </div>
-    <div class="mfoot">
-      <button class="btn btn-ghost" onclick="closeOv('ov-delproy')">Cancelar</button>
-      <button class="btn btn-red" id="btn-delproy" disabled>🗑 &nbsp;Eliminar definitivamente</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL DEVUELTO A ITO -->
-<div class="ov" id="ov-dito">
-  <div class="modal modal-sm">
-    <div class="mhdr mhdr-amber">
-      <div><h2>↩️ Devuelto a ITO</h2><div class="msub">Se registra la fecha · el proyecto sigue activo</div></div>
-      <button class="mx" onclick="closeOv('ov-dito')">✕</button>
-    </div>
-    <div class="mbody">
-      <div class="alerta al-a" style="margin-bottom:16px">↩️ &nbsp;El proyecto queda marcado como <strong>pendiente de corrección por el ITO</strong> hasta que se registre la liberación.</div>
-      <div class="fg"><label>Motivo / falla a corregir *</label>
-        <textarea id="mdito" style="min-height:95px" placeholder="Ej: Falta plano actualizado · Dato de potencia no coincide · Falta firma del cliente..."></textarea>
-      </div>
-    </div>
-    <div class="mfoot">
-      <button class="btn btn-ghost" onclick="closeOv('ov-dito')">Cancelar</button>
-      <button class="btn" style="background:#F59E0B;color:#fff" id="btn-dito">↩️ &nbsp;Confirmar Devuelto a ITO</button>
     </div>
   </div>
 </div>
@@ -1802,9 +1774,8 @@ document.addEventListener('DOMContentLoaded', async function() {
 
   document.getElementById('btn-crear').addEventListener('click', crearProyecto);
   document.getElementById('btn-cf').addEventListener('click', okForzado);
-  document.getElementById('btn-delproy').addEventListener('click', okDelProy);
+  document.getElementById('mcf-captura').addEventListener('change', manejarCapturaCF);
   document.getElementById('btn-delc').addEventListener('click', okDelCarga);
-  document.getElementById('btn-dito').addEventListener('click', okDevITO);
   document.getElementById('nr').addEventListener('change', function(){ sugerirCertificador(); sugerirJefeInstalaciones(); actualizarResumenNuevoProyecto(); });
   document.getElementById('nct').addEventListener('input', sugerirCertificador);
   document.getElementById('nce').addEventListener('input', function(){certManual=true;});
@@ -2239,16 +2210,20 @@ function autoStatus(p){
 }
 
 // ─── ETAPAS Y HITOS (para el filtro superior Etapa → Hito) ────────────────
-var ETAPAS_DEF=['Anteproyecto y Coordinación','Tareas Previas','En Ejecución','Término y Cierre'];
-// orden de MÁS TEMPRANO a MÁS TARDÍO — hitoActual() recorre al revés y devuelve el primero que calce
+var ETAPAS_DEF=['Vende','Construye','En Ejecución','Término y Cierre'];
+// orden de MÁS TEMPRANO a MÁS TARDÍO — hitoActual() recorre al revés y devuelve el primero que calce.
+// "etapa" es solo la agrupación visual (filtro Etapa→Hito, tarjetas de la ficha, peso de
+// porcentajeProgreso()) — NO es la cadena de secuencia (ver CADENA_HITOS más abajo, que a
+// propósito NO se reordenó ni sumó 'primera_validacion' — reunión 2026-09, queda para después).
 var HITOS_DEF=[
   {id:'ingreso',etapa:0,label:'Ingreso',chk:function(p){return tieneFecha(p.f_v_validar);}},
+  {id:'primera_validacion',etapa:0,label:'Primera Validación',chk:function(p){return tieneFecha(p.f_v_prevalidacion);}},
   {id:'validacion',etapa:0,label:'Validación',chk:function(p){return tieneFecha(p.f_v_respondido);}},
-  {id:'asignacion',etapa:0,label:'Asignación',chk:function(p){return tieneFecha(p.f_v_coord);}},
+  {id:'asignacion',etapa:1,label:'Asignación',chk:function(p){return tieneFecha(p.f_v_coord);}},
   {id:'revision',etapa:1,label:'Revisión',chk:function(p){return tieneFecha(p.f_rev_ant);}},
   {id:'visita_previa',etapa:1,label:'Visita Previa',chk:function(p){return tieneFecha(p.f_visita);}},
   {id:'envio_a_liberar',etapa:1,label:'Envío a Liberar',chk:function(p){return tieneFecha(p.f_liberar);}},
-  {id:'liberado',etapa:2,label:'Liberado',chk:function(p){return tieneFecha(p.f_liberado);}},
+  {id:'liberado',etapa:1,label:'Liberado',chk:function(p){return tieneFecha(p.f_liberado);}},
   {id:'crear_ut',etapa:2,label:'Crear UT',chk:function(p){return tieneFecha(p.f_ut);}},
   {id:'pedir_liberar_grafo',etapa:2,label:'Pedir Liberar Grafo',chk:function(p){return tieneFecha(p.f_pedir_grafo);}},
   {id:'envio_oc',etapa:2,label:'Envío OC',chk:function(p){return tieneFecha(p.f_oc);}},
@@ -2286,7 +2261,7 @@ var HITO_BY_ID={};
 HITOS_DEF.forEach(function(hd){HITO_BY_ID[hd.id]=hd;});
 
 // ─── PROGRESO PONDERADO ────────────────────────────────────────────────────
-// Peso por etapa (deben sumar 100): Etapa 1 Anteproyecto=10, Etapa 2 Tareas Previas=15,
+// Peso por etapa (deben sumar 100): Etapa 1 Vende=10, Etapa 2 Construye=15,
 // Etapa 3 En Ejecución=60 (repartido según hitos internos completados), Etapa 4=15.
 // Cierre de Proyecto y Cierre Forzado siempre marcan 100% — el proyecto ya terminó.
 var ETAPA_PESO=[10,15,60,15];
@@ -2718,8 +2693,7 @@ function abrirDet(id){
   h+='<div class="alerta al-b">📌 &nbsp;Estado real: <strong>'+esc(estadoHumano(p.status))+'</strong> · '+esc(p.etapa||'Sin etapa definida')+'</div>';
   if(dg!==null)h+='<div class="alerta '+(dg>15?'al-r':'al-b')+'">📁 &nbsp;En <strong>Gestor Documental</strong> hace <strong>'+dg+' días</strong>'+(dg>15?' — revisar urgente':'')+'</div>';
   if(p.f_v_coord&&!p.f_rev_ant){var dv=diasDesde(p.f_v_coord);if(dv>4)h+='<div class="alerta al-r">⚠️ &nbsp;Revisión de antecedentes vencida — <strong>'+dv+' días</strong> sin validar (máx. 4 días)</div>';} 
-  if(p.f_oc&&!p.f_trabajos){var doc=diasDesde(p.f_oc);if(doc>7)h+='<div class="alerta al-a">📦 &nbsp;<strong>Welcome Pack pendiente</strong> — O.C. enviada hace <strong>'+doc+' días</strong></div>';} 
-  if(p.dev_ito&&!p.f_liberado)h+='<div class="alerta al-a">↩️ &nbsp;<strong>Devuelto a ITO</strong> — pendiente de corrección desde el '+esc(fFH(p.dev_ito))+' (ver motivo en Observaciones)</div>';
+  if(p.f_oc&&!p.f_trabajos){var doc=diasDesde(p.f_oc);if(doc>7)h+='<div class="alerta al-a">📦 &nbsp;<strong>Welcome Pack pendiente</strong> — O.C. enviada hace <strong>'+doc+' días</strong></div>';}
   if(alerts.length){
     alerts.forEach(function(msg){
       h+='<div class="alerta al-w">🕒 &nbsp;'+esc(msg)+'</div>';
@@ -2750,21 +2724,21 @@ function abrirDet(id){
 
   // Etapas (4 etapas — ver ETAPAS_DEF/HITOS_DEF; Cargas, Documentos Normativos y Estados de Pago son puntos a registrar dentro de En Ejecución, no etapas propias)
   h+='<div class="etapas">';
-  h+='<div class="etapa e0"><div class="ehdr">🗂 Etapa 1 &nbsp;·&nbsp; Anteproyecto y Coordinación</div>';
+  h+='<div class="etapa e0"><div class="ehdr">🗂 Etapa 1 &nbsp;·&nbsp; Vende</div>';
   h+=hF(idx,'f_v_validar','Ingreso',p,'📮','Envío para validar, fuera de Renova',cer);
+  h+=hF(idx,'f_v_prevalidacion','Primera Validación',p,'🧭','',cer);
   h+=hF(idx,'f_v_respondido','Validación',p,'✅','Cuadre hecho y respondido',cer);
-  h+=hF(idx,'f_v_coord','Asignación',p,'📤','Envío Ventas → Coordinador — inicio del plazo de revisión de 4 días',cer);
   h+='</div>';
 
-  h+='<div class="etapa e1"><div class="ehdr">🔍 Etapa 2 &nbsp;·&nbsp; Tareas Previas</div>';
+  h+='<div class="etapa e1"><div class="ehdr">🔍 Etapa 2 &nbsp;·&nbsp; Construye</div>';
   h+=hF(idx,'f_rev_ant','Revisión',p,'🔍','Revisión de Antecedentes (ITO / Coordinador)',cer);
+  h+=hF(idx,'f_v_coord','Asignación',p,'📤','Coordinador asigna Supervisor y Proveedores',cer);
   h+=hF(idx,'f_visita','Visita Previa',p,'🏠','Primera visita al cliente',cer);
   h+=hF(idx,'f_liberar','Envío a Liberar',p,'📨','',cer);
-  h+=hDevITO(idx,p,cer);
+  h+=hF(idx,'f_liberado','Liberado',p,'🔓','Jefe de Proyectos',cer);
   h+='</div>';
 
   h+='<div class="etapa e2"><div class="ehdr">🏗 Etapa 3 &nbsp;·&nbsp; En Ejecución</div>';
-  h+=hF(idx,'f_liberado','Liberado',p,'🔓','Jefe de Proyectos Masivos',cer);
   h+=hF(idx,'f_ut','Crear UT',p,'🧾','',cer);
   h+=hF(idx,'f_pedir_grafo','Pedir Liberar Grafo',p,'🗺','Correo automático al Jefe de Instalaciones de la zona',cer,
     '<input type="text" id="fi-'+idx+'-num_grafo" value="'+esc(p.num_grafo||'')+'" placeholder="N° Grafo" style="width:100px;margin-right:6px;padding:6px 8px;font-size:13px;border:1px solid var(--gris-borde,#d4d5d6);border-radius:6px" onchange="saveCampoEdit('+idx+',\'num_grafo\')">'
@@ -2827,13 +2801,21 @@ function abrirDet(id){
   if(!cer)h+=hBotonAccion('🏁','Enviar End Pack al cliente','','<button class="hbtn hb-reg" onclick="abrirWPEP('+idx+',\'EP\')">🏁 Generar End Pack</button>');
   h+=hF(idx,'f_gestor','Envío a Gestor Documental',p,'📁','Días en gestor se calculan automáticamente',cer);
   if(p.f_cierre)h+='<div class="hito"><div class="hico">🏁</div><div class="hlbl">Cierre de Proyecto<small>Registrado permanentemente</small></div><div class="hright"><div class="hval hf">📅 '+esc(fFH(p.f_cierre)||p.f_cierre)+'</div><button class="hbtn hb-done" disabled>Registrado</button></div></div>';
+  if(p.f_cierre)h+='<div class="hito"><div class="hico">🛍</div><div class="hlbl">Pasado a Post Venta<small>Se marca junto con el Cierre de Proyecto</small></div><div class="hright"><div class="hval hf">📅 '+esc(fFH(p.f_cierre)||p.f_cierre)+'</div><button class="hbtn hb-done" disabled>Registrado</button></div></div>';
   if(p.f_forzado)h+='<div class="hito"><div class="hico">⛔</div><div class="hlbl">Cierre Forzado<small>Registrado permanentemente</small></div><div class="hright"><div class="hval hf">📅 '+esc(fFH(p.f_forzado)||p.f_forzado)+'</div><button class="hbtn hb-done" disabled>Registrado</button></div></div>';
+  if(p.f_forzado&&(p.cf_obs||p.cf_fecha||p.cf_autoriza||p.cf_captura)){
+    h+='<div class="obs-box"><strong>⛔ Evidencia del Cierre Forzado:</strong><br><br>';
+    if(p.cf_obs)h+='<strong>Observaciones del correo:</strong> '+esc(p.cf_obs)+'<br>';
+    if(p.cf_fecha)h+='<strong>Fecha del correo/autorización:</strong> '+esc(fFH(p.cf_fecha))+'<br>';
+    if(p.cf_autoriza)h+='<strong>Autorizado por:</strong> '+esc(p.cf_autoriza)+'<br>';
+    if(p.cf_captura)h+='<br><a href="'+p.cf_captura+'" target="_blank" rel="noopener"><img src="'+p.cf_captura+'" alt="Captura del correo" style="max-width:260px;border:1px solid var(--line2);border-radius:8px;margin-top:6px"></a>';
+    h+='</div>';
+  }
   h+='</div></div>';
 
   if(p.obs)h+='<div class="obs-box"><strong>📝 Observaciones:</strong><br><br>'+esc(p.obs)+'</div>';
   h+='<div class="pie">';
   if(!cer){h+='<button class="btn btn-red" onclick="abrirCF('+idx+')">⛔ Cierre Forzado</button>';h+='<button class="btn btn-green" onclick="mkCierre('+idx+')">🏁 Cierre de Proyecto</button>';}
-  h+='<button class="btn btn-red" onclick="abrirDelProy('+idx+')" title="Elimina el proyecto de forma permanente de la base de datos">🗑 Eliminar Proyecto</button>';
   h+='</div>';
 
   document.getElementById('m-body').innerHTML=h;
@@ -3018,21 +3000,6 @@ function borrarOK(idx,key,lbl,ev){
 
 function hBotonAccion(icono,label,sub,botonHtml){
   return '<div class="hito"><div class="hico">'+icono+'</div><div class="hlbl">'+label+(sub?'<small>'+sub+'</small>':'')+'</div><div class="hright">'+botonHtml+'</div></div>';
-}
-
-function hDevITO(idx,p,cer){
-  var h='<div class="hito"><div class="hico">↩️</div><div class="hlbl">Devuelto a ITO<small>Falla que impide seguir con la liberación — corrige y vuelve a enviar</small></div><div class="hright">';
-  if(p.dev_ito){
-    h+='<div class="fecha-edit"><span class="hval hf">📅 '+esc(fFH(p.dev_ito))+'</span>';
-    if(!cer)h+='<button class="hbtn hb-reg" onclick="abrirDevITO('+idx+')">↩️ Devolver de nuevo</button>';
-    h+='</div>';
-  } else if(cer){
-    h+='<div class="hval" style="color:#BDC5DC">—</div>';
-  } else {
-    h+='<button class="hbtn hb-reg" onclick="abrirDevITO('+idx+')">↩️ Devolver a ITO</button>';
-  }
-  h+='</div></div>';
-  return h;
 }
 
 // ─── VALIDACIÓN DE SECUENCIA DE HITOS ──────────────────────────────────────
@@ -3286,6 +3253,9 @@ function okDelCarga(){
 // ahora con una confirmación que exige escribir el N° de ítem exacto antes de
 // habilitar el botón — es una acción permanente, sin deshacer posible desde
 // la app.
+// Reunión 2026-09: a pedido del usuario se saca de nuevo el botón (y ahora
+// también el modal y las funciones abrirDelProy/revisarConfirmDelProy/
+// okDelProy) de la ficha. La policy de DELETE en la BD NO se tocó.
 function mkCierre(idx){
   if(!BD[idx])return;
   var p=BD[idx];
@@ -3303,84 +3273,41 @@ function mkCierre(idx){
   BD[idx].obs=(BD[idx].obs||'')+'\n[CIERRE DE PROYECTO '+ts+']';
   guardar(idx).then(filtrar);closeOv('ov-det');toast('🏁 Proyecto cerrado','ok');
 }
-function abrirCF(idx){CFI=idx;document.getElementById('mcf').value='';document.getElementById('ov-cf').classList.add('open');}
+var CF_CAPTURA_B64=null;
+var CF_CAPTURA_MAX=3*1024*1024;
+function abrirCF(idx){
+  CFI=idx;CF_CAPTURA_B64=null;
+  document.getElementById('mcf').value='';
+  document.getElementById('mcf-obs').value='';
+  document.getElementById('mcf-fecha').value='';
+  document.getElementById('mcf-autoriza').value='';
+  document.getElementById('mcf-captura').value='';
+  document.getElementById('mcf-captura-hint').textContent='';
+  document.getElementById('ov-cf').classList.add('open');
+}
+function manejarCapturaCF(){
+  var f=this.files&&this.files[0], hint=document.getElementById('mcf-captura-hint');
+  CF_CAPTURA_B64=null; hint.textContent='';
+  if(!f)return;
+  if(f.size>CF_CAPTURA_MAX){hint.textContent='⚠️ La imagen pesa más de 3 MB — elige una más liviana';hint.style.color='var(--rojo,#C0304A)';this.value='';return;}
+  var reader=new FileReader();
+  reader.onload=function(){CF_CAPTURA_B64=reader.result;hint.textContent='✓ Adjuntada — se guarda al confirmar';hint.style.color='var(--verde,#059669)';};
+  reader.onerror=function(){CF_CAPTURA_B64=null;hint.textContent='⚠️ No se pudo leer la imagen';hint.style.color='var(--rojo,#C0304A)';};
+  reader.readAsDataURL(f);
+}
 function okForzado(){
   var m=(document.getElementById('mcf').value||'').trim();
   if(!m){toast('⚠️ Ingresa el motivo del cierre forzado','warn');return;}
   var ts=ahora();BD[CFI].status='8. Cierre Forzado';BD[CFI].f_forzado=nowForDB();
   BD[CFI].obs=(BD[CFI].obs||'')+'\n[CIERRE FORZADO '+ts+']: '+m;
+  BD[CFI].cf_obs=(document.getElementById('mcf-obs').value||'').trim()||null;
+  var mcfFecha=document.getElementById('mcf-fecha').value;
+  BD[CFI].cf_fecha=mcfFecha?fromDtLocal(mcfFecha):null;
+  BD[CFI].cf_autoriza=(document.getElementById('mcf-autoriza').value||'').trim()||null;
+  BD[CFI].cf_captura=CF_CAPTURA_B64;
   guardar(CFI).then(filtrar);closeOv('ov-cf');closeOv('ov-det');toast('⛔ Cierre forzado registrado','err');
 }
 
-// Eliminar Proyecto — a diferencia de guardar()/las demás acciones, esto borra
-// la fila de verdad (DELETE real en Supabase, con policy habilitada a pedido
-// explícito del usuario — ver schema.sql). Por eso exige escribir el N° de
-// ítem exacto antes de habilitar el botón de confirmación: no alcanza con un
-// solo clic para una acción que no tiene revertir posible desde la app.
-var DELPI=null;
-function abrirDelProy(idx){
-  DELPI=idx;
-  var p=BD[idx];
-  document.getElementById('delproy-nombre').textContent=(p.codigo||'—')+' · '+(p.cliente||p.nombre_proyecto||'—');
-  document.getElementById('delproy-item').textContent=p.item;
-  document.getElementById('delproy-confirm').value='';
-  document.getElementById('delproy-hint').textContent='';
-  document.getElementById('btn-delproy').disabled=true;
-  document.getElementById('ov-delproy').classList.add('open');
-  setTimeout(function(){document.getElementById('delproy-confirm').focus();},50);
-}
-function revisarConfirmDelProy(){
-  if(DELPI===null||!BD[DELPI])return;
-  var v=(document.getElementById('delproy-confirm').value||'').trim();
-  var ok=v===String(BD[DELPI].item);
-  document.getElementById('btn-delproy').disabled=!ok;
-  var hint=document.getElementById('delproy-hint');
-  if(!v){hint.textContent='';hint.style.color='var(--muted)';}
-  else if(ok){hint.textContent='✓ Coincide — ya podés confirmar';hint.style.color='var(--verde,#059669)';}
-  else{hint.textContent='✕ No coincide con N°'+BD[DELPI].item;hint.style.color='var(--rojo,#C0304A)';}
-}
-// OBS-CRIT-01 (Fase 4.9): un DELETE sin .select() devuelve data:null/error:null
-// aunque no haya afectado ninguna fila (ej. otra sesión ya lo había borrado) —
-// antes de este cambio eso se informaba igual como "eliminado" (falsa
-// confirmación de éxito). Se agrega .select('id') para poder distinguir
-// "0 filas afectadas" de un borrado real, mismo criterio que ya usa guardar()
-// desde la Fase 4.2 con el UPDATE.
-async function okDelProy(){
-  if(DELPI===null||!BD[DELPI])return;
-  var p=BD[DELPI];
-  if((document.getElementById('delproy-confirm').value||'').trim()!==String(p.item))return;
-  try{
-    var res=await sb.from('proyectos').delete().eq('id', p.id).select('id');
-    if(res.error) throw res.error;
-    if(!res.data||!res.data.length){
-      toast('⚠️ Este proyecto ya no existe en la base de datos (probablemente lo eliminó otra sesión) — se quita de la lista local.','warn');
-      BD.splice(DELPI,1);
-      closeOv('ov-delproy');closeOv('ov-det');
-      filtrar();renderDash();renderResumen();
-      return;
-    }
-  }catch(e){
-    console.error('Error eliminando proyecto', e);
-    toast('⚠️ No se pudo eliminar: '+mensajeErrorBD(e),'err');
-    return;
-  }
-  BD.splice(DELPI,1);
-  closeOv('ov-delproy');closeOv('ov-det');
-  toast('🗑 Proyecto '+(p.codigo||'')+' eliminado','ok');
-  filtrar();renderDash();renderResumen();
-}
-
-var DITOI=null;
-function abrirDevITO(idx){DITOI=idx;document.getElementById('mdito').value='';document.getElementById('ov-dito').classList.add('open');}
-function okDevITO(){
-  var m=(document.getElementById('mdito').value||'').trim();
-  if(!m){toast('⚠️ Ingresa el motivo de la devolución','warn');return;}
-  var ts=ahora();BD[DITOI].dev_ito=nowForDB();
-  BD[DITOI].obs=(BD[DITOI].obs||'')+'\n[DEVUELTO A ITO '+ts+']: '+m;
-  guardar(DITOI).then(filtrar);closeOv('ov-dito');
-  toast('↩️ Devuelto a ITO registrado','warn');
-  setTimeout(function(){abrirDet(BD[DITOI]._id);},60);
-}
 
 // ─── NUEVO PROYECTO ───────────────────────────────────────────────────────
 function actualizarResumenNuevoProyecto(){
@@ -4055,19 +3982,19 @@ async function expCSV(){
   var HDR=['Item','Código','Cliente','Nombre Proyecto','Región','Comuna','Dirección','Tipo','Construcción','Estado','Etapa',
     '% Progreso Ponderado','Supervisor','ITO','Contratista','Certificador','Jefe Instalaciones','Vendedor',
     'Potencia Mcal/h','Tanque','Cant. Tanques','Costo Inversión','Cant. Reguladores','Modelo(s) Regulador','Cant. Medidores','Toneladas Estimadas',
-    'Envío para validar (fuera de Renova)','Validado - Cuadre - Respondido','Envío Ventas→Coord','Revisión Antecedentes','Primera Visita','Envío Liberar',
+    'Envío para validar (fuera de Renova)','Primera Validación','Validado - Cuadre - Respondido','Envío Ventas→Coord','Revisión Antecedentes','Primera Visita','Envío Liberar',
     'Proyecto Liberado','Crear UT','Pedir Liberar Grafo','N° Grafo','Envío O.C.','Inicio Trabajos','Despacho Tanque y Equipos','Envío TC8','Retiro de Materiales Generado','Montaje Tanque','Ampliar Cliente',
     'Carga N°1','Carga N°2','Carga N°3','Carga N°4','Carga N°5',
     'Carga N°6','Carga N°7','Carga N°8','Carga N°9','Carga N°10',
     'TC2','Sello Verde','TC6','IR','TC7','Pago 1','Pago 2','Pago 3','Pago 4',
-    'Término Ejecución','Gestor Documental','Devuelto ITO','Cierre de Proyecto','Cierre Forzado','Días Totales','Observaciones'];
+    'Término Ejecución','Gestor Documental','Devuelto ITO (histórico)','Cierre de Proyecto','Cierre Forzado','CF Observaciones Correo','CF Fecha Autorización','CF Autorizado Por','Días Totales','Observaciones'];
   var rows=filtrados.map(function(p){
     return [p.item,p.codigo,p.cliente,p.nombre_proyecto,p.region,p.comuna,p.direccion,p.tipo,p.construccion,p.status,p.etapa,
       porcentajeProgreso(p),p.supervisor,p.ito,p.contratista,p.cert,p.jefe,p.vendedor,p.potencia,p.tanque,p.cant_tanque,p.costo,p.reguladores_cant,p.reguladores_modelo,p.medidores_cant,p.toneladas_estimadas,
-      soloFecha(p.f_v_validar),soloFecha(p.f_v_respondido),soloFecha(p.f_v_coord),soloFecha(p.f_rev_ant),soloFecha(p.f_visita),soloFecha(p.f_liberar),soloFecha(p.f_liberado),soloFecha(p.f_ut),soloFecha(p.f_pedir_grafo),p.num_grafo,soloFecha(p.f_oc),soloFecha(p.f_trabajos),soloFecha(p.f_despacho_tq),soloFecha(p.f_tc8),soloFecha(p.f_retiro_materiales),soloFecha(p.f_montaje),soloFecha(p.f_ampliacion),
+      soloFecha(p.f_v_validar),soloFecha(p.f_v_prevalidacion),soloFecha(p.f_v_respondido),soloFecha(p.f_v_coord),soloFecha(p.f_rev_ant),soloFecha(p.f_visita),soloFecha(p.f_liberar),soloFecha(p.f_liberado),soloFecha(p.f_ut),soloFecha(p.f_pedir_grafo),p.num_grafo,soloFecha(p.f_oc),soloFecha(p.f_trabajos),soloFecha(p.f_despacho_tq),soloFecha(p.f_tc8),soloFecha(p.f_retiro_materiales),soloFecha(p.f_montaje),soloFecha(p.f_ampliacion),
       soloFecha(p.f_c1),soloFecha(p.f_c2),soloFecha(p.f_c3),soloFecha(p.f_c4),soloFecha(p.f_c5),soloFecha(p.f_c6),soloFecha(p.f_c7),soloFecha(p.f_c8),soloFecha(p.f_c9),soloFecha(p.f_c10),
       p.tc2,p.sello,p.tc6,p.ir,p.tc7,soloFecha(p.pago1),soloFecha(p.pago2),soloFecha(p.pago3),soloFecha(p.pago4),
-      soloFecha(p.f_termino_ejecucion),soloFecha(p.f_gestor),soloFecha(p.dev_ito),soloFecha(p.f_cierre),soloFecha(p.f_forzado),diasProy(p),p.obs];
+      soloFecha(p.f_termino_ejecucion),soloFecha(p.f_gestor),soloFecha(p.dev_ito),soloFecha(p.f_cierre),soloFecha(p.f_forzado),p.cf_obs,soloFecha(p.cf_fecha),p.cf_autoriza,diasProy(p),p.obs];
   });
   var ws=XLSX.utils.aoa_to_sheet([HDR].concat(rows));
   var wb=XLSX.utils.book_new();
