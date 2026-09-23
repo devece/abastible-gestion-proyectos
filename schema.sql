@@ -866,3 +866,270 @@ alter table public.proyectos add constraint proyectos_medidores_cant_check check
 -- lo que sugiere que no es una secuencia estrictamente obligatoria en la
 -- práctica). No se tocaron RLS, permisos, Storage, Auth ni ningún dato
 -- existente.
+
+-- ── Stage: reunión 2026-09 — Vende/Construye, hito Primera Validación,
+-- evidencia de Cierre Forzado ──
+-- A pedido explícito del usuario, tras validar un mockup:
+--  - Etapa 1 "Anteproyecto y Coordinación" y Etapa 2 "Tareas Previas" se
+--    renombran a "Vende" y "Construye" (solo texto, ver HITOS_DEF/ETAPAS_DEF
+--    en el frontend — no hay tabla de etapas en la BD).
+--  - Nuevo hito "Primera Validación" en Vende, entre Ingreso y Validación:
+--    columna f_v_prevalidacion.
+--  - Asignación (f_v_coord) y Liberado (f_v_liberado) pasan de agrupación
+--    visual a Construye — se actualiza etapa_actual en rpc_listar_proyectos.
+--  - Evidencia de Cierre Forzado: cf_obs, cf_fecha, cf_autoriza, cf_captura
+--    (captura como data URL base64 — sin bucket de Storage nuevo, a propósito,
+--    para no reabrir SEC-ALTO-01).
+--
+-- A propósito NO se tocó (queda para una revisión posterior, a pedido del
+-- usuario): CADENA_HITOS/cadena_hitos (motor de validación de secuencia,
+-- sigue con Asignación antes que Revisión), autoStatus()/vencido() en el
+-- frontend (alerta de "revisión vencida" a 4 días), ni la policy de DELETE
+-- de "proyectos". "Primera Validación" no se agregó a cadena_hitos: no tiene
+-- validación de secuencia por ahora.
+alter table public.proyectos
+  add column if not exists f_v_prevalidacion timestamptz,
+  add column if not exists cf_obs text,
+  add column if not exists cf_fecha timestamptz,
+  add column if not exists cf_autoriza text,
+  add column if not exists cf_captura text;
+
+-- rpc_listar_proyectos: mismo DROP + CREATE que en el PR #73 (no se puede
+-- ALTER el RETURNS TABLE de una función existente). Cambios sobre la versión
+-- de arriba: se agregan f_v_prevalidacion/cf_obs/cf_fecha/cf_autoriza/
+-- cf_captura al RETURNS TABLE y al SELECT final; se agrega
+-- "when p.f_v_prevalidacion is not null then 'primera_validacion'" al CASE de
+-- hito_actual (antes del "else 'ingreso'"); y en etapa_actual, 'asignacion' y
+-- 'liberado' se mueven a la lista de etapa 1 (antes: 'asignacion' estaba en
+-- la lista de etapa 0 y 'liberado' caía en el "else 2"), y se agrega
+-- 'primera_validacion' a la lista de etapa 0. cadena_hitos (para
+-- próximo_hito) queda IDÉNTICA a la de arriba, sin 'f_v_prevalidacion' y sin
+-- reordenar 'f_v_coord'/'f_rev_ant' — ver nota arriba.
+drop function if exists public.rpc_listar_proyectos(text,text,text,text,text,int,text,text,boolean,int,int,text);
+
+create or replace function public.rpc_listar_proyectos(
+  p_q text default null,
+  p_region text default null,
+  p_supervisor text default null,
+  p_tipo text default null,
+  p_contratista text default null,
+  p_etapa int default null,
+  p_hito text default null,
+  p_orden_col text default 'item',
+  p_orden_asc boolean default true,
+  p_offset int default 0,
+  p_limit int default 25,
+  p_proximo_hito text default null
+)
+returns table (
+  id bigint, item int, codigo text, cliente text, nombre_proyecto text, direccion text,
+  region text, comuna text, status text, supervisor text, ito text, jefe text,
+  contratista text, vendedor text, tipo text,
+  f_v_validar timestamptz, f_v_prevalidacion timestamptz, f_v_respondido timestamptz, f_v_coord timestamptz, f_rev_ant timestamptz,
+  f_visita timestamptz, f_liberar timestamptz, f_liberado timestamptz, f_ut timestamptz,
+  f_pedir_grafo timestamptz, f_oc timestamptz, f_trabajos timestamptz, f_despacho_tq timestamptz,
+  f_retiro_materiales timestamptz, f_tc8 timestamptz, f_montaje timestamptz, f_ampliacion timestamptz,
+  f_c1 timestamptz, f_c2 timestamptz, f_c3 timestamptz, f_c4 timestamptz, f_c5 timestamptz,
+  f_c6 timestamptz, f_c7 timestamptz, f_c8 timestamptz, f_c9 timestamptz, f_c10 timestamptz,
+  tc2 text, sello text, tc6 text, ir text, tc7 text,
+  pago1 text, pago2 text, pago3 text, pago4 text,
+  f_termino_ejecucion timestamptz, f_gestor timestamptz, f_forzado timestamptz,
+  cf_obs text, cf_fecha timestamptz, cf_autoriza text, cf_captura text,
+  hito_actual text, etapa_actual int,
+  proximo_hito_key text, proximo_hito_pos int,
+  total_count bigint
+)
+language plpgsql
+stable
+set search_path to 'public', 'pg_temp'
+as $$
+declare
+  v_q text;
+  v_orden_col text;
+  v_dir text;
+  v_order_clause text;
+  v_sql text;
+begin
+  v_q := case when p_q is null or p_q='' then null
+    else replace(replace(replace(p_q,'\','\\'),'%','\%'),'_','\_') end;
+
+  v_orden_col := case p_orden_col
+    when 'item' then 'item'
+    when 'codigo' then 'codigo'
+    when 'cliente' then 'cliente'
+    when 'nombre_proyecto' then 'nombre_proyecto'
+    when 'region' then 'region'
+    when 'status' then 'status'
+    when 'supervisor' then 'supervisor'
+    when 'contratista' then 'contratista'
+    when '_d' then 'dias'
+    when 'proximo_hito' then 'proximo_hito_pos'
+    else 'item'
+  end;
+
+  v_dir := case when p_orden_asc then 'asc' else 'desc' end;
+
+  if v_orden_col in ('item','dias','proximo_hito_pos') then
+    v_order_clause := format('f.%I %s nulls last', v_orden_col, v_dir);
+  else
+    v_order_clause := format('lower(coalesce(f.%I, %L)) %s', v_orden_col, '', v_dir);
+  end if;
+
+  v_sql := format($f$
+    with cadena_hitos(pos, key) as (
+      values
+        (0,'f_v_validar'),(1,'f_v_respondido'),(2,'f_v_coord'),(3,'f_rev_ant'),(4,'f_visita'),
+        (5,'f_liberar'),(6,'f_liberado'),(7,'f_ut'),(8,'f_pedir_grafo'),(9,'f_oc'),
+        (10,'f_trabajos'),(11,'f_despacho_tq'),(12,'f_tc8'),(13,'f_montaje'),(14,'f_ampliacion'),
+        (15,'f_termino_ejecucion'),(16,'f_gestor')
+    ),
+    base as (
+      select p.*,
+        case
+          when p.f_forzado is not null or p.status = '8. Cierre Forzado' then 'cierre_forzado'
+          when p.status = '7. Cierre Proyecto' then 'pasado_post_venta'
+          when p.f_gestor is not null then 'envio_gestor_documental'
+          when p.f_termino_ejecucion is not null then 'termino_trabajos'
+          when p.pago4 is not null then 'pago_4'
+          when p.pago3 is not null then 'pago_3'
+          when p.pago2 is not null then 'pago_2'
+          when p.pago1 is not null then 'pago_1'
+          when p.tc7 = 'OK' then 'tc5_tc7_otros'
+          when p.ir = 'OK' then 'ir'
+          when p.tc6 = 'OK' then 'tc6'
+          when p.sello = 'OK' then 'sello_verde'
+          when p.tc2 = 'OK' then 'tc2'
+          when p.f_c10 is not null then 'carga_10'
+          when p.f_c9 is not null then 'carga_9'
+          when p.f_c8 is not null then 'carga_8'
+          when p.f_c7 is not null then 'carga_7'
+          when p.f_c6 is not null then 'carga_6'
+          when p.f_c5 is not null then 'carga_5'
+          when p.f_c4 is not null then 'carga_4'
+          when p.f_c3 is not null then 'carga_3'
+          when p.f_c2 is not null then 'carga_2'
+          when p.f_c1 is not null then 'carga_1'
+          when p.f_ampliacion is not null then 'ampliar_cliente'
+          when p.f_montaje is not null then 'montaje_tk'
+          when p.f_retiro_materiales is not null then 'retiro_materiales'
+          when p.f_tc8 is not null then 'envio_tc8'
+          when p.f_despacho_tq is not null then 'despacho_tq_equipos'
+          when p.f_trabajos is not null then 'inicio_trabajos'
+          when p.f_oc is not null then 'envio_oc'
+          when p.f_pedir_grafo is not null then 'pedir_liberar_grafo'
+          when p.f_ut is not null then 'crear_ut'
+          when p.f_liberado is not null then 'liberado'
+          when p.f_liberar is not null then 'envio_a_liberar'
+          when p.f_visita is not null then 'visita_previa'
+          when p.f_rev_ant is not null then 'revision'
+          when p.f_v_coord is not null then 'asignacion'
+          when p.f_v_respondido is not null then 'validacion'
+          when p.f_v_prevalidacion is not null then 'primera_validacion'
+          else 'ingreso'
+        end as hito_actual,
+        (((now() at time zone 'America/Santiago')::date) - (coalesce(p.f_liberado, p.f_v_coord, p.f_v_validar))::date) as dias
+      from public.proyectos p
+    ), base2 as (
+      select b.*,
+        case
+          when b.hito_actual in ('revision','asignacion','visita_previa','envio_a_liberar','liberado') then 1
+          when b.hito_actual in ('termino_trabajos','envio_gestor_documental','pasado_post_venta','cierre_forzado') then 3
+          when b.hito_actual in ('ingreso','primera_validacion','validacion') then 0
+          else 2
+        end as etapa_actual
+      from base b
+    ), base3 as (
+      select b2.*,
+        (
+          select max(ch.pos) from cadena_hitos ch
+          where (to_jsonb(b2) ->> ch.key) is not null
+        ) as ultimo_pos
+      from base2 b2
+    ), base4 as (
+      select b3.*,
+        (
+          select min(ch.pos) from cadena_hitos ch
+          where ch.pos > coalesce(b3.ultimo_pos, -1)
+            and not (coalesce(b3.hitos_na, '[]'::jsonb) ? ch.key)
+        ) as proximo_hito_pos
+      from base3 b3
+    ), base5 as (
+      select b4.*,
+        case when b4.proximo_hito_pos is null then null
+          else (select ch.key from cadena_hitos ch where ch.pos = b4.proximo_hito_pos)
+        end as proximo_hito_key
+      from base4 b4
+    ), filtrado as (
+      select *
+      from base5 b
+      where
+        ($1::text is null or (
+          b.codigo ilike '%%'||$1||'%%' escape '\' or
+          b.cliente ilike '%%'||$1||'%%' escape '\' or
+          b.nombre_proyecto ilike '%%'||$1||'%%' escape '\' or
+          b.direccion ilike '%%'||$1||'%%' escape '\' or
+          b.region ilike '%%'||$1||'%%' escape '\' or
+          b.contratista ilike '%%'||$1||'%%' escape '\' or
+          b.ito ilike '%%'||$1||'%%' escape '\' or
+          b.supervisor ilike '%%'||$1||'%%' escape '\' or
+          b.vendedor ilike '%%'||$1||'%%' escape '\' or
+          b.comuna ilike '%%'||$1||'%%' escape '\' or
+          b.tipo ilike '%%'||$1||'%%' escape '\' or
+          b.jefe ilike '%%'||$1||'%%' escape '\' or
+          b.item::text ilike '%%'||$1||'%%' escape '\'
+        ))
+        and ($2::text is null or $2='' or b.region = $2)
+        and ($3::text is null or $3='' or b.supervisor = $3)
+        and ($4::text is null or $4='' or b.tipo = $4)
+        and ($5::text is null or $5='' or b.contratista = $5)
+        and (
+          ($6::text is not null and $6<>'' and b.hito_actual = $6)
+          or (
+            ($6::text is null or $6='') and
+            ($7::int is null or b.etapa_actual = $7)
+          )
+        )
+        and (
+          $10::text is null or $10=''
+          or ($10='COMPLETO' and b.proximo_hito_key is null)
+          or b.proximo_hito_key = $10
+        )
+    )
+    select
+      f.id, f.item, f.codigo, f.cliente, f.nombre_proyecto, f.direccion,
+      f.region, f.comuna, f.status, f.supervisor, f.ito, f.jefe,
+      f.contratista, f.vendedor, f.tipo,
+      f.f_v_validar, f.f_v_prevalidacion, f.f_v_respondido, f.f_v_coord, f.f_rev_ant,
+      f.f_visita, f.f_liberar, f.f_liberado, f.f_ut,
+      f.f_pedir_grafo, f.f_oc, f.f_trabajos, f.f_despacho_tq,
+      f.f_retiro_materiales, f.f_tc8, f.f_montaje, f.f_ampliacion,
+      f.f_c1, f.f_c2, f.f_c3, f.f_c4, f.f_c5,
+      f.f_c6, f.f_c7, f.f_c8, f.f_c9, f.f_c10,
+      f.tc2, f.sello, f.tc6, f.ir, f.tc7,
+      f.pago1, f.pago2, f.pago3, f.pago4,
+      f.f_termino_ejecucion, f.f_gestor, f.f_forzado,
+      f.cf_obs, f.cf_fecha, f.cf_autoriza, f.cf_captura,
+      f.hito_actual, f.etapa_actual,
+      f.proximo_hito_key, f.proximo_hito_pos,
+      count(*) over() as total_count
+    from filtrado f
+    order by %s
+    offset $8 limit $9
+  $f$, v_order_clause);
+
+  return query execute v_sql using v_q, p_region, p_supervisor, p_tipo, p_contratista, p_hito, p_etapa, p_offset, p_limit, p_proximo_hito;
+end;
+$$;
+
+grant execute on function public.rpc_listar_proyectos(text,text,text,text,text,int,text,text,boolean,int,int,text) to anon, authenticated;
+
+-- Verificado con execute_sql en producción (rpc_listar_proyectos(p_limit:=1000)
+-- agrupado por etapa_actual/hito_actual): 'asignacion' y 'liberado' cayeron en
+-- etapa_actual=1 como se esperaba, sin errores de la función ni cambios en el
+-- resto de los hitos/conteos.
+--
+-- Eliminado de la app (no de la BD): el botón "Devuelto a ITO" y su modal
+-- (dev_ito queda como dato histórico, sin acción para volver a marcarlo) y el
+-- botón "Eliminar Proyecto" y su modal de confirmación (la policy de DELETE
+-- de "proyectos" NO se tocó). "Cierre de Proyecto" pasa a mostrar también un
+-- hito "Pasado a Post Venta" (misma fecha f_cierre, sin columna nueva).
