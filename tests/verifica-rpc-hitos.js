@@ -66,8 +66,8 @@ function calcularHitoActual(p) {
   if (p.f_liberado) return 'liberado';
   if (p.f_liberar) return 'envio_a_liberar';
   if (p.f_visita) return 'visita_previa';
-  if (p.f_rev_ant) return 'revision';
   if (p.f_v_coord) return 'asignacion';
+  if (p.f_rev_ant) return 'revision';
   if (p.f_v_respondido) return 'validacion';
   if (p.f_v_prevalidacion) return 'primera_validacion';
   return 'ingreso';
@@ -85,7 +85,7 @@ function calcularEtapaActual(hitoActual) {
 
 // ── CADENA_HITOS: misma lista y orden documentados para "Próximo Hito" ──
 const CADENA_HITOS = [
-  'f_v_validar', 'f_v_respondido', 'f_v_coord', 'f_rev_ant', 'f_visita',
+  'f_v_validar', 'f_v_respondido', 'f_rev_ant', 'f_v_coord', 'f_visita',
   'f_liberar', 'f_liberado', 'f_ut', 'f_pedir_grafo', 'f_oc',
   'f_trabajos', 'f_despacho_tq', 'f_tc8', 'f_montaje', 'f_ampliacion',
   'f_termino_ejecucion', 'f_gestor',
