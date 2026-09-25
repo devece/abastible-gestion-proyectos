@@ -393,8 +393,8 @@ tbody td:first-child{padding-left:16px}
       <option value="">Próximo Hito — todos</option>
       <option value="f_v_validar">1/17 · Ingreso</option>
       <option value="f_v_respondido">2/17 · Validación</option>
-      <option value="f_v_coord">3/17 · Asignación</option>
-      <option value="f_rev_ant">4/17 · Revisión</option>
+      <option value="f_rev_ant">3/17 · Revisión</option>
+      <option value="f_v_coord">4/17 · Asignación</option>
       <option value="f_visita">5/17 · Visita Previa</option>
       <option value="f_liberar">6/17 · Envío a Liberar</option>
       <option value="f_liberado">7/17 · Liberado</option>
@@ -2213,14 +2213,15 @@ function autoStatus(p){
 var ETAPAS_DEF=['Vende','Construye','En Ejecución','Término y Cierre'];
 // orden de MÁS TEMPRANO a MÁS TARDÍO — hitoActual() recorre al revés y devuelve el primero que calce.
 // "etapa" es solo la agrupación visual (filtro Etapa→Hito, tarjetas de la ficha, peso de
-// porcentajeProgreso()) — NO es la cadena de secuencia (ver CADENA_HITOS más abajo, que a
-// propósito NO se reordenó ni sumó 'primera_validacion' — reunión 2026-09, queda para después).
+// porcentajeProgreso()) — NO es la cadena de secuencia (ver CADENA_HITOS más abajo).
+// Orden dentro de cada etapa: el de avance real de la planilla (Revisión antes que
+// Asignación, Asignación antes que Visita Previa, y así sucesivamente).
 var HITOS_DEF=[
   {id:'ingreso',etapa:0,label:'Ingreso',chk:function(p){return tieneFecha(p.f_v_validar);}},
   {id:'primera_validacion',etapa:0,label:'Primera Validación',chk:function(p){return tieneFecha(p.f_v_prevalidacion);}},
   {id:'validacion',etapa:0,label:'Validación',chk:function(p){return tieneFecha(p.f_v_respondido);}},
-  {id:'asignacion',etapa:1,label:'Asignación',chk:function(p){return tieneFecha(p.f_v_coord);}},
   {id:'revision',etapa:1,label:'Revisión',chk:function(p){return tieneFecha(p.f_rev_ant);}},
+  {id:'asignacion',etapa:1,label:'Asignación',chk:function(p){return tieneFecha(p.f_v_coord);}},
   {id:'visita_previa',etapa:1,label:'Visita Previa',chk:function(p){return tieneFecha(p.f_visita);}},
   {id:'envio_a_liberar',etapa:1,label:'Envío a Liberar',chk:function(p){return tieneFecha(p.f_liberar);}},
   {id:'liberado',etapa:1,label:'Liberado',chk:function(p){return tieneFecha(p.f_liberado);}},
@@ -2312,8 +2313,8 @@ function estadoHumano(s){
 }
 function validarOrdenFechas(p){
   var orden=[
-    ['f_v_coord','f_rev_ant'],
-    ['f_rev_ant','f_liberar'],
+    ['f_rev_ant','f_v_coord'],
+    ['f_v_coord','f_liberar'],
     ['f_liberar','f_liberado'],
     ['f_liberado','f_pedir_grafo'],
     ['f_pedir_grafo','f_oc'],
@@ -2328,7 +2329,7 @@ function validarOrdenFechas(p){
   var activo = p.status!=='7. Cierre Proyecto' && p.status!=='8. Cierre Forzado';
   if(activo){
     orden = orden.concat([
-      ['f_rev_ant','f_visita'],['f_visita','f_liberar'],
+      ['f_v_coord','f_visita'],['f_visita','f_liberar'],
       ['f_liberado','f_ut'],['f_ut','f_pedir_grafo'],
       // f_trabajos -> f_despacho_tq queda fuera: el Retiro de TQ puede pedirse
       // antes de Inicio de Trabajos, no es una cronología inválida.
@@ -3020,8 +3021,8 @@ function hBotonAccion(icono,label,sub,botonHtml){
 var CADENA_HITOS=[
   {key:'f_v_validar',label:'Ingreso'},
   {key:'f_v_respondido',label:'Validación'},
-  {key:'f_v_coord',label:'Asignación'},
   {key:'f_rev_ant',label:'Revisión'},
+  {key:'f_v_coord',label:'Asignación'},
   {key:'f_visita',label:'Visita Previa'},
   {key:'f_liberar',label:'Envío a Liberar'},
   {key:'f_liberado',label:'Liberado'},
